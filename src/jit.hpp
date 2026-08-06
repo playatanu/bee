@@ -32,10 +32,14 @@ class Interpreter;
 //   args  : pointer to `argc` doubles (the numeric arguments)
 //   argc  : number of arguments (always == the function's arity at call time)
 //   interp: opaque `Interpreter*`, threaded through for trampolines
-//   bail  : out-flag. Set to non-zero if native code gave up (e.g. a Bee
-//           runtime error such as division by zero). When set, the caller must
-//           ignore the return value and fall back to the interpreter. This is
-//           safe precisely because the subset has no observable side effects.
+//   bail  : out-flag, three-valued.
+//             0 => success; the return value is the function's numeric result.
+//             1 => native code gave up (e.g. a Bee runtime error such as
+//                  division by zero); ignore the result and re-run in the
+//                  interpreter. Safe because the subset has no side effects.
+//             2 => the function completed with a nil result (a value-less
+//                  `return`, or falling off the end); the return value is
+//                  unused and the caller yields nil without re-running.
 //
 // Returns the function's numeric result as a double.
 using JitFn = double (*)(const double* args, int argc, void* interp, int* bail);

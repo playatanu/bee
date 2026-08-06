@@ -252,11 +252,81 @@ void Interpreter::execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<E
     for (auto& s : stmts) execute(s.get(), env);
 }
 
+// Below this many iterations, interpreting a flat loop is cheaper than paying
+// the one-time (~3 ms) native compilation, so we don't JIT it.
+static const long kJitLoopMinTrips = 40000;
+
+static bool litNum(Expr* e, double& out) {
+    if (e && e->kind == Expr::Kind::Literal) {
+        auto* l = static_cast<LiteralExpr*>(e);
+        if (l->value.isNumber()) { out = l->value.asNumber(); return true; }
+    }
+    return false;
+}
+
+// Exact trip count of a simple counting `for (let i = c; i </<= c; i += c)`, or
+// -1 if the bounds aren't compile-time literals. Used only as a cost heuristic,
+// so a wrong/absent estimate affects speed, never correctness.
+static long estimateForTrips(ForStmt* s) {
+    if (!s->init || !s->condition || !s->increment) return -1;
+    if (s->init->kind != Stmt::Kind::Let) return -1;
+    auto* let = static_cast<LetStmt*>(s->init.get());
+    if (let->isDestructure || !let->initializer) return -1;
+    double lo; if (!litNum(let->initializer.get(), lo)) return -1;
+
+    if (s->condition->kind != Expr::Kind::Binary) return -1;
+    auto* c = static_cast<BinaryExpr*>(s->condition.get());
+    if (c->op != TokenType::LT && c->op != TokenType::LE) return -1;
+    if (c->left->kind != Expr::Kind::Variable) return -1;
+    auto* cv = static_cast<VariableExpr*>(c->left.get());
+    if (cv->global != (let->slot < 0) || cv->slot != let->slot) return -1;
+    double hi; if (!litNum(c->right.get(), hi)) return -1;
+
+    if (s->increment->kind != Expr::Kind::Assign) return -1;
+    auto* a = static_cast<AssignExpr*>(s->increment.get());
+    if (a->slot != let->slot || !a->value || a->value->kind != Expr::Kind::Binary) return -1;
+    auto* bin = static_cast<BinaryExpr*>(a->value.get());
+    double step; if (bin->op != TokenType::PLUS || !litNum(bin->right.get(), step)) return -1;
+    if (step <= 0) return -1;
+
+    double span = (c->op == TokenType::LT) ? (hi - lo) : (hi - lo + 1);
+    if (span <= 0) return 0;
+    return (long)((span + step - 1) / step);
+}
+
+// Does this statement (a loop body) contain a nested loop? A nested loop makes
+// the total work large, so it's worth compiling even if the outer trip is low.
+static bool stmtContainsLoop(Stmt* s) {
+    if (!s) return false;
+    switch (s->kind) {
+        case Stmt::Kind::While: case Stmt::Kind::For: case Stmt::Kind::ForIn:
+            return true;
+        case Stmt::Kind::Block:
+            for (auto& st : static_cast<BlockStmt*>(s)->statements)
+                if (stmtContainsLoop(st.get())) return true;
+            return false;
+        case Stmt::Kind::If: {
+            auto* i = static_cast<IfStmt*>(s);
+            return stmtContainsLoop(i->thenBranch.get()) || stmtContainsLoop(i->elseBranch.get());
+        }
+        default: return false;
+    }
+}
+
 bool Interpreter::tryJitLoop(Stmt* stmt, std::shared_ptr<Environment>& env) {
     // Only top-level loops (whose outer variables are named globals) qualify;
     // inside functions, loop variables are slots and the function-level JIT
     // already applies.
     if (env.get() != globals.get()) return false;
+
+    // Warmup guard: a small flat loop finishes faster interpreted than the ~3 ms
+    // it takes to compile. Nested/large/unanalyzable loops still compile.
+    if (stmt->kind == Stmt::Kind::For) {
+        auto* fs = static_cast<ForStmt*>(stmt);
+        long trips = estimateForTrips(fs);
+        if (trips >= 0 && trips < kJitLoopMinTrips && !stmtContainsLoop(fs->body.get()))
+            return false;
+    }
 
     const CompiledLoop& cl = jit.getCompiledLoop(stmt, *this);
     if (!cl.fn) return false;
@@ -1086,7 +1156,9 @@ Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>
                 for (size_t i = 0; i < np; ++i) ds[i] = args[i].asNumber();
                 int bail = 0;
                 double r = nf(ds.data(), (int)np, this, &bail);
-                if (!bail) return Value(r);
+                if (bail == 0) return Value(r);       // numeric result
+                if (bail == 2) return Value();        // completed, nil result
+                // bail == 1: native code gave up; fall through to the interpreter
             }
         }
     }

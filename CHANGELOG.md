@@ -33,6 +33,17 @@ language or API changes — existing programs run identically, only faster. All
   grows the buffer in place when the string is not aliased, falling back to a
   copy to preserve value semantics otherwise. Building a 200 k-character string
   went from ~2.46 s to ~0.03 s (~82× faster).
+- **JIT warmup guard.** A small, flat `for` loop with a compile-time-known trip
+  count below ~40 k now runs interpreted instead of paying the ~3 ms one-time
+  native compilation, which for such loops costs more than it saves. Nested,
+  large, or unanalyzable loops still compile as before. A 10 k-iteration loop
+  dropped from ~4.3 ms to ~0.5 ms, matching Python.
+- **Void numeric functions no longer run twice.** A function that falls off the
+  end (no value-returning `return`) used to be compiled, executed natively, then
+  discarded and re-run in the interpreter — doubling the work. Native completion
+  now reports a nil result directly, so such functions keep their native run. A
+  100 M-iteration side-effect-free function dropped from ~6 s to milliseconds;
+  a 10 M-iteration accumulating loop runs ~20× faster than Python.
 
 ## [0.1.0] — 2026-08-06
 

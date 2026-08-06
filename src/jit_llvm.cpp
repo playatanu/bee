@@ -150,10 +150,11 @@ public:
             stmt(s.get());
         }
 
-        // Fall off the end (or an un-returned path) => the Bee function would
-        // yield nil, which isn't a number. Bail so the interpreter reproduces
-        // the correct result. Safe: the subset has no side effects.
-        if (!terminated()) emitBail();
+        // Fall off the end (or an un-returned path) => the Bee function yields
+        // nil. Signal a nil completion (bail=2) rather than a hard bail, so a
+        // side-effect-free numeric function with no `return` still runs natively
+        // instead of being re-executed by the interpreter.
+        if (!terminated()) emitNilReturn();
 
         popScope();
         if (verifyFunction(*func_, &errs())) throw JitBail{};
@@ -207,6 +208,7 @@ private:
     llvm::Value* interpArg_ = nullptr;
     llvm::Value* bailArg_ = nullptr;
     BasicBlock* bailBB_ = nullptr;
+    BasicBlock* nilBB_ = nullptr;
 
     // Loop-region codegen (fn_ == nullptr): the numeric globals the loop
     // touches, each backed by an alloca mirroring a slot of the in/out vars[].
@@ -248,6 +250,20 @@ private:
     void emitBailOn(llvm::Value* cond, BasicBlock* contBB) {
         b_.CreateCondBr(cond, bailBlock(), contBB);
     }
+
+    // "Completed with a nil result" (bail flag = 2): a value-less `return` or
+    // falling off the end. Distinct from a genuine bail (=1) so the caller keeps
+    // the native run instead of re-executing the whole function interpreted.
+    BasicBlock* nilBlock() {
+        if (!nilBB_) {
+            nilBB_ = BasicBlock::Create(ctx_, "retnil", func_);
+            IRBuilder<> nb(nilBB_);
+            nb.CreateStore(nb.getInt32(2), bailArg_);
+            nb.CreateRet(ConstantFP::get(nb.getDoubleTy(), 0.0));
+        }
+        return nilBB_;
+    }
+    void emitNilReturn() { b_.CreateBr(nilBlock()); }
 
     // Truthiness of a typed value as an i1. Numbers are always truthy in Bee
     // (even 0), so a NUMBER condition is a compile-time `true`.
@@ -376,7 +392,7 @@ private:
         // A `return` inside a top-level loop region would end the whole program,
         // not just the loop, and would skip the global write-back. Bail.
         if (loopRegion_) throw JitBail{};
-        if (!s->value) { emitBail(); return; }   // `return` (nil) isn't numeric
+        if (!s->value) { emitNilReturn(); return; }   // `return` with no value => nil
         TVal v = expr(s->value.get());
         b_.CreateRet(toNum(v));                  // ABI returns a double
     }
