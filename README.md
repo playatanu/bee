@@ -9,9 +9,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-4c9a2a.svg?style=flat-square)](LICENSE)
 [![Language: C++17](https://img.shields.io/badge/C%2B%2B-17-00599c.svg?style=flat-square)](Makefile)
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](#-installation)
-[![Version](https://img.shields.io/badge/version-0.1.1-f5b51e.svg?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-0.2.0-f5b51e.svg?style=flat-square)](#)
 
-[Install](#-installation) · [Quick start](#-quick-start) · [Language tour](#-language-tour) · [Docs](docs/LANGUAGE.md) · [Examples](examples/)
+[Install](#-installation) · [Quick start](#-quick-start) · [Language tour](#-language-tour) · [Packages](#-packages) · [Docs](docs/LANGUAGE.md) · [Examples](examples/)
 
 </div>
 
@@ -30,10 +30,14 @@ BeeLang is a dynamically-typed language designed to be **easy to read and quick 
 ## ✨ Features
 
 - **Clean, familiar syntax** — `let`, `fn`, `if`/`while`/`for`, `class`, and both `#` and `//` comments.
+- **String interpolation & slicing** — `f"{name} has {n}"`, `xs[1:3]`, `s[-5:]`.
+- **An interactive REPL** — run `bee` with no arguments, or `bee -e '<code>'` for a one-liner.
 - **First-class functions & closures** — pass functions around, capture state, build counters and callbacks.
 - **Classes & single inheritance** — constructors, methods, `this`, `super`, and custom `str()` for printing.
 - **Module system** — `import`, `from … import`, aliases, and a sibling `lib/` search path.
+- **A package manager** — `hive install <package>` fetches a package into `hive_modules/`, where `import` finds it. See the [Hive guide](docs/HIVE.md).
 - **Error handling** — `try` / `catch` / `finally` with `throw` of *any* value.
+- **Real stack traces** — every error names the file, line and function it came from, all the way back to `<main>`.
 - **Threads with a GIL** — safe shared state and real overlap for I/O-bound work.
 - **Rich standard library** — strings, lists, dicts, math, files, time, random, env, and process execution — no imports needed.
 - **Native LLVM JIT** — numeric-heavy functions are compiled to native code and run at near-native speed, transparently.
@@ -45,8 +49,8 @@ BeeLang is a dynamically-typed language designed to be **easy to read and quick 
 
 | Platform | Package | How |
 |----------|---------|-----|
-| **Windows** | `BeeSetup-0.1.1.exe` | Run the installer. It adds `bee` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
-| **Debian / Ubuntu** | `bee_0.1.1_amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee_0.1.1_amd64.deb`. |
+| **Windows** | `BeeSetup-0.2.0.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
+| **Debian / Ubuntu** | `bee_0.2.0_amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee_0.2.0_amd64.deb`. Installs `bee` and `hive`. |
 
 > Grab the latest packages from the [**Releases**](https://github.com/playatanu/beelang/releases) page.
 
@@ -56,8 +60,9 @@ Requires a C++17 compiler, `make`, and LLVM (17/18) for the JIT:
 
 ```bash
 sudo apt install llvm-18-dev   # the JIT dependency (Debian/Ubuntu)
-make                           # builds ./bee with the native JIT
-sudo cp bee /usr/local/bin     # (optional) put it on your PATH
+make                           # builds ./bee (with the native JIT) and ./hive
+make test                      # end-to-end tests for hive and module resolution
+sudo cp bee hive /usr/local/bin  # (optional) put them on your PATH
 ```
 
 The packaging scripts in [`packaging/`](packaging/) reproduce the release
@@ -93,9 +98,38 @@ A source file uses the `.be` or `.bee` extension. Statements may end with an
 optional semicolon; newlines are not significant.
 
 ```bash
-bee --version    # bee 0.1.1
-bee --help       # usage and options
+bee --version              # bee 0.2.0
+bee --help                 # usage and options
+bee                        # an interactive REPL
+bee -e 'print(1 + 1)'      # run one line
 ```
+
+## 📚 Packages
+
+`hive`, BeeLang's package manager, ships with `bee`:
+
+```bash
+hive init                     # start a project (writes hive.json)
+hive install greet            # fetch a package into ./hive_modules
+hive install greet@^1.2.0     # ... a particular version
+hive install ./greet-1.2.0.hive   # ... or a local .hive archive
+hive list                     # what's installed
+```
+
+Then import it by name:
+
+```
+import greet
+
+print(greet.hello("BeeLang"))
+```
+
+Dependencies resolve transitively, every download is checked against its
+SHA-256, and `hive.lock` pins exact versions so a repeat install — or an
+`--offline` one — gets the same bytes. Publishing is `hive pack` plus a static
+file on any web server.
+
+**[Full guide → docs/HIVE.md](docs/HIVE.md)**
 
 ## 🐝 Language tour
 

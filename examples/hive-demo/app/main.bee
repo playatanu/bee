@@ -1,0 +1,10 @@
+# Install the package first (see ../README.md):
+#     hive pack ../greet
+#     hive install ../greet/greet-0.1.0.hive
+
+import greet
+from greet import hello_in
+
+print(greet.hello("BeeLang"))
+print(hello_in("fr", "monde"))
+print(hello_in("hi", "duniya"))

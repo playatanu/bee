@@ -5,7 +5,7 @@ namespace bee {
 
 enum class TokenType {
     // Literals
-    NUMBER, STRING, IDENTIFIER,
+    NUMBER, STRING, INTERP_STRING, IDENTIFIER,
     TRUE, FALSE, NIL,
 
     // Keywords

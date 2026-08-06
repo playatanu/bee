@@ -8,7 +8,7 @@ the [README](../README.md) — installation and a quick tour live there.
 - [Variables](#variables)
 - [Operators](#operators)
 - [Truthiness](#truthiness)
-- [Strings](#strings)
+- [Strings](#strings) — including interpolation and slicing
 - [Lists](#lists)
 - [Dicts](#dicts)
 - [Control flow](#control-flow)
@@ -20,6 +20,7 @@ the [README](../README.md) — installation and a quick tour live there.
 - [System library](#system-library) — file I/O, time, random, env, processes
 - [Threads](#threads)
 - [Type methods](#type-methods)
+- [The REPL](#the-repl)
 - [Runtime errors](#runtime-errors)
 - [Editor support](#editor-support)
 - [A complete example](#a-complete-example)
@@ -192,6 +193,55 @@ print(s[-1])       # o
 print(len(s))      # 5
 ```
 
+### Interpolation
+
+Prefix a string with `f` to substitute `{expressions}` into it:
+
+```
+let name = "Ada"
+let n = 5
+print(f"{name} has {n} items")          # Ada has 5 items
+print(f"{n} squared is {n * n}")        # 5 squared is 25
+print(f"{name.upper()} / {[1, 2]}")     # ADA / [1, 2]
+```
+
+Any expression works inside the braces, including strings of its own:
+
+```
+let d = {"key": "val"}
+print(f"{d["key"]}")                    # val
+```
+
+Values are stringified the way `str()` would do it. Write `{{` and `}}` for
+literal braces, and note that a string without the `f` prefix is left alone:
+
+```
+print(f"{{not an expression}}")         # {not an expression}
+print("{name} stays as typed")          # {name} stays as typed
+```
+
+### Slicing
+
+`[start:end]` takes a range — `start` is included, `end` is not. Both bounds are
+optional and may be negative (counting from the end):
+
+```
+let xs = [1, 2, 3, 4, 5]
+print(xs[1:3])       # [2, 3]
+print(xs[:2])        # [1, 2]
+print(xs[2:])        # [3, 4, 5]
+print(xs[-2:])       # [4, 5]
+print(xs[:])         # [1, 2, 3, 4, 5]   (a copy)
+
+let s = "hello world"
+print(s[0:5])        # hello
+print(s[-5:])        # world
+```
+
+Bounds are clamped rather than checked, so `xs[0:100]` is the whole list and an
+inverted range is empty. Slicing a list returns a **new** list — changing it
+doesn't touch the original.
+
 Strings are immutable and have [methods](#type-methods):
 
 ```
@@ -226,6 +276,8 @@ for x in [10, 20, 30] {
 }
 print(total)          # 60
 ```
+
+Take a range with a [slice](#slicing): `xs[1:3]`, `xs[:2]`, `xs[-2:]`.
 
 See [list methods](#type-methods) for `push`, `pop`, `contains`, `insert`, etc.
 
@@ -404,9 +456,21 @@ print(d.speak())                 # Rex makes a sound: woof!
 
 ## Modules
 
-Each `.be` or `.bee` file is a module. Modules are resolved relative to the importing
-file's directory and a sibling `lib/` folder; the `.be`/`.bee` extension is added
-automatically. Dotted names map to sub-directories (`a.b.c` → `a/b/c.bee`).
+Each `.be` or `.bee` file is a module. The `.be`/`.bee` extension is added
+automatically, and dotted names map to sub-directories (`a.b.c` → `a/b/c.bee`).
+
+`import name` looks, in order, in:
+
+1. the importing file's own directory
+2. its sibling `lib/` folder
+3. `hive_modules/` in that directory and every directory above it — packages
+   installed by [Hive](HIVE.md), the package manager
+4. each entry of `$BEE_PATH` (`;`-separated on Windows, `:` elsewhere)
+5. the global package library, `$HIVE_HOME/lib` (default `~/.hive/lib`)
+
+Local code therefore wins over an installed package of the same name. A
+directory found this way is treated as a package: the module loaded is the
+`"main"` named by its `hive.json`, or else `init.bee`.
 
 `mathutil.bee`:
 ```
@@ -437,6 +501,9 @@ print(square(9))
 
 `from … import *` skips names beginning with `_` (treat those as private).
 Circular imports are tolerated (a module is cached as soon as it starts loading).
+
+To use somebody else's module, install it with `hive install <name>` and import
+it by name — see the [Hive guide](HIVE.md).
 
 ---
 
@@ -727,19 +794,94 @@ print(d.has("a"))         # true
 
 ---
 
+## The REPL
+
+Run `bee` with no arguments for an interactive session. A bare expression prints
+its value; definitions persist across lines, and an open block keeps prompting
+with `...` until it closes:
+
+```
+$ bee
+bee 0.2.0 - interactive session
+type an expression to see its value; 'exit' or Ctrl-D to quit
+>>> 1 + 1
+2
+>>> let x = 10
+>>> f"x is {x}"
+"x is 10"
+>>> fn fact(n) {
+...     if n <= 1 { return 1 }
+...     return n * fact(n - 1)
+... }
+>>> fact(10)
+3628800
+```
+
+An error prints and the session continues. Leave with `exit` or Ctrl-D.
+
+Two more ways in, for scripts and pipelines:
+
+```bash
+bee -e 'print(f"{2 * 21}")'    # run one line and exit
+bee < script.bee               # read the program from stdin
+echo 'print("hi")' | bee       # same, in a pipeline
+```
+
+---
+
 ## Runtime errors
 
-Uncaught lex, parse, and runtime errors are reported with a line number, and the
-interpreter exits with a non-zero status:
+An uncaught error prints what went wrong and a **stack trace** -- the file, line
+and function for every call on the way in, innermost first -- and the interpreter
+exits with a non-zero status:
 
 ```
-Runtime error (line 7): division by zero
+Runtime error: division by zero
+  at safe_div()  lib/math.bee:8
+  at total()     report.bee:14
+  at <main>      report.bee:31
 ```
 
-Catch and handle them with [`try` / `catch`](#error-handling), or use `assert`
-for defensive checks. Common runtime errors include undefined variables, wrong
-argument counts, indexing out of range, calling a non-callable, and type
-mismatches in operators.
+Each row is where *that* function was executing, so the innermost row is the
+failing line and the rows below it are the calls that led there. Methods appear
+as `Class.method()`, and functions from an installed package name the package's
+own file -- so an error inside a dependency is traceable to its source.
+
+Lex and parse errors name their file too:
+
+```
+Parse error: expected ')' after arguments
+  at greet.bee:12
+```
+
+Catch and handle errors with [`try` / `catch`](#error-handling), or use `assert`
+for defensive checks. A caught runtime error binds as a single-line string with
+its location, so printing it inside your own message stays readable:
+
+```
+try { risky() } catch (e) { print("failed: " + e) }
+# failed: Runtime error: division by zero (lib/math.bee:8)
+```
+
+Common runtime errors include undefined variables, wrong argument counts,
+indexing out of range, calling a non-callable, and type mismatches in operators.
+
+### Recursion depth
+
+Bee stops a runaway recursion with an error instead of letting the process die:
+
+```
+Runtime error: call stack overflow in 'walk' (deeper than 2293 nested calls) -- unbounded recursion?
+       if the depth is intentional, raise it with BEE_MAX_DEPTH (and the stack with 'ulimit -s')
+  at walk()  tree.bee:4
+  ... 2280 more frames ...
+  at <main>  tree.bee:19
+```
+
+The limit scales with the stack the process actually has, so `ulimit -s 65536`
+genuinely buys deeper recursion; `BEE_MAX_DEPTH` overrides it outright. Very deep
+traces are truncated in the middle -- the innermost and outermost frames are the
+informative ones.
 
 ---
 

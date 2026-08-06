@@ -18,8 +18,53 @@ struct ReturnSignal { Value value; };
 struct BreakSignal {};
 struct ContinueSignal {};
 
+// A runtime error that already carries its full message *and* its stack trace.
+// Native built-ins throw a plain RuntimeError with no location; the interpreter
+// catches those at the call site and re-throws them as this, so the location is
+// added exactly once no matter how deep the call went.
+//
+// The parts are kept separate because they have two audiences: what() is what a
+// crashing program prints (message + full trace), while brief() is what a Bee
+// `catch` binds -- one line, because that value often gets printed as part of a
+// larger message.
+struct TracedError : RuntimeError {
+    std::string message;   // what went wrong, with no prefix or location
+    std::string location;  // "file:line", empty when unknown
+    std::string trace;     // "  at f()  file:line" rows, innermost first
+
+    explicit TracedError(const std::string& fullText) : RuntimeError(fullText) {}
+    TracedError(std::string msg, std::string loc, std::string tr)
+        : RuntimeError(compose(msg, tr)),
+          message(std::move(msg)), location(std::move(loc)), trace(std::move(tr)) {}
+
+    std::string brief() const {
+        if (message.empty()) return what();
+        std::string out = "Runtime error: " + message;
+        return location.empty() ? out : out + " (" + location + ")";
+    }
+
+private:
+    static std::string compose(const std::string& msg, const std::string& tr) {
+        std::string out = "Runtime error: " + msg;
+        return tr.empty() ? out : out + "\n" + tr;
+    }
+};
+
 // A Bee-level `throw` in flight, carrying the thrown value. Caught by `try`.
-struct BeeThrow { Value value; };
+// The trace is captured at the throw site, because by the time an uncaught
+// throw reaches the top the frames it came through are already gone.
+struct BeeThrow {
+    Value value;
+    std::string trace;
+};
+
+// One entry per active Bee call. A frame records where the call was *written*,
+// which is what lets a trace show the path taken into the error.
+struct CallFrame {
+    std::string name;                             // the function being called
+    std::shared_ptr<const std::string> callFile;  // file containing the call
+    int callLine = 0;
+};
 
 // A running (or finished) Bee thread spawned via spawn().
 struct ThreadRec {
@@ -35,6 +80,14 @@ public:
 
     // Run a top-level program from `path` (used as the main module).
     void runFile(const std::string& path);
+
+    // Run source that isn't a file on disk -- stdin, or `bee -e`. `name` is what
+    // errors call it; `dir` is where `import` starts looking.
+    void runSource(const std::string& src, const std::string& name, const std::string& dir);
+
+    // Read-eval-print loop. Each line is a top-level program in its own right,
+    // sharing one set of globals, so definitions persist across lines.
+    void runRepl();
 
     // Convert any value to its display string.
     std::string stringify(const Value& v);
@@ -70,7 +123,31 @@ public:
     // Optional LLVM JIT for numeric functions (a no-op stub without BEE_JIT).
     Jit jit;
 
+    // Turn a bare message into "Runtime error: <msg>" plus a stack trace ending
+    // at `line` of the file currently executing. Public so built-ins that call
+    // back into Bee code can report with a location.
+    std::string describeError(const std::string& msg, int line) const;
+
 private:
+    // ---- Source locations -------------------------------------------------
+    // File names are interned: every function and every frame from one file
+    // shares a single string, so pushing a frame copies a pointer.
+    std::map<std::string, std::shared_ptr<const std::string>> fileNames;
+    std::shared_ptr<const std::string> internFile(const std::string& path);
+
+    // "  at f()  file:line" lines, innermost first, for the trace ending at
+    // `line` in the file currently executing.
+    std::string formatTrace(int line) const;
+
+    // "file:line" for the innermost location, or "" if the file is unknown.
+    std::string currentLocation(int line) const;
+
+    // Deepest Bee call nesting allowed. Without a limit, runaway recursion
+    // overflows the real C++ stack and the process dies on a signal with no
+    // diagnostic at all. Derived from the process's stack limit at startup --
+    // see computeMaxCallDepth().
+    size_t maxCallDepth = 2000;
+
     // Module system
     std::map<std::string, std::shared_ptr<Module>> moduleCache; // by resolved path
     std::vector<std::string> searchPaths;
@@ -111,6 +188,7 @@ private:
     Value evalCall(CallExpr* e, std::shared_ptr<Environment>& env);
     Value evalGet(GetExpr* e, std::shared_ptr<Environment>& env);
     Value evalIndex(IndexExpr* e, std::shared_ptr<Environment>& env);
+    Value evalSlice(SliceExpr* e, std::shared_ptr<Environment>& env);
 
     Value callFunction(std::shared_ptr<Function> fn, std::vector<Value>& args, int line);
     std::shared_ptr<Function> bindMethod(std::shared_ptr<Function> method,

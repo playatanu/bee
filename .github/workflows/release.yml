@@ -2,7 +2,7 @@ name: Release
 
 # Build the Linux .deb and the Windows installer, and publish them to a
 # GitHub Release. Triggered by pushing a version tag, e.g.:
-#     git tag v0.1.0 && git push origin v0.1.0
+#     git tag v0.2.0 && git push origin v0.2.0
 # `workflow_dispatch` builds the artifacts too (without creating a release),
 # which is handy for testing the pipeline.
 on:
@@ -27,7 +27,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             export VERSION="${GITHUB_REF_NAME#v}"
           else
-            export VERSION="0.1.0"
+            export VERSION="0.2.0"
           fi
           bash packaging/build-deb.sh
 
@@ -51,12 +51,14 @@ jobs:
           update: true
           install: mingw-w64-ucrt-x86_64-gcc
 
-      - name: Compile bee.exe (static, self-contained)
+      - name: Compile bee.exe and hive.exe (static, self-contained)
         shell: msys2 {0}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.1.0"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.2.0"; fi
           g++ -std=c++17 -O2 -static -pthread -DBEE_VERSION="\"$ver\"" \
               src/*.cpp -o packaging/windows/bee.exe
+          g++ -std=c++17 -O2 -static -pthread -DHIVE_VERSION="\"$ver\"" \
+              src/hive/*.cpp -o packaging/windows/hive.exe
 
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
@@ -67,7 +69,7 @@ jobs:
           if ($env:GITHUB_REF -like 'refs/tags/v*') {
             $ver = $env:GITHUB_REF_NAME -replace '^v',''
           } else {
-            $ver = '0.1.0'
+            $ver = '0.2.0'
           }
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" packaging\windows\bee-setup.iss
 

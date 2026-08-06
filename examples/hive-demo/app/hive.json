@@ -1,0 +1,8 @@
+{
+  "name": "greet-demo",
+  "version": "0.1.0",
+  "description": "An app that depends on the greet package",
+  "license": "MIT",
+  "main": "main.bee",
+  "dependencies": {}
+}

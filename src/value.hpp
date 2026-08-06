@@ -97,6 +97,11 @@ struct Function {
     std::shared_ptr<Class> definingClass;        // for `super` resolution
     bool isInitializer = false;                  // constructor `init`
     std::string name;
+    // The source file this function was written in, shared with every other
+    // function from the same file. Stack traces need it: a function can be
+    // called from anywhere, so the call site's file says nothing about where
+    // the function itself lives.
+    std::shared_ptr<const std::string> file;
 };
 
 // A class definition.

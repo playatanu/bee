@@ -3,13 +3,20 @@
 #include "ast.hpp"
 #include <vector>
 #include <stdexcept>
+#include <string>
 
 namespace bee {
 
 struct ParseError : std::runtime_error {
     int line;
-    ParseError(const std::string& msg, int ln)
-        : std::runtime_error("Parse error (line " + std::to_string(ln) + "): " + msg), line(ln) {}
+    std::string message;   // without the "Parse error (line N):" prefix, so the
+                           // caller can re-render it with the file name
+    // True when the parser ran out of input rather than finding something wrong:
+    // the REPL treats that as "keep typing" instead of an error.
+    bool atEnd = false;
+    ParseError(const std::string& msg, int ln, bool end = false)
+        : std::runtime_error("Parse error (line " + std::to_string(ln) + "): " + msg),
+          line(ln), message(msg), atEnd(end) {}
 };
 
 class Parser {
@@ -18,6 +25,10 @@ public:
     Program parse();
 
 private:
+    // f"a={a}" desugars to ("a=" + (a)), reusing the interpreter's rule that a
+    // concatenation with a string stringifies the other side.
+    ExprPtr interpolatedString(const Token& tok);
+
     std::vector<Token> tokens;
     size_t current = 0;
 

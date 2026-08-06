@@ -30,6 +30,81 @@ bool Lexer::match(char expected) {
     return true;
 }
 
+std::string decodeStringEscapes(const std::string& raw) {
+    std::string value;
+    value.reserve(raw.size());
+    for (size_t i = 0; i < raw.size(); ++i) {
+        if (raw[i] != '\\' || i + 1 >= raw.size()) { value.push_back(raw[i]); continue; }
+        switch (raw[++i]) {
+            case 'n':  value.push_back('\n'); break;
+            case 't':  value.push_back('\t'); break;
+            case 'r':  value.push_back('\r'); break;
+            case '\\': value.push_back('\\'); break;
+            case '"':  value.push_back('"');  break;
+            case '\'': value.push_back('\''); break;
+            case '0':  value.push_back('\0'); break;
+            default:   value.push_back(raw[i]); break;
+        }
+    }
+    return value;
+}
+
+// An interpolated string is captured whole and split by the parser, so the
+// scanner only has to find the closing quote. That means skipping over anything
+// inside {braces}, including strings of its own: f"{d["key"]}" must not end at
+// the quote before `key`.
+void Lexer::addInterpString(std::vector<Token>& out, char quote) {
+    const int startLine = line;
+    std::string raw;
+    int depth = 0;
+
+    while (!atEnd()) {
+        char c = peek();
+        if (c == '\\') {                       // keep escapes for the parser
+            raw.push_back(advance());
+            if (!atEnd()) raw.push_back(advance());
+            continue;
+        }
+        if (depth == 0 && c == quote) break;
+        if (c == '\n') line++;
+
+        if (c == '{') {
+            if (depth == 0 && peekNext() == '{') {   // {{ is a literal brace
+                raw.push_back(advance());
+                raw.push_back(advance());
+                continue;
+            }
+            depth++;
+        } else if (c == '}') {
+            if (depth == 0) {
+                if (peekNext() == '}') {             // }} likewise
+                    raw.push_back(advance());
+                    raw.push_back(advance());
+                    continue;
+                }
+                throw LexError("unmatched '}' in interpolated string (write '}}' for a literal one)", line);
+            }
+            depth--;
+        } else if (depth > 0 && (c == '"' || c == '\'')) {
+            char inner = advance();                  // a string inside {...}
+            raw.push_back(inner);
+            while (!atEnd() && peek() != inner) {
+                if (peek() == '\\') raw.push_back(advance());
+                if (!atEnd()) raw.push_back(advance());
+            }
+            if (atEnd()) throw LexError("unterminated string inside interpolation -- is a '{' or a quote unclosed?", startLine);
+            raw.push_back(advance());                // its closing quote
+            continue;
+        }
+        raw.push_back(advance());
+    }
+
+    if (atEnd()) throw LexError("unterminated interpolated string", startLine);
+    advance();  // closing quote
+    if (depth != 0) throw LexError("unclosed '{' in interpolated string", startLine);
+    out.emplace_back(TokenType::INTERP_STRING, raw, startLine);
+}
+
 void Lexer::addString(std::vector<Token>& out, char quote) {
     std::string value;
     while (!atEnd() && peek() != quote) {
@@ -141,6 +216,10 @@ std::vector<Token> Lexer::tokenize() {
             case '\'': addString(out, '\''); break;
             default:
                 if (std::isdigit((unsigned char)c)) { pos--; advance(); addNumber(out); }
+                // f"..." with no space: an interpolated string, not the name `f`
+                // applied to a string.
+                else if ((c == 'f' || c == 'F') && (peek() == '"' || peek() == '\''))
+                    addInterpString(out, advance());
                 else if (std::isalpha((unsigned char)c) || c == '_') { addIdentifier(out); }
                 else throw LexError(std::string("unexpected character '") + c + "'", line);
                 break;

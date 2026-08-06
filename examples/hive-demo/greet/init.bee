@@ -1,0 +1,19 @@
+# greet -- the public surface of this package.
+#
+# Everything defined here is what `import greet` exposes. Names starting with
+# '_' stay private: `from greet import *` skips them.
+
+let LANGUAGES = {"en": "Hello", "fr": "Bonjour", "hi": "Namaste"}
+
+fn _word(lang) {
+    if LANGUAGES.has(lang) { return LANGUAGES[lang] }
+    return LANGUAGES["en"]
+}
+
+fn hello(name) {
+    return _word("en") + ", " + name + "!"
+}
+
+fn hello_in(lang, name) {
+    return _word(lang) + ", " + name + "!"
+}

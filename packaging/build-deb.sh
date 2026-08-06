@@ -9,7 +9,7 @@
 #
 set -euo pipefail
 
-VERSION="${VERSION:-0.1.1}"
+VERSION="${VERSION:-0.2.0}"
 ARCH="$(dpkg --print-architecture)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKG="bee"
@@ -31,6 +31,9 @@ if ! ldd "$ROOT/bee" | grep -qi 'libLLVM'; then
 fi
 cp "$ROOT/bee" "$ROOT/dist/bee"
 strip "$ROOT/dist/bee"
+# hive (the package manager) links no LLVM -- it just rides along.
+cp "$ROOT/hive" "$ROOT/dist/hive"
+strip "$ROOT/dist/hive"
 
 # Auto-detect the runtime packages the binary links against, so Depends is right
 # on whatever LLVM version this machine has (e.g. libllvm18).
@@ -45,6 +48,7 @@ fi
 echo "[deb] staging file tree at $STAGE ..."
 rm -rf "$STAGE"
 install -Dm0755 "$ROOT/dist/bee"                 "$STAGE/usr/bin/bee"
+install -Dm0755 "$ROOT/dist/hive"                "$STAGE/usr/bin/hive"
 for f in "$ROOT"/examples/*.bee; do
     install -Dm0644 "$f" "$STAGE/usr/share/bee/examples/$(basename "$f")"
 done
@@ -79,6 +83,10 @@ Description: BeeLang - a small dynamically-typed scripting language
  JIT. Run a program with: bee script.bee
  .
  Example programs are installed under /usr/share/bee/examples.
+ .
+ The package also installs "hive", the BeeLang package manager:
+ hive install <package> fetches a package into ./hive_modules so that
+ "import <package>" finds it.
 EOF
 
 echo "[deb] building package ..."

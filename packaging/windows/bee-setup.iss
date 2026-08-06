@@ -3,13 +3,15 @@
 ; a friendly BeeSetup-<version>.exe wizard that non-technical users just run.
 ;
 ;   1. Build the Windows binary first (see README-build.md) so that
-;        packaging\windows\bee.exe   exists next to this script.
+;        packaging\windows\bee.exe   and   packaging\windows\hive.exe
+;      exist next to this script.
 ;   2. Open this file in the Inno Setup Compiler and press F9 (Compile),
 ;      or from a terminal:   iscc bee-setup.iss
 ;   3. The installer appears in   dist\BeeSetup-<version>.exe
 ;
 ; What the installer does:
-;   - installs bee.exe to  C:\Program Files\BeeLang\bin
+;   - installs bee.exe and hive.exe (the package manager) to
+;       C:\Program Files\BeeLang\bin
 ;   - installs the example programs
 ;   - (optional) adds bee to the system PATH
 ;   - (optional) associates .be / .bee files with a bee icon; double-click runs them
@@ -18,7 +20,7 @@
 #define MyAppName        "BeeLang"
 ; Version can be overridden from the command line: iscc /DMyAppVersion=1.2.3 ...
 #ifndef MyAppVersion
-  #define MyAppVersion   "0.1.1"
+  #define MyAppVersion   "0.2.0"
 #endif
 #define MyAppPublisher   "Atanu Debnath"
 #define MyAppExeName     "bee.exe"
@@ -51,6 +53,7 @@ Name: "assoc";     Description: "Associate .be and .bee files with Bee (double-c
 
 [Files]
 Source: "bee.exe";          DestDir: "{app}\bin";      Flags: ignoreversion
+Source: "hive.exe";         DestDir: "{app}\bin";      Flags: ignoreversion
 Source: "bee.ico";          DestDir: "{app}";          Flags: ignoreversion
 Source: "..\..\examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\..\README.md";  DestDir: "{app}";          Flags: ignoreversion

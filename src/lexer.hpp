@@ -8,9 +8,16 @@ namespace bee {
 
 struct LexError : std::runtime_error {
     int line;
+    std::string message;   // see ParseError::message
     LexError(const std::string& msg, int ln)
-        : std::runtime_error("Lex error (line " + std::to_string(ln) + "): " + msg), line(ln) {}
+        : std::runtime_error("Lex error (line " + std::to_string(ln) + "): " + msg),
+          line(ln), message(msg) {}
 };
+
+// Decode the escape sequences of a string body (\n, \t, \\, quotes, \0).
+// Shared with the parser, which decodes the literal chunks of an interpolated
+// string after splitting it on its {expressions}.
+std::string decodeStringEscapes(const std::string& raw);
 
 class Lexer {
 public:
@@ -29,6 +36,8 @@ private:
     bool match(char expected);
 
     void addString(std::vector<Token>& out, char quote);
+    // f"..." -- captured raw (escapes and braces intact) for the parser to split.
+    void addInterpString(std::vector<Token>& out, char quote);
     void addNumber(std::vector<Token>& out);
     void addIdentifier(std::vector<Token>& out);
 };

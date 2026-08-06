@@ -305,6 +305,13 @@ void Resolver::resolveExpr(Expr* e) {
             resolveExpr(ix->index.get());
             break;
         }
+        case Expr::Kind::Slice: {
+            auto* sl = static_cast<SliceExpr*>(e);
+            resolveExpr(sl->object.get());
+            if (sl->start) resolveExpr(sl->start.get());   // absent means "from 0"
+            if (sl->end) resolveExpr(sl->end.get());       // absent means "to the end"
+            break;
+        }
 
         case Expr::Kind::IndexSet: {
             auto* ix = static_cast<IndexSetExpr*>(e);

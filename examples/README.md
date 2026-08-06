@@ -28,5 +28,8 @@ Work through them in order, or jump to the topic you need:
 `mathutil.bee` is a library module imported by `08_modules.bee` — not a
 standalone program.
 
+[`hive-demo/`](hive-demo/) is a walkthrough of the package manager: pack a
+package, install it, import it. It needs no registry and no network.
+
 For the complete language documentation, see the
 [language reference](../docs/LANGUAGE.md).

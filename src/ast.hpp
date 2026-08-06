@@ -12,7 +12,7 @@ struct Expr {
     enum class Kind {
         Literal, ListLit, DictLit, Variable, Assign,
         Binary, Logical, Unary, Call, Get, Set,
-        Index, IndexSet, This, Super, Grouping,
+        Index, IndexSet, Slice, This, Super, Grouping,
         Ternary, Function, ListComp
     };
     Kind kind;
@@ -50,7 +50,8 @@ struct VariableExpr : Expr {
     // walk is skipped and the binding is read through a cached pointer.
     Environment* cacheEnv = nullptr;
     Value* cacheSlot = nullptr;
-    explicit VariableExpr(std::string n) : Expr(Kind::Variable), name(std::move(n)) {}
+    explicit VariableExpr(std::string n, int ln = 0)
+        : Expr(Kind::Variable), name(std::move(n)) { line = ln; }
 };
 
 struct AssignExpr : Expr {
@@ -107,6 +108,12 @@ struct SetExpr : Expr {         // object.name = value  (op != ASSIGN => compoun
 struct IndexExpr : Expr {       // object[index]
     ExprPtr object, index;
     IndexExpr() : Expr(Kind::Index) {}
+};
+
+struct SliceExpr : Expr {       // object[start:end]
+    ExprPtr object;
+    ExprPtr start, end;         // either may be null: [:n], [n:], [:]
+    SliceExpr() : Expr(Kind::Slice) {}
 };
 
 struct IndexSetExpr : Expr {    // object[index] = value  (op != ASSIGN => compound)

@@ -4,6 +4,143 @@ All notable changes to **BeeLang** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-08-06
+
+The sharing-and-diagnostics release. BeeLang gains **Hive**, a package manager,
+so code can be published and installed; **stack traces**, so an error says where
+it came from instead of just naming a line; and three conveniences the language
+was missing — **string interpolation**, **slicing**, and an **interactive REPL**.
+A new test suite covers all of it: 100 checks, plus the 15 examples.
+
+### Language
+
+- **String interpolation.** An `f` prefix substitutes `{expressions}` into a
+  string — `f"{name} has {n * 2} items"` — with any expression allowed inside the
+  braces, including strings of its own (`f"{d["key"]}"`). Write `{{` and `}}` for
+  literal braces; a string without the prefix is untouched, so nothing that used
+  to work changes meaning.
+
+- **Slicing.** `xs[1:3]`, `xs[:2]`, `xs[2:]`, `xs[-2:]` and `xs[:]`, on lists and
+  strings. Bounds may be negative (counting from the end) and are clamped rather
+  than checked, so `xs[0:100]` is the whole list and an inverted range is empty.
+  Slicing a list returns a copy.
+
+- **An interactive REPL.** `bee` with no arguments starts a session: a bare
+  expression prints its value, definitions persist across lines, an open block
+  keeps prompting with `...` until it closes, and an error doesn't end the
+  session. Two more entry points come with it — `bee -e '<code>'` for a one-liner
+  and `bee < script.bee` (or a pipe) to read a program from stdin.
+
+### Diagnostics
+
+- **Stack traces on every error.** An uncaught error now prints the file, line
+  and function for each call on the way in, innermost first:
+
+  ```
+  Runtime error: division by zero
+    at safe_div()  lib/math.bee:8
+    at total()     report.bee:14
+    at <main>      report.bee:31
+  ```
+
+  Methods appear as `Class.method()`. Built-in failures are reported at their
+  call site, an error raised inside a callback (`map`, `sort`, `spawn`) keeps its
+  own deeper trace, and an uncaught `throw` carries the trace from where it was
+  thrown. Lex and parse errors name their file too — including the file of a
+  module that failed to parse, and the import that pulled it in. Very deep traces
+  are truncated in the middle.
+
+- **Runaway recursion is an error, not a crash.** Recursion deeper than the call
+  limit stops with `call stack overflow` plus a trace, where it previously
+  overflowed the C++ stack and died on a signal with no message at all. The limit
+  scales with the process's stack limit, so `ulimit -s 65536` genuinely buys
+  deeper recursion, and `BEE_MAX_DEPTH` overrides it outright. A numeric function
+  compiled by the JIT recurses natively and so escapes that check; a `SIGSEGV`
+  handler catches the overflow and explains it instead of leaving a bare
+  "Segmentation fault" (set `BEE_NO_CRASH_HANDLER=1` to get the core dump back).
+
+### Packages — Hive
+
+- **`hive`, a package manager**, shipped alongside `bee`:
+
+  ```bash
+  hive install greet              # from a registry
+  hive install ./greet-1.2.0.hive # from a local archive
+  hive install                    # everything in hive.json
+  ```
+
+  It resolves dependencies transitively, verifies every download against its
+  SHA-256, and writes a `hive.lock` that makes a repeat install reproducible —
+  and, because the lock carries URLs and hashes, servable entirely from the cache
+  with `--offline`. Other commands: `uninstall`, `list`, `info`, `search`,
+  `init`, `pack`, `cache`.
+
+  A registry is just static files (`packages/<name>.json`, `index.json`, and the
+  archives), so it can live on GitHub Pages, S3, a plain web server, or a
+  directory on disk. Full documentation in [docs/HIVE.md](docs/HIVE.md).
+
+- **The `.hive` package format.** A dependency-free container: a `HIVE1` magic
+  line, a JSON header holding the manifest and a per-file SHA-256, then the file
+  bytes. No zip or tar library on either side, and a corrupt, truncated or
+  tampered archive fails loudly instead of installing.
+
+- **`hive.json` manifests.** `name`, `version`, `main`, `dependencies` (with `^`,
+  `~`, `>=`, `<`, `=` and comma-separated constraints), `files`/`exclude` for
+  packing, plus the usual descriptive fields. Unknown keys are preserved when
+  Hive rewrites the file.
+
+- **A worked example** in [`examples/hive-demo/`](examples/hive-demo/): pack a
+  package, install it, import it — no registry and no network needed.
+
+### Tooling & tests
+
+- **`make test`** runs two suites: `tests/lang_test.sh` (56 checks — traces,
+  locations, interpolation, slicing, the REPL, recursion limits, exit codes) and
+  `tests/hive_test.sh` (44 checks — the package manager end to end, against a
+  registry served straight off the filesystem, so the tests never touch the
+  network).
+
+- The `.deb` and the Windows installer now install `hive` next to `bee`, and
+  `make` builds both binaries.
+
+### Changed
+
+- **Module resolution finds installed packages.** `import name` searches the
+  importing file's directory, its sibling `lib/`, `hive_modules/` in that
+  directory and every directory above it, `$BEE_PATH`, and finally the global
+  library at `$HIVE_HOME/lib` (default `~/.hive/lib`). Local code still wins over
+  an installed package of the same name, and a directory found this way is
+  imported as a package via its manifest's `"main"` (default `init.bee`).
+
+- **Caught errors read better.** A runtime error caught by `try` / `catch` binds
+  as a single line that now includes its location — `Runtime error: division by
+  zero (lib/math.bee:8)` rather than `Runtime error (line 8): division by zero` —
+  and never the stack trace, so printing it inside a message of your own stays
+  readable.
+
+- **`bee` with no arguments** starts the REPL (on a terminal) or reads a program
+  from stdin, rather than printing usage and exiting.
+
+- A failed `import` of a bare name now suggests `hive install <name>`.
+
+### Fixed
+
+- Reading a module no longer treats a *directory* whose name matches the module
+  as an empty source file — the old resolver accepted anything `ifstream` could
+  open.
+- Variable references carried no line number, so `undefined variable 'x'` was
+  reported without a location. They do now.
+
+### Known limitations
+
+- No public registry is running yet, so `hive install <name>` needs a `--registry`
+  (or `HIVE_REGISTRY`, or `~/.hive/config.json`) pointing at one. Installing from
+  a local `.hive` file works with no registry at all.
+- `hive publish` doesn't exist: `hive pack` prints the SHA-256 to paste into your
+  registry metadata.
+- The REPL has no line editing or history — arrow keys and Ctrl-C aren't handled.
+- The VS Code extension doesn't highlight `f"..."` strings or slices yet.
+
 ## [0.1.1] — 2026-08-06
 
 Performance work focused on loops, condition checking, and string building. No
@@ -122,5 +259,6 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions — pass named functions (e.g. to `spawn`).
 
+[0.2.0]: https://github.com/playatanu/beelang/releases/tag/v0.2.0
 [0.1.1]: https://github.com/playatanu/beelang/releases/tag/v0.1.1
 [0.1.0]: https://github.com/playatanu/beelang/releases/tag/v0.1.0

@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include "lexer.hpp"   // sub-lexing interpolated expressions, and escape decoding
 
 namespace bee {
 
@@ -9,7 +10,96 @@ bool Parser::matchAny(std::initializer_list<TokenType> types) {
 
 const Token& Parser::consume(TokenType t, const std::string& msg) {
     if (check(t)) return advance();
-    throw ParseError(msg + " (got '" + peek().lexeme + "')", peek().line);
+    const bool ranOut = atEnd();
+    throw ParseError(ranOut ? msg + " (reached the end of the input)"
+                            : msg + " (got '" + peek().lexeme + "')",
+                     peek().line, ranOut);
+}
+
+// Split f"...{expr}..." into literal chunks and expressions, then fold the
+// pieces together with '+'. The chain starts from a string literal so that a
+// value in the first slot -- f"{n} left" -- still stringifies.
+ExprPtr Parser::interpolatedString(const Token& tok) {
+    const std::string& raw = tok.lexeme;
+    const int line = tok.line;
+
+    auto literal = [&](const std::string& text) {
+        auto lit = std::make_unique<LiteralExpr>(Value(decodeStringEscapes(text)));
+        lit->line = line;
+        return lit;
+    };
+    auto join = [&](ExprPtr left, ExprPtr right) -> ExprPtr {
+        auto plus = std::make_unique<BinaryExpr>();
+        plus->line = line;
+        plus->op = TokenType::PLUS;
+        plus->left = std::move(left);
+        plus->right = std::move(right);
+        return plus;
+    };
+
+    ExprPtr result;
+    std::string chunk;
+    for (size_t i = 0; i < raw.size(); ++i) {
+        // Escapes were kept raw by the lexer; carry them into the chunk so the
+        // decoder sees them intact.
+        if (raw[i] == '\\' && i + 1 < raw.size()) {
+            chunk.push_back(raw[i]);
+            chunk.push_back(raw[++i]);
+            continue;
+        }
+        if ((raw[i] == '{' || raw[i] == '}') && i + 1 < raw.size() && raw[i + 1] == raw[i]) {
+            chunk.push_back(raw[i++]);   // {{ or }} -> one literal brace
+            continue;
+        }
+        if (raw[i] != '{') {
+            chunk.push_back(raw[i]);
+            continue;
+        }
+
+        // An expression: find its matching '}', skipping strings and nesting.
+        size_t start = ++i;
+        int depth = 1;
+        while (i < raw.size() && depth > 0) {
+            char c = raw[i];
+            if (c == '\\') { i += 2; continue; }
+            if (c == '"' || c == '\'') {
+                char quote = c;
+                for (++i; i < raw.size() && raw[i] != quote; ++i)
+                    if (raw[i] == '\\') ++i;
+            } else if (c == '{') depth++;
+            else if (c == '}' && --depth == 0) break;
+            ++i;
+        }
+        if (depth != 0) throw ParseError("unclosed '{' in interpolated string", line);
+        std::string exprText = raw.substr(start, i - start);
+
+        result = result ? join(std::move(result), literal(chunk)) : ExprPtr(literal(chunk));
+        chunk.clear();
+
+        // Empty braces would silently produce nothing, which is never intended.
+        bool blank = exprText.find_first_not_of(" \t") == std::string::npos;
+        if (blank) throw ParseError("empty '{}' in interpolated string", line);
+
+        // Parse the expression on its own. Its errors are reported at the line
+        // the string sits on -- the sub-parse has no idea where it came from.
+        ExprPtr inner;
+        try {
+            Lexer sub(exprText);
+            Parser ps(sub.tokenize());
+            inner = ps.expression();
+            if (!ps.atEnd())
+                throw ParseError("unexpected '" + ps.peek().lexeme + "' in interpolated expression", line);
+        } catch (const ParseError& e) {
+            throw ParseError("in interpolated expression: " + e.message, line);
+        } catch (const LexError& e) {
+            throw ParseError("in interpolated expression: " + e.message, line);
+        }
+        result = join(std::move(result), std::move(inner));
+    }
+
+    if (!chunk.empty() || !result)
+        result = result ? join(std::move(result), literal(chunk)) : ExprPtr(literal(chunk));
+    return result;
 }
 
 Program Parser::parse() {
@@ -359,7 +449,7 @@ ExprPtr Parser::assignment() {
                 auto bin = std::make_unique<BinaryExpr>();
                 bin->line = line;
                 bin->op = arith;
-                bin->left = std::make_unique<VariableExpr>(var->name);
+                bin->left = std::make_unique<VariableExpr>(var->name, line);
                 bin->right = std::move(rhs);
                 assign->value = std::move(bin);
             }
@@ -544,7 +634,7 @@ static ExprPtr makeIncDec(ExprPtr target, TokenType arith, int line) {
         auto bin = std::make_unique<BinaryExpr>();
         bin->line = line;
         bin->op = arith;
-        bin->left = std::make_unique<VariableExpr>(var->name);
+        bin->left = std::make_unique<VariableExpr>(var->name, line);
         bin->right = std::make_unique<LiteralExpr>(Value(1.0));
         assign->value = std::move(bin);
         return assign;
@@ -613,12 +703,26 @@ ExprPtr Parser::call() {
             get->object = std::move(expr);
             expr = std::move(get);
         } else if (match(TokenType::LBRACKET)) {
-            auto idx = std::make_unique<IndexExpr>();
-            idx->line = previous().line;
-            idx->object = std::move(expr);
-            idx->index = expression();
-            consume(TokenType::RBRACKET, "expected ']' after index");
-            expr = std::move(idx);
+            const int bracketLine = previous().line;
+            // Either an index or a slice; we only know once we see the ':'.
+            ExprPtr first;
+            if (!check(TokenType::COLON)) first = expression();
+            if (match(TokenType::COLON)) {
+                auto sl = std::make_unique<SliceExpr>();
+                sl->line = bracketLine;
+                sl->object = std::move(expr);
+                sl->start = std::move(first);
+                if (!check(TokenType::RBRACKET)) sl->end = expression();
+                consume(TokenType::RBRACKET, "expected ']' after slice");
+                expr = std::move(sl);
+            } else {
+                auto idx = std::make_unique<IndexExpr>();
+                idx->line = bracketLine;
+                idx->object = std::move(expr);
+                idx->index = std::move(first);
+                consume(TokenType::RBRACKET, "expected ']' after index");
+                expr = std::move(idx);
+            }
         } else {
             break;
         }
@@ -667,8 +771,12 @@ ExprPtr Parser::primary() {
         return call();
     }
 
+    if (match(TokenType::INTERP_STRING)) {
+        return interpolatedString(previous());
+    }
+
     if (match(TokenType::IDENTIFIER)) {
-        return std::make_unique<VariableExpr>(previous().lexeme);
+        return std::make_unique<VariableExpr>(previous().lexeme, previous().line);
     }
 
     if (match(TokenType::LPAREN)) {
@@ -731,7 +839,7 @@ ExprPtr Parser::primary() {
         return dict;
     }
 
-    throw ParseError("expected expression", line);
+    throw ParseError("expected expression", line, atEnd());
 }
 
 } // namespace bee

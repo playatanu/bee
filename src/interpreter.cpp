@@ -9,6 +9,12 @@
 #include <cmath>
 #include <iomanip>
 #include <cctype>
+#include <cstdlib>
+#include <filesystem>
+
+#ifndef _WIN32
+#include <sys/resource.h>
+#endif
 
 namespace bee {
 
@@ -36,13 +42,112 @@ static std::string dirOf(const std::string& path) {
     return path.substr(0, p);
 }
 
+static bool isRegularFile(const std::string& path) {
+    std::error_code ec;
+    return std::filesystem::is_regular_file(path, ec);
+}
+
+static bool isDirectory(const std::string& path) {
+    std::error_code ec;
+    return std::filesystem::is_directory(path, ec);
+}
+
 static bool readFileContents(const std::string& path, std::string& out) {
+    if (!isRegularFile(path)) return false; // a directory must not read as empty
     std::ifstream f(path, std::ios::binary);
     if (!f) return false;
     std::ostringstream ss;
     ss << f.rdbuf();
     out = ss.str();
     return true;
+}
+
+// ---- Installed packages (see the `hive` package manager) -------------------
+// `hive` owns these directories; the interpreter only reads them. The layout is
+// the whole contract: <root>/<package>/ holding the package's files and its
+// hive.json, whose "main" names the entry module.
+
+static std::string envValue(const char* name) {
+    const char* v = std::getenv(name);
+    return (v && *v) ? std::string(v) : std::string();
+}
+
+// $HIVE_HOME/lib, else ~/.hive/lib -- where `hive install -g` puts packages.
+static std::string hiveGlobalLib() {
+    std::string home = envValue("HIVE_HOME");
+    if (home.empty()) {
+        home = envValue("HOME");
+#ifdef _WIN32
+        if (home.empty()) home = envValue("USERPROFILE");
+#endif
+        if (home.empty()) return "";
+        home += "/.hive";
+    }
+    return home + "/lib";
+}
+
+// BEE_PATH is a PATH-style list of extra module roots.
+static std::vector<std::string> beePathRoots() {
+    std::vector<std::string> roots;
+    const std::string list = envValue("BEE_PATH");
+#ifdef _WIN32
+    const char sep = ';';
+#else
+    const char sep = ':';
+#endif
+    size_t start = 0;
+    while (start <= list.size()) {
+        size_t at = list.find(sep, start);
+        std::string part = list.substr(start, at == std::string::npos ? std::string::npos : at - start);
+        if (!part.empty()) roots.push_back(part);
+        if (at == std::string::npos) break;
+        start = at + 1;
+    }
+    return roots;
+}
+
+// The "main" entry from a package's hive.json. Read with a targeted scan rather
+// than a full JSON parse: a malformed or exotic manifest just falls back to the
+// default entry names instead of failing the import.
+static std::string packageMainEntry(const std::string& pkgDir) {
+    std::string text;
+    if (!readFileContents(pkgDir + "/hive.json", text)) return "";
+    const std::string key = "\"main\"";
+    size_t k = text.find(key);
+    if (k == std::string::npos) return "";
+    size_t colon = text.find(':', k + key.size());
+    if (colon == std::string::npos) return "";
+    size_t open = text.find('"', colon + 1);
+    if (open == std::string::npos) return "";
+    std::string out;
+    for (size_t i = open + 1; i < text.size(); ++i) {
+        char c = text[i];
+        if (c == '\\' && i + 1 < text.size()) { out += text[++i]; continue; }
+        if (c == '"') return out;
+        if (c == '\n') break;
+        out += c;
+    }
+    return "";
+}
+
+// Entry module of an installed package directory, or "" if it has none.
+static std::string packageEntryPath(const std::string& pkgDir, const std::string& lastName) {
+    std::vector<std::string> candidates;
+    std::string main = packageMainEntry(pkgDir);
+    // Keep a manifest from pointing outside its own package.
+    if (!main.empty() && main.find("..") == std::string::npos && main[0] != '/')
+        candidates.push_back(main);
+    candidates.push_back("init.bee");
+    candidates.push_back("init.be");
+    candidates.push_back(lastName + ".bee");
+    candidates.push_back(lastName + ".be");
+    candidates.push_back("main.bee");
+
+    for (auto& c : candidates) {
+        std::string full = pkgDir + "/" + c;
+        if (isRegularFile(full)) return full;
+    }
+    return "";
 }
 
 static double numArg(const Value& v, const std::string& who) {
@@ -63,7 +168,33 @@ static Value nativeMethod(const std::string& name, int arity,
 // Construction / errors
 // ------------------------------------------------------------------
 
+// A Bee call costs roughly 2.2 KB of C++ stack (an Environment, the evaluate()
+// recursion for the body, and callFunction's own locals). Rather than hard-code
+// a depth, scale it to the stack this process actually has and keep a wide
+// margin, so `ulimit -s` genuinely buys deeper recursion.
+static size_t computeMaxCallDepth() {
+    if (const char* v = std::getenv("BEE_MAX_DEPTH")) {
+        long n = std::strtol(v, nullptr, 10);
+        if (n > 0) return (size_t)n;   // explicit wins: the user knows their stack
+    }
+
+    size_t stackBytes = 8u * 1024 * 1024;   // assumed when we can't ask
+#ifndef _WIN32
+    struct rlimit rl;
+    if (getrlimit(RLIMIT_STACK, &rl) == 0) {
+        if (rl.rlim_cur == RLIM_INFINITY) stackBytes = 64u * 1024 * 1024;
+        else if (rl.rlim_cur > 0) stackBytes = (size_t)rl.rlim_cur;
+    }
+#endif
+    const size_t perFrame = 2560;                       // measured, rounded up
+    size_t depth = (stackBytes / 10 * 7) / perFrame;     // spend 70% of it
+    if (depth < 256) depth = 256;
+    if (depth > 200000) depth = 200000;
+    return depth;
+}
+
 Interpreter::Interpreter() {
+    maxCallDepth = computeMaxCallDepth();
     globals = std::make_shared<Environment>();
     rng.seed(std::random_device{}());
     defineBuiltins();
@@ -81,10 +212,89 @@ void Interpreter::joinAllThreads() {
     gilAcquire();
 }
 
+// ------------------------------------------------------------------
+// Source locations and stack traces
+// ------------------------------------------------------------------
+// Which file is executing, and how we got here. Both are per-thread: spawned
+// threads run Bee code under the GIL but have their own call chain, so keeping
+// these thread-local stops one thread's frames appearing in another's trace.
+static thread_local std::shared_ptr<const std::string> tlsCurrentFile;
+static thread_local std::vector<CallFrame> tlsCallStack;
+
+// Swap in a file (and restore the previous one) for the duration of a scope.
+namespace {
+struct FileScope {
+    std::shared_ptr<const std::string> saved;
+    explicit FileScope(std::shared_ptr<const std::string> file) : saved(tlsCurrentFile) {
+        if (file) tlsCurrentFile = std::move(file);
+    }
+    ~FileScope() { tlsCurrentFile = std::move(saved); }
+    FileScope(const FileScope&) = delete;
+    FileScope& operator=(const FileScope&) = delete;
+};
+}
+
+std::shared_ptr<const std::string> Interpreter::internFile(const std::string& path) {
+    auto it = fileNames.find(path);
+    if (it != fileNames.end()) return it->second;
+    // Module paths are built from the importing file's directory, which is "."
+    // for a script run from its own folder -- "./util.bee" reads as noise.
+    std::string display = path;
+    while (display.rfind("./", 0) == 0) display.erase(0, 2);
+    return fileNames.emplace(path, std::make_shared<const std::string>(display)).first->second;
+}
+
+std::string Interpreter::formatTrace(int line) const {
+    auto place = [](const std::shared_ptr<const std::string>& f, int ln) {
+        if (!f) return std::string("<unknown>");
+        return ln > 0 ? *f + ":" + std::to_string(ln) : *f;
+    };
+
+    // Walk outwards. The innermost row is where the error happened; each row
+    // above it sits at the call site recorded by the frame below.
+    struct Row { std::string name, where; };
+    std::vector<Row> rows;
+    auto file = tlsCurrentFile;
+    int ln = line;
+    for (size_t i = tlsCallStack.size(); i-- > 0;) {
+        rows.push_back({tlsCallStack[i].name + "()", place(file, ln)});
+        file = tlsCallStack[i].callFile;
+        ln = tlsCallStack[i].callLine;
+    }
+    // The outermost frame is a script's top level -- or a thread's, whose
+    // spawn site is in another stack we can no longer point at.
+    rows.push_back({file ? "<main>" : "<thread>", place(file, ln)});
+
+    size_t width = 0;
+    for (auto& r : rows) width = std::max(width, r.name.size());
+
+    // Runaway recursion would otherwise print thousands of identical lines.
+    const size_t kHead = 12, kTail = 3;
+    std::string out;
+    for (size_t i = 0; i < rows.size(); ++i) {
+        if (rows.size() > kHead + kTail + 1 && i == kHead) {
+            out += "  ... " + std::to_string(rows.size() - kHead - kTail) + " more frames ...\n";
+            i = rows.size() - kTail - 1;   // the loop's ++i lands on the tail
+            continue;
+        }
+        out += "  at " + rows[i].name + std::string(width - rows[i].name.size(), ' ') +
+               "  " + rows[i].where + "\n";
+    }
+    if (!out.empty()) out.pop_back();
+    return out;
+}
+
+std::string Interpreter::currentLocation(int line) const {
+    if (!tlsCurrentFile) return "";
+    return line > 0 ? *tlsCurrentFile + ":" + std::to_string(line) : *tlsCurrentFile;
+}
+
+std::string Interpreter::describeError(const std::string& msg, int line) const {
+    return "Runtime error: " + msg + "\n" + formatTrace(line);
+}
+
 void Interpreter::error(const std::string& msg, int line) {
-    if (line > 0)
-        throw RuntimeError("Runtime error (line " + std::to_string(line) + "): " + msg);
-    throw RuntimeError("Runtime error: " + msg);
+    throw TracedError(msg, currentLocation(line), formatTrace(line));
 }
 
 std::string Interpreter::keyString(const Value& v) {
@@ -205,18 +415,30 @@ void Interpreter::runFile(const std::string& path) {
     std::string src;
     if (!readFileContents(path, src))
         throw RuntimeError("cannot open file '" + path + "'");
+    runSource(src, path, dirOf(path));
+}
 
-    currentDir = dirOf(path);
+void Interpreter::runSource(const std::string& src, const std::string& name,
+                            const std::string& dir) {
+    const std::string& path = name;
+    currentDir = dir;
     searchPaths.clear();
     searchPaths.push_back(currentDir);
     searchPaths.push_back(currentDir + "/lib");
 
+    auto file = internFile(path);
+    tlsCurrentFile = file;
+
     auto program = std::make_unique<Program>();
-    {
+    try {
         Lexer lx(src);
         auto toks = lx.tokenize();
         Parser ps(std::move(toks));
         *program = ps.parse();
+    } catch (const LexError& e) {
+        throw TracedError("Lex error: " + e.message + "\n  at " + path + ":" + std::to_string(e.line));
+    } catch (const ParseError& e) {
+        throw TracedError("Parse error: " + e.message + "\n  at " + path + ":" + std::to_string(e.line));
     }
     Resolver().resolve(*program);
     Program* prog = program.get();
@@ -236,11 +458,101 @@ void Interpreter::runFile(const std::string& path) {
     } catch (ReturnSignal&) {
         // A top-level `return` just ends the program.
     } catch (BreakSignal&) {
-        throw RuntimeError("Runtime error: 'break' used outside of a loop");
+        throw TracedError("Runtime error: 'break' used outside of a loop");
     } catch (ContinueSignal&) {
-        throw RuntimeError("Runtime error: 'continue' used outside of a loop");
+        throw TracedError("Runtime error: 'continue' used outside of a loop");
     } catch (BeeThrow& t) {
-        throw RuntimeError("Uncaught: " + stringify(t.value));
+        // The trace was captured where the throw happened; those frames are
+        // already unwound by the time we get here.
+        std::string msg = "Uncaught: " + stringify(t.value);
+        throw TracedError(t.trace.empty() ? msg : msg + "\n" + t.trace);
+    }
+}
+
+// ------------------------------------------------------------------
+// REPL
+// ------------------------------------------------------------------
+void Interpreter::runRepl() {
+    currentDir = ".";
+    searchPaths.clear();
+    searchPaths.push_back(currentDir);
+    searchPaths.push_back(currentDir + "/lib");
+    tlsCurrentFile = internFile("<repl>");
+
+    gil.lock();
+    struct Guard {
+        Interpreter* it;
+        ~Guard() { it->joinAllThreads(); it->gil.unlock(); }
+    } guard{ this };
+
+    std::string pending;   // accumulates across lines while input is incomplete
+    while (true) {
+        std::cout << (pending.empty() ? ">>> " : "... ") << std::flush;
+        std::string line;
+        if (!std::getline(std::cin, line)) {   // Ctrl-D
+            std::cout << "\n";
+            break;
+        }
+        if (pending.empty()) {
+            if (line == "exit" || line == "quit" || line == ":q") break;
+            if (line.find_first_not_of(" \t") == std::string::npos) continue;
+        }
+        pending += line;
+        pending += "\n";
+
+        auto program = std::make_unique<Program>();
+        try {
+            Lexer lx(pending);
+            auto toks = lx.tokenize();
+            Parser ps(std::move(toks));
+            *program = ps.parse();
+        } catch (const ParseError& e) {
+            // Ran out of input rather than hit something wrong: the user is
+            // mid-block, so prompt for more instead of complaining.
+            if (e.atEnd) continue;
+            std::cout << "Parse error: " << e.message << "\n";
+            pending.clear();
+            continue;
+        } catch (const LexError& e) {
+            // An unterminated string or f-string is the same situation.
+            if (e.message.rfind("unterminated", 0) == 0) continue;
+            std::cout << "Lex error: " << e.message << "\n";
+            pending.clear();
+            continue;
+        }
+        pending.clear();
+
+        try {
+            Resolver().resolve(*program);
+            Program* prog = program.get();
+            programStore.push_back(std::move(program));
+
+            auto env = globals;
+            for (auto& stmt : *prog) {
+                // Echo the value of a bare expression -- that's what makes a
+                // REPL worth using -- but stay quiet for statements and nil.
+                if (stmt->kind == Stmt::Kind::Expression) {
+                    Value v = evaluate(static_cast<ExprStmt*>(stmt.get())->expr.get(), env);
+                    if (!v.isNil()) std::cout << reprString(v) << "\n";
+                } else {
+                    execute(stmt.get(), env);
+                }
+            }
+        } catch (BeeThrow& t) {
+            std::cout << "Uncaught: " << stringify(t.value) << "\n";
+            if (!t.trace.empty()) std::cout << t.trace << "\n";
+        } catch (ReturnSignal&) {
+            std::cout << "Runtime error: 'return' outside of a function\n";
+        } catch (BreakSignal&) {
+            std::cout << "Runtime error: 'break' outside of a loop\n";
+        } catch (ContinueSignal&) {
+            std::cout << "Runtime error: 'continue' outside of a loop\n";
+        } catch (const std::exception& e) {
+            std::cout << e.what() << "\n";
+        }
+        // A failed line must not leave frames behind for the next one.
+        tlsCallStack.clear();
+        tlsCurrentFile = internFile("<repl>");
     }
 }
 
@@ -490,6 +802,7 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
             fn->decl = s;
             fn->closure = env;
             fn->name = s->name;
+            fn->file = tlsCurrentFile;
             if (s->nameGlobal) env->define(s->name, Value(fn));
             else env->slots[(size_t)s->nameSlot] = Value(fn);
             break;
@@ -527,7 +840,8 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
             break;
         case Stmt::Kind::Throw: {
             auto* s = static_cast<ThrowStmt*>(stmt);
-            throw BeeThrow{ evaluate(s->value.get(), env) };
+            Value thrown = evaluate(s->value.get(), env);
+            throw BeeThrow{ thrown, formatTrace(s->line) };
         }
         case Stmt::Kind::Break:
             throw BreakSignal{};
@@ -552,9 +866,14 @@ void Interpreter::execTry(TryStmt* s, std::shared_ptr<Environment>& env) {
         } catch (BeeThrow& t) {
             if (!s->hasCatch) throw;
             runCatch(s, t.value, env);
+        } catch (TracedError& e) {
+            if (!s->hasCatch) throw;
+            // One line: a handler usually prints this inside a message of its
+            // own, and a stack trace embedded there would be noise.
+            runCatch(s, Value(e.brief()), env);
         } catch (RuntimeError& e) {
             if (!s->hasCatch) throw;
-            runCatch(s, Value(std::string(e.what())), env); // built-in errors caught as their message string
+            runCatch(s, Value(std::string(e.what())), env); // a built-in's own message
         }
     } catch (...) {
         if (s->hasFinally) execute(s->finallyBody.get(), env);
@@ -591,6 +910,7 @@ void Interpreter::execClass(ClassStmt* c, std::shared_ptr<Environment>& env) {
         fn->decl = m.get();
         fn->closure = env;
         fn->name = m->name;
+        fn->file = tlsCurrentFile;
         fn->isInitializer = (m->name == "init");
         fn->definingClass = klass;
         klass->methods[m->name] = fn;
@@ -627,29 +947,67 @@ void Interpreter::execImport(ImportStmt* s, std::shared_ptr<Environment>& env) {
 // ------------------------------------------------------------------
 
 std::string Interpreter::resolveModulePath(const std::string& moduleName) {
-    std::vector<std::string> candidates;
-    auto add = [&](const std::string& base) {
-        candidates.push_back(base + "/" + moduleName + ".bee");
-        candidates.push_back(base + "/" + moduleName + ".be");
-        candidates.push_back(base + "/" + moduleName);
+    // Roots are searched in order: the importing file's own directory first, so
+    // local code always wins over an installed package of the same name.
+    std::vector<std::string> roots;
+    auto addRoot = [&](const std::string& r) {
+        if (r.empty()) return;
+        for (auto& have : roots)
+            if (have == r) return;
+        roots.push_back(r);
     };
-    add(currentDir);
-    for (auto& sp : searchPaths) add(sp);
-    candidates.push_back(moduleName + ".bee");
-    candidates.push_back(moduleName + ".be");
-    candidates.push_back(moduleName);
 
-    for (auto& c : candidates) {
-        std::ifstream f(c);
-        if (f.good()) return c;
+    addRoot(currentDir);
+    for (auto& sp : searchPaths) addRoot(sp);
+
+    // `hive_modules` in the importing directory and every directory above it, so
+    // an installed package finds the project's other packages -- including the
+    // ones it depends on -- without each package carrying its own copy.
+    {
+        std::error_code ec;
+        std::filesystem::path dir = std::filesystem::absolute(currentDir.empty() ? "." : currentDir, ec);
+        if (!ec) {
+            for (;;) {
+                addRoot((dir / "hive_modules").generic_string());
+                std::filesystem::path up = dir.parent_path();
+                if (up.empty() || up == dir) break;
+                dir = up;
+            }
+        }
+    }
+
+    for (auto& p : beePathRoots()) addRoot(p);
+    addRoot(hiveGlobalLib());
+    addRoot(".");
+
+    // For `import a.b`, moduleName is "a/b" -- only the last component can name
+    // a package's entry module.
+    size_t slash = moduleName.find_last_of('/');
+    const std::string lastName = (slash == std::string::npos) ? moduleName : moduleName.substr(slash + 1);
+
+    for (auto& root : roots) {
+        const std::string base = root + "/" + moduleName;
+        if (isRegularFile(base + ".bee")) return base + ".bee";
+        if (isRegularFile(base + ".be")) return base + ".be";
+        if (isRegularFile(base)) return base;
+        // A directory is an installed package: import its entry module.
+        if (isDirectory(base)) {
+            std::string entry = packageEntryPath(base, lastName);
+            if (!entry.empty()) return entry;
+        }
     }
     return "";
 }
 
 std::shared_ptr<Module> Interpreter::loadModule(const std::string& moduleName, int line) {
     std::string path = resolveModulePath(moduleName);
-    if (path.empty())
-        error("cannot find module '" + moduleName + "'", line);
+    if (path.empty()) {
+        std::string hint;
+        // A bare name could well be a package nobody has installed yet.
+        if (moduleName.find('/') == std::string::npos)
+            hint = " (try 'hive install " + moduleName + "')";
+        error("cannot find module '" + moduleName + "'" + hint, line);
+    }
 
     auto cached = moduleCache.find(path);
     if (cached != moduleCache.end()) return cached->second;
@@ -664,6 +1022,13 @@ std::shared_ptr<Module> Interpreter::loadModule(const std::string& moduleName, i
         auto toks = lx.tokenize();
         Parser ps(std::move(toks));
         *program = ps.parse();
+    } catch (const LexError& e) {
+        // Report the module's own file and line, then how we came to import it.
+        throw TracedError("Lex error: " + e.message + "\n  at " + *internFile(path) + ":" +
+                          std::to_string(e.line) + "\n" + formatTrace(line));
+    } catch (const ParseError& e) {
+        throw TracedError("Parse error: " + e.message + "\n  at " + *internFile(path) + ":" +
+                          std::to_string(e.line) + "\n" + formatTrace(line));
     } catch (const std::exception& e) {
         error("while loading module '" + moduleName + "': " + e.what(), line);
     }
@@ -681,6 +1046,7 @@ std::shared_ptr<Module> Interpreter::loadModule(const std::string& moduleName, i
 
     std::string savedDir = currentDir;
     currentDir = dirOf(path);
+    FileScope scope(internFile(path));   // errors in the module name its file
     try {
         execProgram(*prog, modEnv);
     } catch (...) {
@@ -830,6 +1196,8 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
 
         case Expr::Kind::Index:
             return evalIndex(static_cast<IndexExpr*>(expr), env);
+        case Expr::Kind::Slice:
+            return evalSlice(static_cast<SliceExpr*>(expr), env);
 
         case Expr::Kind::IndexSet: {
             auto* e = static_cast<IndexSetExpr*>(expr);
@@ -900,6 +1268,7 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             fn->decl = e->fn.get();
             fn->closure = env;
             fn->name = ""; // anonymous
+            fn->file = tlsCurrentFile;
             return Value(fn);
         }
 
@@ -1072,6 +1441,41 @@ Value Interpreter::evalGet(GetExpr* e, std::shared_ptr<Environment>& env) {
     return getProperty(obj, e->name, e->line);
 }
 
+Value Interpreter::evalSlice(SliceExpr* e, std::shared_ptr<Environment>& env) {
+    Value obj = evaluate(e->object.get(), env);
+    const bool isList = obj.isList();
+    if (!isList && !obj.isString())
+        error("only lists and strings can be sliced", e->line);
+
+    const long long n = isList ? (long long)obj.asList()->size()
+                               : (long long)obj.asString().size();
+
+    // A bound may be negative (from the end) and may point outside the value;
+    // like most languages, slicing clamps instead of failing, so a[0:1000] is
+    // simply everything.
+    auto bound = [&](Expr* expr, long long fallback) {
+        if (!expr) return fallback;
+        Value v = evaluate(expr, env);
+        if (!v.isNumber()) error("slice bounds must be numbers", e->line);
+        long long i = (long long)v.asNumber();
+        if (i < 0) i += n;
+        if (i < 0) i = 0;
+        if (i > n) i = n;
+        return i;
+    };
+
+    long long from = bound(e->start.get(), 0);
+    long long to = bound(e->end.get(), n);
+    if (to < from) to = from;   // an inverted range is empty, not an error
+
+    if (isList) {
+        auto src = obj.asList();
+        auto out = std::make_shared<ValueList>(src->begin() + (long)from, src->begin() + (long)to);
+        return Value(out);
+    }
+    return Value(obj.asString().substr((size_t)from, (size_t)(to - from)));
+}
+
 Value Interpreter::evalIndex(IndexExpr* e, std::shared_ptr<Environment>& env) {
     Value obj = evaluate(e->object.get(), env);
     Value idx = evaluate(e->index.get(), env);
@@ -1112,7 +1516,17 @@ Value Interpreter::callValue(const Value& callee, std::vector<Value>& args, int 
         if (b->arity >= 0 && (int)args.size() != b->arity)
             error("'" + b->name + "' expects " + std::to_string(b->arity) +
                   " argument(s) but got " + std::to_string(args.size()), line);
-        return b->fn(*this, args);
+        // A built-in throws a bare RuntimeError with no idea where it was
+        // called from. Attach the location here -- and let an already-traced
+        // error from Bee code called *back* into (map, sort, spawn) pass
+        // through untouched, so it keeps its own deeper trace.
+        try {
+            return b->fn(*this, args);
+        } catch (TracedError&) {
+            throw;
+        } catch (RuntimeError& e) {
+            error(e.what(), line);
+        }
     }
     if (callee.isFunction())
         return callFunction(callee.asFunction(), args, line);
@@ -1135,6 +1549,10 @@ Value Interpreter::callValue(const Value& callee, std::vector<Value>& args, int 
 Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>& args, int line) {
     const FunctionStmt* decl = fn->decl;
     std::string name = !fn->name.empty() ? fn->name : (decl->name.empty() ? "<anonymous>" : decl->name);
+    // Qualify methods with their class: two classes can both have `draw`, and a
+    // trace saying which one is running is the whole point.
+    if (fn->definingClass && !fn->definingClass->name.empty())
+        name = fn->definingClass->name + "." + name;
     size_t np = decl->params.size();
     size_t provided = args.size();
     int rest = decl->restParam;
@@ -1162,6 +1580,21 @@ Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>
             }
         }
     }
+
+    // Past this point we are inside the callee, so record a frame: the trace
+    // needs the call site, and the depth check needs the count. Arity errors
+    // above deliberately stay attributed to the caller.
+    if (tlsCallStack.size() >= maxCallDepth)
+        error("call stack overflow in '" + name + "' (deeper than " +
+              std::to_string(maxCallDepth) + " nested calls) -- unbounded recursion?\n"
+              "       if the depth is intentional, raise it with BEE_MAX_DEPTH "
+              "(and the stack with 'ulimit -s')", line);
+
+    tlsCallStack.push_back({name, tlsCurrentFile, line});
+    struct FrameGuard {
+        ~FrameGuard() { tlsCallStack.pop_back(); }
+    } frameGuard;
+    FileScope fileScope(fn->file);   // errors inside report the callee's file
 
     // Frame layout (fixed by the resolver): [this?][super?][params...][locals...]
     auto frame = std::make_shared<Environment>(fn->closure, decl->frameSlots);

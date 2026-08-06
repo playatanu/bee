@@ -1,8 +1,8 @@
 # Building the Windows installer (`BeeSetup.exe`)
 
-This produces a single double-click `BeeSetup-0.1.0.exe` that installs Bee for
-non-technical users (PATH entry, `.be`/`.bee` file association with the bee icon,
-uninstaller in *Add or remove programs*).
+This produces a single double-click `BeeSetup-0.2.0.exe` that installs Bee for
+non-technical users (`bee` and `hive` on the PATH, `.be`/`.bee` file association
+with the bee icon, uninstaller in *Add or remove programs*).
 
 You need a **Windows machine** (or a Windows CI runner). Two one-time tools:
 
@@ -22,16 +22,19 @@ You need a **Windows machine** (or a Windows CI runner). Two one-time tools:
 From the repository root, in PowerShell:
 
 ```powershell
-# 1. Compile the Windows binary (interpreter only, no LLVM needed).
+# 1. Compile the interpreter (interpreter only, no LLVM needed).
 #    jit_llvm.cpp is #ifdef-guarded, so it compiles to nothing here.
-g++ -std=c++17 -O2 -pthread -DBEE_VERSION='\"0.1.0\"' (Get-ChildItem src\*.cpp).FullName -o packaging\windows\bee.exe -pthread
+g++ -std=c++17 -O2 -pthread -DBEE_VERSION='\"0.2.0\"' (Get-ChildItem src\*.cpp).FullName -o packaging\windows\bee.exe -pthread
 
-# 2. Build the installer.
+# 2. Compile the package manager (no LLVM either).
+g++ -std=c++17 -O2 -pthread -DHIVE_VERSION='\"0.2.0\"' (Get-ChildItem src\hive\*.cpp).FullName -o packaging\windows\hive.exe -pthread
+
+# 3. Build the installer.
 cd packaging\windows
 iscc bee-setup.iss
 ```
 
-The result is written to `dist\BeeSetup-0.1.0.exe`.
+The result is written to `dist\BeeSetup-0.2.0.exe`.
 
 > If `iscc` isn't found, open `bee-setup.iss` in the **Inno Setup Compiler** GUI
 > and press **F9** (Compile) instead.
@@ -41,6 +44,7 @@ The result is written to `dist\BeeSetup-0.1.0.exe`.
 | Item | Location |
 |------|----------|
 | `bee.exe` | `C:\Program Files\BeeLang\bin\bee.exe` |
+| `hive.exe` (package manager) | `C:\Program Files\BeeLang\bin\hive.exe` |
 | Examples | `C:\Program Files\BeeLang\examples\` |
 | PATH entry | `...\BeeLang\bin` (optional task) |
 | `.be` / `.bee` association | bee icon; double-click runs the script (optional task) |
