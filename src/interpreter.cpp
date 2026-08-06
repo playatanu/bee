@@ -252,6 +252,53 @@ void Interpreter::execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<E
     for (auto& s : stmts) execute(s.get(), env);
 }
 
+bool Interpreter::tryJitLoop(Stmt* stmt, std::shared_ptr<Environment>& env) {
+    // Only top-level loops (whose outer variables are named globals) qualify;
+    // inside functions, loop variables are slots and the function-level JIT
+    // already applies.
+    if (env.get() != globals.get()) return false;
+
+    const CompiledLoop& cl = jit.getCompiledLoop(stmt, *this);
+    if (!cl.fn) return false;
+
+    // Gather the current values of the numeric globals the loop touches. If any
+    // isn't a number right now, interpret instead.
+    size_t n = cl.globals.size();
+    std::vector<double> vars(n ? n : 1);
+    std::vector<Value*> slots(n);
+    for (size_t i = 0; i < n; ++i) {
+        Value* p = globals->findNameSlot(cl.globals[i]);
+        if (!p || !p->isNumber()) return false;
+        slots[i] = p;
+        vars[i] = p->asNumber();
+    }
+
+    int bail = 0;
+    cl.fn(vars.data(), (int)n, this, &bail);
+    if (bail) return false;   // native code gave up: re-run from the original state
+
+    for (size_t i = 0; i < n; ++i) *slots[i] = Value(vars[i]);
+    return true;
+}
+
+Value* Interpreter::selfStringAppend(AssignExpr* e, std::shared_ptr<Environment>& env) {
+    if (!e->value || e->value->kind != Expr::Kind::Binary) return nullptr;
+    auto* bin = static_cast<BinaryExpr*>(e->value.get());
+    if (bin->op != TokenType::PLUS || bin->left->kind != Expr::Kind::Variable) return nullptr;
+    auto* lv = static_cast<VariableExpr*>(bin->left.get());
+
+    Value* slot = nullptr;
+    if (e->global) {
+        if (!lv->global || lv->name != e->name) return nullptr;
+        slot = env->findNameSlot(e->name);
+    } else {
+        if (lv->global || lv->depth != e->depth || lv->slot != e->slot) return nullptr;
+        slot = &env->ancestor(e->depth)->slots[(size_t)e->slot];
+    }
+    if (!slot || !slot->isString()) return nullptr;
+    return slot;
+}
+
 void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
     switch (stmt->kind) {
         case Stmt::Kind::Expression: {
@@ -305,6 +352,7 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         }
         case Stmt::Kind::While: {
             auto* s = static_cast<WhileStmt*>(stmt);
+            if (tryJitLoop(stmt, env)) break;
             while (evaluate(s->condition.get(), env).truthy()) {
                 try {
                     execute(s->body.get(), env);
@@ -318,6 +366,7 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         }
         case Stmt::Kind::For: {
             auto* s = static_cast<ForStmt*>(stmt);
+            if (tryJitLoop(stmt, env)) break;
             auto loopEnv = std::make_shared<Environment>(env, s->slotCount);
             if (s->init) execute(s->init.get(), loopEnv);
             while (s->condition ? evaluate(s->condition.get(), loopEnv).truthy() : true) {
@@ -611,19 +660,49 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
         case Expr::Kind::Variable: {
             auto* e = static_cast<VariableExpr*>(expr);
             if (!e->global) return env->getAt(e->depth, e->slot);
-            Value out;
-            if (!env->tryGetName(e->name, out))
-                error("undefined variable '" + e->name + "'", e->line);
-            return out;
+            // Inline cache: re-resolve only when the base environment changes.
+            Environment* base = env.get();
+            if (e->cacheEnv != base) {
+                Value* slot = base->findNameSlot(e->name);
+                if (!slot) error("undefined variable '" + e->name + "'", e->line);
+                e->cacheEnv = base;
+                e->cacheSlot = slot;
+            }
+            return *e->cacheSlot;
         }
 
         case Expr::Kind::Assign: {
             auto* e = static_cast<AssignExpr*>(expr);
+
+            // Fast path: `x = x + rhs` (x a string). Capture x's buffer, then
+            // append rhs. If x's string is uniquely owned once its own slot is
+            // released, grow it in place; otherwise (an alias like `let a = x`
+            // exists) fall back to allocating a fresh string, preserving value
+            // semantics. This is O(1) amortized instead of O(n) per iteration.
+            if (Value* slot = selfStringAppend(e, env)) {
+                auto* bin = static_cast<BinaryExpr*>(e->value.get());
+                auto sp = std::get<std::shared_ptr<std::string>>(slot->data); // old value
+                std::string add;
+                { Value rv = evaluate(bin->right.get(), env); add = stringify(rv); }
+                *slot = Value();                        // drop the slot's own reference
+                if (sp.use_count() == 1) { *sp += add; slot->data = sp; }   // unique: in place
+                else slot->data = std::make_shared<std::string>(*sp + add); // shared: copy
+                return *slot;
+            }
+
             Value v = e->value ? evaluate(e->value.get(), env) : Value();
             if (!e->global) {
                 env->setAt(e->depth, e->slot, v);
-            } else if (!env->assignName(e->name, v)) {
-                error("cannot assign to undefined variable '" + e->name + "'", e->line);
+            } else {
+                Environment* base = env.get();
+                if (e->cacheEnv != base) {
+                    Value* slot = base->findNameSlot(e->name);
+                    if (!slot)
+                        error("cannot assign to undefined variable '" + e->name + "'", e->line);
+                    e->cacheEnv = base;
+                    e->cacheSlot = slot;
+                }
+                *e->cacheSlot = v;
             }
             return v;
         }

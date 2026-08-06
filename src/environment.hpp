@@ -55,6 +55,19 @@ public:
         return false;
     }
 
+    // Return a stable pointer to a named binding (or null). std::map keeps
+    // element pointers valid until the key is erased -- which never happens for
+    // globals -- so callers may cache the result. Used by the AST inline cache.
+    Value* findNameSlot(const std::string& name) {
+        for (Environment* e = this; e; e = e->parent.get()) {
+            if (!e->values.empty()) {
+                auto it = e->values.find(name);
+                if (it != e->values.end()) return &it->second;
+            }
+        }
+        return nullptr;
+    }
+
     // ---- slotted access (resolved locals) ----
     Environment* ancestor(int depth) {
         Environment* e = this;

@@ -4,9 +4,16 @@
 //
 // Bee is a dynamically-typed tree-walking interpreter. This backend detects
 // functions whose bodies stay inside a *numeric subset* (only numbers/bools,
-// arithmetic, comparisons, control flow, and direct self-recursion) and
-// compiles them to native code with LLVM's ORCv2 JIT, operating on unboxed
-// `double`s. Everything outside the subset keeps running on the interpreter.
+// arithmetic, comparisons, control flow, and calls to other numeric functions
+// -- self-recursion, mutual recursion, and helpers) and compiles them to native
+// code with LLVM's ORCv2 JIT, operating on unboxed `double`s. A whole numeric
+// call graph is compiled into one module so calls are direct and inlinable.
+// Everything outside the subset keeps running on the interpreter.
+//
+// Like the tree-walker's fast path, a compiled call resolves its target from
+// the global binding once, at compile time; reassigning a numeric function to a
+// different value at runtime is unsupported (compiled callers keep the original
+// target).
 //
 // The whole thing is gated on BEE_JIT: when LLVM is not available the header
 // still compiles, but Jit is an empty stub and getCompiled() always fails,
@@ -33,6 +40,20 @@ class Interpreter;
 // Returns the function's numeric result as a double.
 using JitFn = double (*)(const double* args, int argc, void* interp, int* bail);
 
+// ABI of a JIT-compiled *top-level loop*. Same shape as JitFn, but `vars` is an
+// in/out array: the numeric globals the loop reads/writes, in `globals` order.
+// The native code loads them on entry and, on clean completion, writes the
+// final values back before returning. On `bail` the array is left untouched and
+// the interpreter re-runs the loop from the (unmodified) globals. The return
+// value is unused. This is safe because numeric code has no other side effects.
+using JitLoopFn = double (*)(double* vars, int nvars, void* interp, int* bail);
+
+// A compiled top-level loop plus the global-variable layout of its `vars` array.
+struct CompiledLoop {
+    JitLoopFn fn = nullptr;
+    std::vector<std::string> globals;   // vars[i] <-> global named globals[i]
+};
+
 // Cheap static pre-filter: is this function even a candidate? (plain function,
 // no `this`/`super`, no rest parameter). The authoritative eligibility check
 // happens inside codegen, which bails on any unsupported construct.
@@ -49,12 +70,18 @@ public:
     // Returns the native entry point, or nullptr if it could not be compiled.
     JitFn getCompiled(const FunctionStmt* fn, Interpreter& interp);
 
+    // Compile a top-level `while`/`for` loop if it stays in the numeric subset.
+    // Returns a CompiledLoop with fn==nullptr if it could not be compiled.
+    const CompiledLoop& getCompiledLoop(const Stmt* loop, Interpreter& interp);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;
     // fn -> compiled entry (nullptr sentinel == "tried and cannot compile").
     std::unordered_map<const FunctionStmt*, JitFn> cache_;
     std::unordered_map<const FunctionStmt*, bool>  tried_;
+    // loop stmt -> compiled loop (fn==nullptr sentinel == "cannot compile").
+    std::unordered_map<const Stmt*, CompiledLoop> loopCache_;
 };
 
 #else // !BEE_JIT
@@ -65,6 +92,10 @@ public:
     Jit() = default;
     ~Jit() = default;
     JitFn getCompiled(const FunctionStmt*, Interpreter&) { return nullptr; }
+    const CompiledLoop& getCompiledLoop(const Stmt*, Interpreter&) {
+        static const CompiledLoop none;
+        return none;
+    }
 };
 
 #endif // BEE_JIT

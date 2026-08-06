@@ -93,6 +93,12 @@ private:
     // Statements
     void execute(Stmt* stmt, std::shared_ptr<Environment>& env);
     void execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<Environment> env);
+    // Try to run a top-level numeric loop as native code. Returns true if it did.
+    bool tryJitLoop(Stmt* stmt, std::shared_ptr<Environment>& env);
+    // If `e` is `x = x + rhs` with x currently a string, return a pointer to x's
+    // storage so the concat can grow it in place (else null). Turns the common
+    // O(n^2) string-building idiom into O(n).
+    Value* selfStringAppend(AssignExpr* e, std::shared_ptr<Environment>& env);
     void execImport(ImportStmt* stmt, std::shared_ptr<Environment>& env);
     void execClass(ClassStmt* stmt, std::shared_ptr<Environment>& env);
     void execTry(TryStmt* stmt, std::shared_ptr<Environment>& env);

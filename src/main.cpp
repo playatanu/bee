@@ -5,7 +5,7 @@
 #include <vector>
 
 #ifndef BEE_VERSION
-#define BEE_VERSION "0.1.0"
+#define BEE_VERSION "0.1.1"
 #endif
 
 int main(int argc, char** argv) {

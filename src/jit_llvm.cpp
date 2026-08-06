@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+#include <set>
 
 using namespace llvm;
 
@@ -71,19 +72,60 @@ struct Scope {
     Scope(const void* o, int n) : owner(o), allocas(n, nullptr), types(n, Ty::NUMBER) {}
 };
 
+// Owns one LLVM module into which a whole numeric call graph is compiled.
+//
+// A JIT-compiled function may call *other* numeric functions (helpers, mutual
+// recursion). Those callees are compiled into the same module so the calls are
+// direct and LLVM can inline across them. `declare()` creates a function's
+// signature on first reference and enqueues its body for codegen; the driver in
+// getCompiled() drains the worklist until the graph is closed.
+struct ModuleCompiler {
+    LLVMContext& ctx;
+    llvm::Module& mod;
+    Interpreter& interp;
+    unsigned& counter;
+    std::map<const FunctionStmt*, llvm::Function*> declared;
+    std::vector<const FunctionStmt*> worklist;
+
+    // The shared numeric-function ABI: double f(double* args, i32 argc, i8* interp, i32* bail)
+    llvm::Function* declare(const FunctionStmt* fn) {
+        auto it = declared.find(fn);
+        if (it != declared.end()) return it->second;
+        IRBuilder<> b(ctx);
+        Type* dbl = b.getDoubleTy();
+        Type* ptr = PointerType::get(ctx, 0);
+        Type* i32 = b.getInt32Ty();
+        FunctionType* ft = FunctionType::get(dbl, {ptr, i32, ptr, ptr}, false);
+        std::string name = "bee_fn_" + std::to_string(counter++);
+        auto* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, mod);
+        declared[fn] = f;
+        worklist.push_back(fn);
+        return f;
+    }
+
+    // Resolve a called global name to a compilable target function, or null.
+    // The binding is read once at compile time; like the existing direct-
+    // recursion path, this assumes numeric functions are not reassigned.
+    const FunctionStmt* resolveTarget(const std::string& name) {
+        if (!interp.globals) return nullptr;
+        Value out;
+        if (!interp.globals->tryGetName(name, out)) return nullptr;
+        if (!out.isFunction()) return nullptr;
+        auto f = out.asFunction();
+        if (!f->decl || f->boundThis || f->definingClass) return nullptr;
+        if (!jitCandidate(f->decl)) return nullptr;
+        return f->decl;
+    }
+};
+
 class Codegen {
 public:
-    Codegen(LLVMContext& ctx, llvm::Module& mod, const FunctionStmt* fn, const std::string& name)
-        : ctx_(ctx), mod_(mod), b_(ctx), fn_(fn), name_(name) {}
+    Codegen(ModuleCompiler& mc, const FunctionStmt* fn, llvm::Function* func)
+        : mc_(mc), ctx_(mc.ctx), mod_(mc.mod), b_(mc.ctx), fn_(fn), func_(func) {}
 
     llvm::Function* emit() {
-        // double f(double* args, i32 argc, i8* interp, i32* bail)
+        // Signature (double f(double*, i32, i8*, i32*)) was fixed by declare().
         Type* dbl = b_.getDoubleTy();
-        Type* ptr = PointerType::get(ctx_, 0);
-        Type* i32 = b_.getInt32Ty();
-        FunctionType* ft = FunctionType::get(dbl, {ptr, i32, ptr, ptr}, false);
-        func_ = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name_, mod_);
-
         argsArg_ = func_->getArg(0);
         interpArg_ = func_->getArg(2);
         bailArg_ = func_->getArg(3);
@@ -103,10 +145,6 @@ public:
             scopes_.back().types[slot] = Ty::NUMBER;
         }
 
-        // Scratch array for self-recursive calls (reused across call sites).
-        if (np > 0)
-            scratch_ = mkAlloca(ArrayType::get(dbl, np));
-
         for (auto& s : fn_->body) {
             if (terminated()) break;
             stmt(s.get());
@@ -122,19 +160,58 @@ public:
         return func_;
     }
 
+    // Compile a top-level while/for loop. ABI: double f(double* vars, i32 nvars,
+    // i8* interp, i32* bail). The numeric globals in `globals` are loaded from
+    // vars[] on entry and written back on clean completion.
+    void emitLoop(const Stmt* loop, const std::vector<std::string>& globals) {
+        loopRegion_ = true;
+        Type* dbl = b_.getDoubleTy();
+        argsArg_ = func_->getArg(0);   // double* vars (in/out)
+        interpArg_ = func_->getArg(2);
+        bailArg_ = func_->getArg(3);
+
+        entry_ = BasicBlock::Create(ctx_, "entry", func_);
+        b_.SetInsertPoint(entry_);
+
+        std::vector<AllocaInst*> gallocas(globals.size());
+        for (size_t i = 0; i < globals.size(); ++i) {
+            AllocaInst* a = mkAlloca(dbl);
+            llvm::Value* gep = b_.CreateGEP(dbl, argsArg_, b_.getInt32((uint32_t)i));
+            b_.CreateStore(b_.CreateLoad(dbl, gep), a);
+            gallocas[i] = a;
+            loopGlobalAllocas_[globals[i]] = a;
+        }
+
+        stmt(const_cast<Stmt*>(loop));  // the while/for; break falls through below
+
+        // Clean completion: flush the (possibly updated) globals back to vars[].
+        if (!terminated()) {
+            for (size_t i = 0; i < globals.size(); ++i) {
+                llvm::Value* gep = b_.CreateGEP(dbl, argsArg_, b_.getInt32((uint32_t)i));
+                b_.CreateStore(b_.CreateLoad(dbl, gallocas[i]), gep);
+            }
+            b_.CreateRet(ConstantFP::get(dbl, 0.0));
+        }
+        if (verifyFunction(*func_, &errs())) throw JitBail{};
+    }
+
 private:
+    ModuleCompiler& mc_;
     LLVMContext& ctx_;
     llvm::Module& mod_;
     IRBuilder<> b_;
     const FunctionStmt* fn_;
-    std::string name_;
     llvm::Function* func_ = nullptr;
     BasicBlock* entry_ = nullptr;
     llvm::Value* argsArg_ = nullptr;
     llvm::Value* interpArg_ = nullptr;
     llvm::Value* bailArg_ = nullptr;
-    AllocaInst* scratch_ = nullptr;
     BasicBlock* bailBB_ = nullptr;
+
+    // Loop-region codegen (fn_ == nullptr): the numeric globals the loop
+    // touches, each backed by an alloca mirroring a slot of the in/out vars[].
+    bool loopRegion_ = false;
+    std::map<std::string, AllocaInst*> loopGlobalAllocas_;
 
     std::vector<Scope> scopes_;
     struct Loop { BasicBlock* brk; BasicBlock* cont; };
@@ -296,6 +373,9 @@ private:
     }
 
     void sReturn(ReturnStmt* s) {
+        // A `return` inside a top-level loop region would end the whole program,
+        // not just the loop, and would skip the global write-back. Bail.
+        if (loopRegion_) throw JitBail{};
         if (!s->value) { emitBail(); return; }   // `return` (nil) isn't numeric
         TVal v = expr(s->value.get());
         b_.CreateRet(toNum(v));                  // ABI returns a double
@@ -326,7 +406,14 @@ private:
     }
 
     TVal eVar(VariableExpr* e) {
-        if (e->global || e->slot < 0) throw JitBail{};
+        if (e->global) {
+            // In a loop region, referenced numeric globals are backed by allocas
+            // loaded from the in/out vars[] array. Anything else bails.
+            auto it = loopGlobalAllocas_.find(e->name);
+            if (it == loopGlobalAllocas_.end()) throw JitBail{};
+            return {b_.CreateLoad(b_.getDoubleTy(), it->second), Ty::NUMBER};
+        }
+        if (e->slot < 0) throw JitBail{};
         Scope& sc = scopeAt(e->depth);
         AllocaInst* a = sc.allocas[e->slot];
         if (!a) throw JitBail{};
@@ -336,7 +423,15 @@ private:
     }
 
     TVal eAssign(AssignExpr* e) {
-        if (e->global || e->slot < 0 || !e->value) throw JitBail{};
+        if (!e->value) throw JitBail{};
+        if (e->global) {
+            auto it = loopGlobalAllocas_.find(e->name);
+            if (it == loopGlobalAllocas_.end()) throw JitBail{};
+            TVal v = expr(e->value.get());
+            b_.CreateStore(toNum(v), it->second); // loop globals are numeric
+            return v;
+        }
+        if (e->slot < 0) throw JitBail{};
         TVal v = expr(e->value.get());
         Scope& sc = scopeAt(e->depth);
         AllocaInst* a = sc.allocas[e->slot];
@@ -404,28 +499,42 @@ private:
         return {phi, t.ty};
     }
 
-    // Only direct self-recursion is supported in v1.
+    // Direct self-recursion and calls to other numeric functions (helpers,
+    // mutual recursion). Non-numeric or unresolvable callees bail the caller.
     TVal eCall(CallExpr* e) {
         if (e->callee->kind != Expr::Kind::Variable) throw JitBail{};
         auto* callee = static_cast<VariableExpr*>(e->callee.get());
-        if (!callee->global || callee->name != fn_->name) throw JitBail{};
-        size_t np = fn_->params.size();
+        if (!callee->global) throw JitBail{};
+
+        const FunctionStmt* target;
+        llvm::Function* calleeFn;
+        if (fn_ && callee->name == fn_->name) {   // direct self-recursion
+            target = fn_;
+            calleeFn = func_;
+        } else {                                  // call to another function (or from a loop region)
+            target = mc_.resolveTarget(callee->name);
+            if (!target) throw JitBail{};
+            calleeFn = mc_.declare(target);       // compiled into this module too
+        }
+
+        size_t np = target->params.size();
         if (e->args.size() != np) throw JitBail{};
         for (bool sp : e->spread) if (sp) throw JitBail{};
 
         Type* dbl = b_.getDoubleTy();
-        ArrayType* arrTy = ArrayType::get(dbl, np);
+        ArrayType* arrTy = ArrayType::get(dbl, np ? np : 1);
+        AllocaInst* argsBuf = mkAlloca(arrTy);    // one buffer per call site
         for (size_t i = 0; i < np; ++i) {
             TVal a = expr(e->args[i].get());
-            llvm::Value* gep = b_.CreateGEP(arrTy, scratch_,
+            llvm::Value* gep = b_.CreateGEP(arrTy, argsBuf,
                                             {b_.getInt32(0), b_.getInt32((uint32_t)i)});
             b_.CreateStore(toNum(a), gep);
         }
-        llvm::Value* argsPtr = b_.CreateGEP(arrTy, scratch_,
+        llvm::Value* argsPtr = b_.CreateGEP(arrTy, argsBuf,
                                             {b_.getInt32(0), b_.getInt32(0)});
-        llvm::Value* ret = b_.CreateCall(func_, {argsPtr, b_.getInt32((uint32_t)np),
-                                                 interpArg_, bailArg_});
-        // Propagate a bail from the recursive call.
+        llvm::Value* ret = b_.CreateCall(calleeFn, {argsPtr, b_.getInt32((uint32_t)np),
+                                                    interpArg_, bailArg_});
+        // Propagate a bail from the callee.
         llvm::Value* bv = b_.CreateLoad(b_.getInt32Ty(), bailArg_);
         llvm::Value* nz = b_.CreateICmpNE(bv, b_.getInt32(0));
         BasicBlock* contBB = BasicBlock::Create(ctx_, "callok", func_);
@@ -486,6 +595,92 @@ private:
     }
 };
 
+// ---- loop-region global collection ---------------------------------------
+//
+// Gather the names of global variables a loop reads or writes. Call *targets*
+// (a global in callee position) are excluded -- they are resolved as functions,
+// not passed as numeric vars. Under-collecting is safe (a missed global just
+// makes codegen bail); over-collecting a non-numeric global makes the runtime
+// prefilter bail. So this need not be exhaustive over the whole language, only
+// consistent -- the returned order also defines the vars[] layout.
+struct GlobalCollector {
+    std::vector<std::string> out;
+    std::set<std::string> seen;
+
+    void add(const std::string& n) { if (seen.insert(n).second) out.push_back(n); }
+
+    void expr(const Expr* e) {
+        if (!e) return;
+        switch (e->kind) {
+            case Expr::Kind::Variable: {
+                auto* v = static_cast<const VariableExpr*>(e);
+                if (v->global) add(v->name);
+                break;
+            }
+            case Expr::Kind::Assign: {
+                auto* a = static_cast<const AssignExpr*>(e);
+                if (a->global) add(a->name);
+                expr(a->value.get());
+                break;
+            }
+            case Expr::Kind::Binary: {
+                auto* b = static_cast<const BinaryExpr*>(e);
+                expr(b->left.get()); expr(b->right.get()); break;
+            }
+            case Expr::Kind::Logical: {
+                auto* l = static_cast<const LogicalExpr*>(e);
+                expr(l->left.get()); expr(l->right.get()); break;
+            }
+            case Expr::Kind::Unary: expr(static_cast<const UnaryExpr*>(e)->right.get()); break;
+            case Expr::Kind::Grouping: expr(static_cast<const GroupingExpr*>(e)->inner.get()); break;
+            case Expr::Kind::Ternary: {
+                auto* t = static_cast<const TernaryExpr*>(e);
+                expr(t->cond.get()); expr(t->thenBranch.get()); expr(t->elseBranch.get()); break;
+            }
+            case Expr::Kind::Call: {
+                auto* c = static_cast<const CallExpr*>(e);
+                // Skip a plain global callee: it is a call target, not a var.
+                if (c->callee->kind != Expr::Kind::Variable) expr(c->callee.get());
+                for (auto& a : c->args) expr(a.get());
+                break;
+            }
+            default: break; // other exprs make codegen bail; nothing to collect
+        }
+    }
+
+    void stmt(const Stmt* s) {
+        if (!s) return;
+        switch (s->kind) {
+            case Stmt::Kind::Expression: expr(static_cast<const ExprStmt*>(s)->expr.get()); break;
+            case Stmt::Kind::Let: expr(static_cast<const LetStmt*>(s)->initializer.get()); break;
+            case Stmt::Kind::Block:
+                for (auto& st : static_cast<const BlockStmt*>(s)->statements) stmt(st.get());
+                break;
+            case Stmt::Kind::If: {
+                auto* i = static_cast<const IfStmt*>(s);
+                expr(i->condition.get()); stmt(i->thenBranch.get()); stmt(i->elseBranch.get()); break;
+            }
+            case Stmt::Kind::While: {
+                auto* w = static_cast<const WhileStmt*>(s);
+                expr(w->condition.get()); stmt(w->body.get()); break;
+            }
+            case Stmt::Kind::For: {
+                auto* f = static_cast<const ForStmt*>(s);
+                stmt(f->init.get()); expr(f->condition.get());
+                expr(f->increment.get()); stmt(f->body.get()); break;
+            }
+            case Stmt::Kind::Return: expr(static_cast<const ReturnStmt*>(s)->value.get()); break;
+            default: break; // other stmts make codegen bail; nothing to collect
+        }
+    }
+};
+
+std::vector<std::string> collectLoopGlobals(const Stmt* loop) {
+    GlobalCollector gc;
+    gc.stmt(loop);
+    return gc.out;
+}
+
 // Run the standard -O2 pipeline over a freshly built module.
 void optimize(llvm::Module& mod) {
     LoopAnalysisManager LAM;
@@ -504,7 +699,7 @@ void optimize(llvm::Module& mod) {
 
 } // anonymous namespace
 
-JitFn Jit::getCompiled(const FunctionStmt* fn, Interpreter& /*interp*/) {
+JitFn Jit::getCompiled(const FunctionStmt* fn, Interpreter& interp) {
     auto it = cache_.find(fn);
     if (it != cache_.end()) return it->second;
     if (tried_[fn]) return nullptr;
@@ -513,26 +708,94 @@ JitFn Jit::getCompiled(const FunctionStmt* fn, Interpreter& /*interp*/) {
     if (!impl->jit || !jitCandidate(fn)) { cache_[fn] = nullptr; return nullptr; }
 
     JitFn result = nullptr;
+    // (FunctionStmt, symbol name) for every function compiled into this module.
+    std::vector<std::pair<const FunctionStmt*, std::string>> compiled;
     try {
         auto ctx = std::make_unique<LLVMContext>();
         auto mod = std::make_unique<llvm::Module>("bee_jit", *ctx);
-        std::string name = "bee_fn_" + std::to_string(impl->counter++);
+        ModuleCompiler mc{*ctx, *mod, interp, impl->counter, {}, {}};
 
-        Codegen cg(*ctx, *mod, fn, name);
-        cg.emit();                       // throws JitBail if outside the subset
+        mc.declare(fn);                  // seed the worklist with the entry
+        // Drain: compiling a body may enqueue the callees it references.
+        for (size_t i = 0; i < mc.worklist.size(); ++i) {
+            const FunctionStmt* cur = mc.worklist[i];
+            Codegen cg(mc, cur, mc.declared[cur]);
+            cg.emit();                   // throws JitBail if outside the subset
+        }
         optimize(*mod);
+
+        for (auto& kv : mc.declared)
+            compiled.push_back({kv.first, kv.second->getName().str()});
 
         if (impl->jit->addIRModule(orc::ThreadSafeModule(std::move(mod), std::move(ctx))))
             throw JitBail{};
-        auto sym = impl->jit->lookup(name);
-        if (!sym) throw JitBail{};
-        result = sym->toPtr<JitFn>();
+
+        // Resolve every function's entry point; cache the callees too so a
+        // later direct call reuses this native code instead of recompiling.
+        for (auto& [stmt, symName] : compiled) {
+            auto sym = impl->jit->lookup(symName);
+            if (!sym) { if (stmt == fn) throw JitBail{}; continue; }
+            JitFn p = sym->toPtr<JitFn>();
+            if (stmt == fn) result = p;
+            else { cache_[stmt] = p; tried_[stmt] = true; }
+        }
+        if (!result) throw JitBail{};
     } catch (JitBail&) {
-        result = nullptr;
+        result = nullptr;                // callees stay retryable on their own
     }
 
     cache_[fn] = result;
     return result;
+}
+
+const CompiledLoop& Jit::getCompiledLoop(const Stmt* loop, Interpreter& interp) {
+    auto it = loopCache_.find(loop);
+    if (it != loopCache_.end()) return it->second;
+
+    CompiledLoop cl;   // fn == nullptr sentinel == "cannot compile"
+    bool isLoop = loop->kind == Stmt::Kind::While || loop->kind == Stmt::Kind::For;
+    if (impl->jit && isLoop) {
+        std::vector<std::string> globals = collectLoopGlobals(loop);
+        try {
+            auto ctx = std::make_unique<LLVMContext>();
+            auto mod = std::make_unique<llvm::Module>("bee_loop", *ctx);
+            ModuleCompiler mc{*ctx, *mod, interp, impl->counter, {}, {}};
+
+            // The loop entry has the JitLoopFn ABI; it is not keyed to a
+            // FunctionStmt, so create it directly (callees still go via mc).
+            IRBuilder<> b(*ctx);
+            Type* dbl = b.getDoubleTy();
+            Type* ptr = PointerType::get(*ctx, 0);
+            Type* i32 = b.getInt32Ty();
+            FunctionType* ft = FunctionType::get(dbl, {ptr, i32, ptr, ptr}, false);
+            std::string entryName = "bee_loop_" + std::to_string(impl->counter++);
+            auto* entryF = llvm::Function::Create(ft, llvm::Function::ExternalLinkage,
+                                                  entryName, *mod);
+
+            Codegen cg(mc, /*fn*/nullptr, entryF);
+            cg.emitLoop(loop, globals);   // may enqueue called functions into mc
+
+            // Drain: compile any functions the loop calls (cross-calls).
+            for (size_t i = 0; i < mc.worklist.size(); ++i) {
+                const FunctionStmt* cur = mc.worklist[i];
+                Codegen c2(mc, cur, mc.declared[cur]);
+                c2.emit();
+            }
+            optimize(*mod);
+
+            if (impl->jit->addIRModule(orc::ThreadSafeModule(std::move(mod), std::move(ctx))))
+                throw JitBail{};
+            auto sym = impl->jit->lookup(entryName);
+            if (!sym) throw JitBail{};
+            cl.fn = sym->toPtr<JitLoopFn>();
+            cl.globals = std::move(globals);
+        } catch (JitBail&) {
+            cl.fn = nullptr;
+        }
+    }
+
+    auto res = loopCache_.emplace(loop, std::move(cl));
+    return res.first->second;
 }
 
 } // namespace bee

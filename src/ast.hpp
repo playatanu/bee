@@ -45,6 +45,11 @@ struct VariableExpr : Expr {
     int depth = 0;
     int slot = -1;
     bool global = true;
+    // Inline cache for name-based (global) lookups: when this node is evaluated
+    // repeatedly against the same environment (e.g. a top-level loop), the map
+    // walk is skipped and the binding is read through a cached pointer.
+    Environment* cacheEnv = nullptr;
+    Value* cacheSlot = nullptr;
     explicit VariableExpr(std::string n) : Expr(Kind::Variable), name(std::move(n)) {}
 };
 
@@ -54,6 +59,9 @@ struct AssignExpr : Expr {
     int depth = 0;      // resolver-filled, mirrors VariableExpr
     int slot = -1;
     bool global = true;
+    // Inline cache for name-based (global) assignment; see VariableExpr.
+    Environment* cacheEnv = nullptr;
+    Value* cacheSlot = nullptr;
     AssignExpr() : Expr(Kind::Assign) {}
 };
 
