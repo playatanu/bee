@@ -1,0 +1,37 @@
+# 04 — Lists & dicts
+#
+#     bee examples/04_collections.bee
+
+print("== lists ==")
+let xs = [1, 2, 3]
+xs.push(4)
+xs.push(5)
+print("list:      ", xs)
+print("length:    ", xs.len())
+print("first/last:", xs[0], xs[-1])
+print("contains 3:", xs.contains(3))
+print("index of 4:", xs.index_of(4))
+xs.insert(0, 99)
+print("after insert:", xs)
+print("popped:    ", xs.pop())
+
+# Transform with a loop.
+let squares = []
+for x in [1, 2, 3, 4, 5] {
+    squares.push(x * x)
+}
+print("squares:   ", squares)
+
+print("== dicts ==")
+let user = {"name": "Ada", "age": 36}
+user["role"] = "engineer"
+print("dict:    ", user)
+print("keys:    ", user.keys())
+print("values:  ", user.values())
+print("has role:", user.has("role"))
+print("get city:", user.get("city", "unknown"))
+
+# Iterating a dict yields its keys.
+for key in user {
+    print("  " + key + " =", user[key])
+}

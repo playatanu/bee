@@ -1,0 +1,67 @@
+{
+  "Function": {
+    "prefix": "fn",
+    "body": ["fn ${1:name}(${2:params}) {", "\t$0", "}"],
+    "description": "Function declaration"
+  },
+  "Class": {
+    "prefix": "class",
+    "body": ["class ${1:Name} {", "\tinit(${2:args}) {", "\t\t$0", "\t}", "}"],
+    "description": "Class with a constructor"
+  },
+  "Class extends": {
+    "prefix": "classext",
+    "body": ["class ${1:Name} extends ${2:Base} {", "\tinit(${3:args}) {", "\t\tsuper.init($3)", "\t\t$0", "\t}", "}"],
+    "description": "Subclass with super constructor call"
+  },
+  "Constructor": {
+    "prefix": "init",
+    "body": ["init(${1:args}) {", "\t$0", "}"],
+    "description": "Constructor method"
+  },
+  "For-in over range": {
+    "prefix": "for",
+    "body": ["for ${1:i} in range(${2:n}) {", "\t$0", "}"],
+    "description": "for-in loop over range"
+  },
+  "C-style for": {
+    "prefix": "forc",
+    "body": ["for (let ${1:i} = 0; ${1:i} < ${2:n}; ${1:i} += 1) {", "\t$0", "}"],
+    "description": "C-style for loop"
+  },
+  "While": {
+    "prefix": "while",
+    "body": ["while ${1:cond} {", "\t$0", "}"],
+    "description": "while loop"
+  },
+  "If": {
+    "prefix": "if",
+    "body": ["if ${1:cond} {", "\t$0", "}"],
+    "description": "if statement"
+  },
+  "If-else": {
+    "prefix": "ifelse",
+    "body": ["if ${1:cond} {", "\t$2", "} else {", "\t$0", "}"],
+    "description": "if-else statement"
+  },
+  "Let": {
+    "prefix": "let",
+    "body": ["let ${1:name} = ${0:nil}"],
+    "description": "Variable declaration"
+  },
+  "Print": {
+    "prefix": "print",
+    "body": ["print($0)"],
+    "description": "Print with newline"
+  },
+  "Import": {
+    "prefix": "import",
+    "body": ["import ${0:module}"],
+    "description": "Import a module"
+  },
+  "From import": {
+    "prefix": "from",
+    "body": ["from ${1:module} import ${0:name}"],
+    "description": "Import names from a module"
+  }
+}

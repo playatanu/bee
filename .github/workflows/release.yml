@@ -1,0 +1,99 @@
+name: Release
+
+# Build the Linux .deb and the Windows installer, and publish them to a
+# GitHub Release. Triggered by pushing a version tag, e.g.:
+#     git tag v0.1.0 && git push origin v0.1.0
+# `workflow_dispatch` builds the artifacts too (without creating a release),
+# which is handy for testing the pipeline.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------- Linux .deb
+  linux-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies (incl. LLVM for the JIT)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends g++ make fakeroot llvm-18-dev
+
+      - name: Build the .deb
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            export VERSION="${GITHUB_REF_NAME#v}"
+          else
+            export VERSION="0.1.0"
+          fi
+          bash packaging/build-deb.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+  # ------------------------------------------------------------ Windows installer
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A reliable MinGW-w64 toolchain (UCRT). The Windows build is
+      # interpreter-only: jit_llvm.cpp is #ifdef-guarded, so no LLVM is needed.
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: mingw-w64-ucrt-x86_64-gcc
+
+      - name: Compile bee.exe (static, self-contained)
+        shell: msys2 {0}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.1.0"; fi
+          g++ -std=c++17 -O2 -static -pthread -DBEE_VERSION="\"$ver\"" \
+              src/*.cpp -o packaging/windows/bee.exe
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $ver = $env:GITHUB_REF_NAME -replace '^v',''
+          } else {
+            $ver = '0.1.0'
+          }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" packaging\windows\bee-setup.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: dist/*.exe
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------- Release
+  release:
+    needs: [linux-deb, windows-exe]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write        # required to create the release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.deb
+            artifacts/**/*.exe
+          generate_release_notes: true
+          fail_on_unmatched_files: true

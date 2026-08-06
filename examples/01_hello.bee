@@ -1,0 +1,6 @@
+# 01 — Hello, world
+#
+# The smallest BeeLang program. Run it with:
+#     bee examples/01_hello.bee
+
+print("Hello, BeeLang!")

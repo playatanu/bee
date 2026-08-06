@@ -1,0 +1,24 @@
+# ---- Build artifacts ----------------------------------------------------
+# Object files and auto-generated header-dependency files from the Makefile.
+*.o
+*.d
+
+# The compiled interpreter (rebuild with `make`).
+/bee
+/bee.exe
+bee.exe
+packaging/windows/bee.exe
+
+# ---- Packaged output ----------------------------------------------------
+# Release artifacts produced by packaging/build-deb.sh and the Inno installer.
+/dist/
+*.deb
+*.vsix
+
+# ---- Editor / OS cruft --------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~

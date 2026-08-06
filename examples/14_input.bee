@@ -1,0 +1,42 @@
+# 14 — Reading input from the user
+#
+# A program gets input two ways:
+#   1. args()  — command-line arguments (everything after the script path)
+#   2. input() — read one line from stdin; returns nil at end-of-input
+#
+# Run it interactively:
+#     bee examples/14_input.bee
+#
+# Pass command-line arguments:
+#     bee examples/14_input.bee Ada Grace
+#
+# Or pipe answers in (handy for scripts / testing):
+#     printf "Ada\n7\n" | bee examples/14_input.bee
+
+# ---- command-line arguments ----------------------------------------------
+let argv = args()
+if argv.len() > 0 {
+    print("command-line args:", argv)
+}
+
+# ---- a line of text -------------------------------------------------------
+# input() prints the prompt (no newline) and returns what the user typed.
+let name = input("What's your name? ")
+if name == nil {
+    print("(no input — reached end of stdin)")
+} else {
+    print("Hello, " + name + "!")
+
+    # ---- a number ---------------------------------------------------------
+    # input() always returns a string, so convert it with num(). Guard the
+    # parse in case the user types something that isn't a number.
+    let raw = input("Pick a number: ")
+    if raw != nil {
+        try {
+            let n = num(raw)
+            print(raw + " doubled is", n * 2)
+        } catch (e) {
+            print("'" + raw + "' is not a number.")
+        }
+    }
+}

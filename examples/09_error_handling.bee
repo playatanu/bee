@@ -1,0 +1,35 @@
+# 09 — Error handling
+#
+#     bee examples/09_error_handling.bee
+
+# try / catch / finally
+fn safe_div(a, b) {
+    try {
+        return a / b
+    } catch (e) {
+        # Built-in runtime errors arrive as their message string.
+        return "error: " + e
+    }
+}
+print("10 / 2 =", safe_div(10, 2))
+print("10 / 0 =", safe_div(10, 0))
+
+# `throw` can raise any value — here, a structured dict.
+fn check_age(n) {
+    if n < 0 {
+        throw {"kind": "range", "msg": "age cannot be negative"}
+    }
+    return n
+}
+
+try {
+    check_age(-1)
+} catch (err) {
+    print("caught:", err.kind, "-", err.msg)
+} finally {
+    print("(finally always runs)")
+}
+
+# assert() for defensive checks.
+assert(1 + 1 == 2, "math still works")
+print("assertion passed")

@@ -1,0 +1,38 @@
+# 02 — Variables, types & operators
+#
+#     bee examples/02_variables_and_operators.bee
+
+# Declare with `let`; reassign with `=`.
+let greeting = "hello"
+let count = 42
+let pi = 3.14159
+let ready = true
+let nothing = nil
+
+print("types:", type(greeting), type(count), type(ready), type(nothing))
+
+# Arithmetic — numbers are 64-bit floats.
+print("7 + 2       =", 7 + 2)
+print("7 / 2       =", 7 / 2)
+print("7 % 3       =", 7 % 3)
+print("pow(2, 10)  =", pow(2, 10))
+
+# `+` and `*` are overloaded for strings and lists.
+print("concat:", "foo" + "bar")
+print("repeat:", "ab" * 3)
+print("lists: ", [1, 2] + [3, 4])
+
+# Comparison & logical operators.
+print("3 < 5 and 5 < 10:", 3 < 5 and 5 < 10)
+print("not false:", not false)
+
+# Compound assignment works on variables.
+let n = 10
+n += 5
+n *= 2
+print("n =", n)
+
+# Truthiness: only nil and false are falsey.
+if 0 and "" and [] {
+    print("0, empty string, and empty list are all truthy")
+}

@@ -1,0 +1,57 @@
+{
+  "name": "bee-lang",
+  "displayName": "Bee",
+  "description": "Syntax highlighting, completions, hovers, and snippets for the Bee language (.be, .bee).",
+  "version": "0.1.0",
+  "publisher": "playatanu",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/playatanu/beelang.git"
+  },
+  "homepage": "https://github.com/playatanu/beelang#readme",
+  "bugs": {
+    "url": "https://github.com/playatanu/beelang/issues"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "icon": "icons/bee-128.png",
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "bee",
+        "aliases": [
+          "Bee",
+          "bee"
+        ],
+        "extensions": [
+          ".be",
+          ".bee"
+        ],
+        "icon": {
+          "light": "./icons/bee.png",
+          "dark": "./icons/bee.png"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bee",
+        "scopeName": "source.bee",
+        "path": "./syntaxes/bee.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "bee",
+        "path": "./snippets/bee.json"
+      }
+    ]
+  }
+}

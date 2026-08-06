@@ -1,0 +1,32 @@
+# 13 — Native JIT benchmark
+#
+# Both functions stay inside BeeLang's numeric subset, so a JIT-enabled build
+# compiles them to native code. Compare a JIT build against a JIT-less one to
+# measure the speedup.
+#
+#     bee examples/13_benchmark.bee
+
+# CPU-bound nested loop, wrapped in a function so the JIT can compile it.
+fn loop_sum(n) {
+    let sum = 0
+    for (let i = 0; i < n; i += 1) {
+        for (let j = 0; j < n; j += 1) {
+            sum += i * j - (i % 7)
+        }
+    }
+    return sum
+}
+
+# Naive recursive Fibonacci (exercises direct self-recursion).
+fn fib(n) {
+    if n < 2 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+
+let t0 = clock()
+print("loop_sum(2000) =", loop_sum(2000))
+print("  took", clock() - t0, "s")
+
+let t1 = clock()
+print("fib(32) =", fib(32))
+print("  took", clock() - t1, "s")
