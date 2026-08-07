@@ -6,7 +6,7 @@
 #include <vector>
 
 #ifndef HIVE_VERSION
-#define HIVE_VERSION "0.3.0"
+#define HIVE_VERSION "0.3.1"
 #endif
 
 namespace {
@@ -17,19 +17,20 @@ void usage(std::ostream& out, const char* prog) {
         << "commands:\n"
         << "  install                    install the dependencies in hive.json\n"
         << "  install <name>[@version]   install a package from the registry\n"
-        << "  install <file.hive>        install a package from a local archive\n"
+        << "  install <file.pkg>         install a package from a local package file\n"
         << "  uninstall <name>...        remove installed packages\n"
         << "  list                       show what is installed\n"
         << "  info <name>                show a package's versions and dependencies\n"
         << "  search <query>             search the registry\n"
         << "  init [dir]                 create a hive.json (and a starter init.bee)\n"
-        << "  pack [dir]                 build a .hive archive from a package\n"
+        << "  pack [dir]                 build a .pkg package from a directory\n"
         << "  cache [dir|clean]          show or clear the download cache\n\n"
         << "options:\n"
         << "  -g, --global               act on the global library instead of ./hive_modules\n"
         << "      --registry <url>       use this registry for this run\n"
         << "      --offline              never hit the network; use the cache only\n"
         << "      --no-save              don't record the package in hive.json\n"
+        << "      --no-build             don't run packages' \"build\" commands\n"
         << "      --force                overwrite files hive doesn't own\n"
         << "  -u, --update               ignore hive.lock pins and take the newest match\n"
         << "  -o, --output <file>        where `pack` writes the archive\n"
@@ -74,6 +75,7 @@ int main(int argc, char** argv) {
         if (a == "--force")                 { opts.force = true; continue; }
         if (a == "-u" || a == "--update")   { opts.update = true; continue; }
         if (a == "--no-save")               { opts.save = false; continue; }
+        if (a == "--no-build")              { opts.build = false; continue; }
         if (a == "--save")                  { opts.save = true; continue; }
         if (a == "-q" || a == "--quiet")    { opts.quiet = true; continue; }
         if (a == "--registry")              { opts.registry = valueFor("--registry"); continue; }

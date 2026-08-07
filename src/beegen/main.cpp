@@ -5,7 +5,7 @@
 #include <iostream>
 
 #ifndef BEEGEN_VERSION
-#define BEEGEN_VERSION "0.3.0"
+#define BEEGEN_VERSION "0.3.1"
 #endif
 
 namespace fs = std::filesystem;

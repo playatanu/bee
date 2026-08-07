@@ -877,7 +877,7 @@ with `...` until it closes:
 
 ```
 $ bee
-bee 0.3.0 - interactive session
+bee 0.3.1 - interactive session
 type an expression to see its value; 'exit' or Ctrl-D to quit
 >>> 1 + 1
 2

@@ -15,7 +15,7 @@
 #endif
 
 #ifndef BEE_VERSION
-#define BEE_VERSION "0.3.0"
+#define BEE_VERSION "0.3.1"
 #endif
 
 #ifndef _WIN32

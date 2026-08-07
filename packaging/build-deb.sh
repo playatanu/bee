@@ -9,14 +9,14 @@
 #
 set -euo pipefail
 
-VERSION="${VERSION:-0.3.0}"
+VERSION="${VERSION:-0.3.1}"
 ARCH="$(dpkg --print-architecture)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKG="bee"
 STAGE="$ROOT/dist/${PKG}-${VERSION}-${ARCH}"
 # Hyphens, not Debian's usual name_version_arch.deb, to match the naming of the
 # Windows installer. dpkg reads the package name, version and architecture from
-# DEBIAN/control, not the filename, so `apt install ./bee-0.3.0-amd64.deb`
+# DEBIAN/control, not the filename, so `apt install ./bee-0.3.1-amd64.deb`
 # installs exactly the same package either way.
 DEB="$ROOT/dist/${PKG}-${VERSION}-${ARCH}.deb"
 
@@ -63,8 +63,20 @@ for f in "$ROOT"/examples/*.bee; do
 done
 install -Dm0644 "$ROOT/README.md"                "$STAGE/usr/share/doc/bee/README.md"
 # Native modules are compiled against these headers (see docs/BINDINGS.md).
-for h in "$ROOT"/src/*.hpp; do
+# Both extensions: bee_buffer.h is a plain C header, and bee_native.hpp includes
+# it, so shipping only *.hpp breaks every native module built against an
+# installed BeeLang.
+for h in "$ROOT"/src/*.hpp "$ROOT"/src/*.h; do
+    [ -e "$h" ] || continue
     install -Dm0644 "$h" "$STAGE/usr/include/bee/$(basename "$h")"
+done
+
+# Fail the build rather than ship headers that can't compile a native module.
+for required in bee_native.hpp bee_buffer.h interpreter.hpp value.hpp; do
+    if [ ! -f "$STAGE/usr/include/bee/$required" ]; then
+        echo "[deb] error: $required missing from the header set" >&2
+        exit 1
+    fi
 done
 
 # copyright (Debian expects one)

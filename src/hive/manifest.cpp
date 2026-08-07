@@ -258,6 +258,24 @@ bool Manifest::fromJson(const Json& j, bool requireName, Manifest& out, std::str
     if (!readStringList(j, "keywords", out.keywords, err)) return false;
     if (!readStringList(j, "files", out.files, err)) return false;
     if (!readStringList(j, "exclude", out.exclude, err)) return false;
+    if (const Json* bins = j.find("binaries")) {
+        if (!bins->isObject()) {
+            err = "'binaries' must be an object of platform -> path";
+            return false;
+        }
+        for (auto& m : bins->members) {
+            if (!m.second.isString()) {
+                err = "'binaries." + m.first + "' must be a path";
+                return false;
+            }
+            out.binaries.emplace_back(m.first, m.second.text);
+        }
+    }
+    out.build = j.str("build");
+    if (out.build.find('\n') != std::string::npos) {
+        err = "'build' must be a single command";
+        return false;
+    }
     if (!readDeps(j, out.dependencies, err)) return false;
     return true;
 }

@@ -104,6 +104,16 @@ std::string currentDir();
 // when nothing matches before the filesystem root.
 std::string findUp(const std::string& start, const std::string& marker);
 
+// Identifies the machine hive is running on, as "<os>-<arch>":
+// linux-x86_64, darwin-arm64, windows-x86_64, ... Used to pick a prebuilt
+// native module out of a package's "binaries" map.
+std::string hostPlatform();
+
+// Run `cmd` with `dir` as the working directory. Output is captured into `out`
+// rather than printed, so a successful install stays quiet and a failed one can
+// show what the command actually said. Returns the exit status.
+int runInDir(const std::string& dir, const std::string& cmd, std::string& out);
+
 // ---------------------------------------------------------------------------
 // Fetching
 // ---------------------------------------------------------------------------
@@ -131,6 +141,15 @@ struct Manifest {
     DepList dependencies;
     std::vector<std::string> files;    // optional include list for `hive pack`
     std::vector<std::string> exclude;  // optional prune list for `hive pack`
+    // Prebuilt native modules, keyed by hostPlatform(). When one matches, it is
+    // copied into place and the build command is not run -- so the common case
+    // is a plain download, and compiling is only the fallback.
+    std::vector<std::pair<std::string, std::string>> binaries;
+    // A command run once, in the package directory, right after install. This
+    // is what makes a package with a native module installable in one step:
+    // the .so it ships can only match one platform and toolchain, so anything
+    // else has to compile it. `hive install --no-build` skips it.
+    std::string build;
     Json raw;                          // as read, so unknown keys survive edits
 
     // `requireName` is false for project manifests, where a name and version
@@ -254,6 +273,7 @@ struct Options {
     bool update = false;  // ignore lockfile pins and take the newest match
     bool save = true;
     bool quiet = false;
+    bool build = true;    // run a package's "build" command after installing it
     std::string registry;   // overrides config / default
     std::string outFile;    // `hive pack -o`
     std::string dir;        // project root override

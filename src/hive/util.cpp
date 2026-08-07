@@ -17,7 +17,7 @@
 #endif
 
 #ifndef HIVE_VERSION
-#define HIVE_VERSION "0.3.0"
+#define HIVE_VERSION "0.3.1"
 #endif
 
 namespace fs = std::filesystem;
@@ -249,6 +249,69 @@ int runQuiet(const std::string& cmd) {
 }
 
 }  // namespace
+
+// Quote a filesystem path for the shell. quoteArg() above is for URLs, which
+// are validated to contain no spaces or quotes first; a real install path has
+// no such guarantee ("C:\Users\John Doe\..."), so it gets escaped properly.
+static std::string quotePath(const std::string& p) {
+#ifdef _WIN32
+    // cmd.exe has no escape for a double quote inside a quoted string, but a
+    // Windows path can never contain one, so quoting is enough.
+    return "\"" + p + "\"";
+#else
+    std::string out = "'";
+    for (char c : p) {
+        if (c == '\'') out += "'\\''";   // close, escaped quote, reopen
+        else out += c;
+    }
+    return out + "'";
+#endif
+}
+
+std::string hostPlatform() {
+#if defined(_WIN32)
+    const char* os = "windows";
+#elif defined(__APPLE__)
+    const char* os = "darwin";
+#elif defined(__linux__)
+    const char* os = "linux";
+#elif defined(__FreeBSD__)
+    const char* os = "freebsd";
+#else
+    const char* os = "unknown";
+#endif
+
+#if defined(__x86_64__) || defined(_M_X64)
+    const char* arch = "x86_64";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    const char* arch = "aarch64";
+#elif defined(__i386__) || defined(_M_IX86)
+    const char* arch = "x86";
+#elif defined(__arm__)
+    const char* arch = "arm";
+#else
+    const char* arch = "unknown";
+#endif
+    return std::string(os) + "-" + arch;
+}
+
+int runInDir(const std::string& dir, const std::string& cmd, std::string& out) {
+    out.clear();
+    const std::string log = tempPath("build");
+#ifdef _WIN32
+    // `cd /d` so a package on another drive still works.
+    std::string full = "cd /d " + quotePath(dir) + " && (" + cmd + ") > " + quotePath(log) +
+                       " 2>&1";
+#else
+    std::string full = "cd " + quotePath(dir) + " && { " + cmd + " ; } > " + quotePath(log) +
+                       " 2>&1";
+#endif
+    int status = runQuiet(full);
+    readFile(log, out);
+    std::error_code ec;
+    fs::remove(log, ec);
+    return status;
+}
 
 bool httpGet(const std::string& url, std::string& out, std::string& err) {
     // A local directory or file works as a registry, which keeps testing (and

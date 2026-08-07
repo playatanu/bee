@@ -6,7 +6,7 @@ puts it somewhere the interpreter looks, and remembers what you installed.
 ```bash
 hive install strutil            # from the registry
 hive install strutil@1.2.0      # a specific version
-hive install ./strutil-1.2.0.hive   # from a local archive
+hive install ./strutil-1.2.0.pkg    # from a local package file
 hive install                    # everything in hive.json
 ```
 
@@ -36,7 +36,8 @@ make test       # end-to-end tests for hive and module resolution
 - [hive.lock](#hivelock)
 - [Version constraints](#version-constraints)
 - [Writing and publishing a package](#writing-and-publishing-a-package)
-- [The .hive archive format](#the-hive-archive-format)
+- [The .pkg package format](#the-pkg-package-format)
+- [Packages that have to be built](#packages-that-have-to-be-built)
 - [Running a registry](#running-a-registry)
 - [Configuration](#configuration)
 - [Security](#security)
@@ -98,13 +99,13 @@ than one module.
 | `hive install` | install every dependency in `hive.json` |
 | `hive install <name>` | install the newest version that fits, and save it to `hive.json` |
 | `hive install <name>@<constraint>` | install a specific version or range |
-| `hive install <file.hive>` | install a local archive; its dependencies still come from the registry |
+| `hive install <file.pkg>` | install a local package file; its dependencies still come from the registry |
 | `hive uninstall <name>...` | delete the package and drop it from `hive.json` |
 | `hive list` | show what's installed, with versions |
 | `hive info <name>` | a package's versions, dependencies and description |
 | `hive search <query>` | search the registry index |
 | `hive init [dir]` | write a starter `hive.json` (and an `init.bee` if there's none) |
-| `hive pack [dir]` | build a `.hive` archive from a package directory |
+| `hive pack [dir]` | build a `.pkg` package from a package directory |
 | `hive cache dir` / `hive cache clean` | show or clear the download cache |
 
 `add`/`i`, `remove`/`rm`, `ls`, `show` and `build` work as aliases.
@@ -159,6 +160,7 @@ The manifest describes a package — or, in an application, just what it needs.
 | `dependencies` | package name → [version constraint](#version-constraints) |
 | `files` | optional whitelist for `hive pack`; a directory name includes everything under it. `hive.json` is always included. |
 | `exclude` | optional prune list for `hive pack` |
+| `build` | a command run once in the package directory right after install |
 
 An application's `hive.json` can be little more than `{"dependencies": {...}}` —
 `name` and `version` are only required for something you intend to publish.
@@ -179,7 +181,7 @@ everything it resolved:
   "packages": {
     "greet": {
       "version": "1.2.0",
-      "url": "https://packages.beelang.dev/files/greet-1.2.0.hive",
+      "url": "https://packages.beelang.dev/files/greet-1.2.0.pkg",
       "sha256": "bbfaecb3…",
       "dependencies": { "logger": "^1.0.0" }
     }
@@ -228,7 +230,7 @@ hive: no version of 'logger' satisfies:
 mkdir strutil && cd strutil
 hive init                 # writes hive.json and a starter init.bee
 $EDITOR init.bee
-hive pack                 # -> strutil-1.2.0.hive, and prints its sha256
+hive pack                 # -> strutil-1.2.0.pkg, and prints its sha256
 ```
 
 `init.bee` is the package's public surface. Everything it defines is what
@@ -246,32 +248,96 @@ Test it against a real project before publishing:
 
 ```bash
 cd ../my-app
-hive install ../strutil/strutil-1.2.0.hive
+hive install ../strutil/strutil-1.2.0.pkg
 bee main.bee
 ```
 
-To publish, upload the `.hive` file somewhere your registry can serve it and add
+To publish, upload the `.pkg` file somewhere your registry can serve it and add
 a version entry with its `sha256` (which `hive pack` prints) to the registry
 metadata — see below.
 
 ---
 
-## The .hive archive format
+## The .pkg package format
 
-A `.hive` file is a plain, uncompressed container: no zip, no tar, no
-third-party library on either side.
+A `.pkg` file is a self-contained container: no zip, no tar, no third-party
+library on either side.
 
 ```
-HIVE1\n
+BEEPKG1\n
+<u32 LE uncompressed size><u32 LE compressed size>
+<compressed bytes>
+```
+
+Decompressed, the payload is:
+
+```
 <header-byte-length>\n
 {"format":1,"manifest":{…},"files":[{"path":"init.bee","size":188,"sha256":"…"}]}\n
 <the file bytes, concatenated in `files` order>
 ```
 
-So `head -2 pkg.hive` tells you what's inside. Every file carries its own
-SHA-256, and the reader rejects the archive if a hash doesn't match, if bytes
-are missing, or if there are unexpected bytes at the end — a corrupt download
-fails loudly instead of installing half a package.
+The payload is compressed with a small built-in LZSS — written out rather than
+pulled in, because a package manager that needs zlib to read its own format has
+a dependency problem. It roughly halves a package, and makes the file a binary
+blob rather than a text file with the sources sitting in it.
+
+The compressed bytes are then XORed with a keystream. **This is obfuscation, not
+encryption**, and the difference matters: the key is a constant in
+`src/hive/archive.cpp`. It stops a package from being browsed or hand-edited in
+a text editor. It does not keep anything in a package secret — anything that can
+install a package can also extract one — so nothing belongs in a package that
+needs to stay private.
+
+Integrity is the layer that does carry weight. Every file carries its own
+SHA-256, and the reader rejects the package if a hash doesn't match, if bytes
+are missing, if there are extra bytes at the end, or if any path would escape
+the package directory — a corrupt or tampered download fails loudly instead of
+installing half a package.
+
+---
+
+## Packages that have to be built
+
+A package containing a native module can only ship one platform's binary. Rather
+than leaving every user to notice that and compile it by hand, a package
+declares how to build itself:
+
+```json
+{
+  "name": "net",
+  "version": "0.1.0",
+  "main": "init.bee",
+  "build": "bash build.sh"
+}
+```
+
+`hive install` runs that command once, in the installed package's directory,
+right after unpacking and after its dependencies are in place:
+
+```
+$ hive install net
+  building net (bash build.sh)
+  + net@0.1.0
+installed 1 package into ./hive_modules
+```
+
+The command is printed before it runs, because it came from a downloaded
+package and running it silently would be worse. `hive install --no-build` skips
+every build step.
+
+If a build fails, its output is shown and hive exits non-zero, but **the files
+stay in place** — a build usually fails for a fixable reason like a missing
+compiler or `-dev` package, and re-running the command by hand in the package
+directory is then the whole fix.
+
+Two things to know when writing one:
+
+- **Invoke an interpreter explicitly** — `bash build.sh`, not `./build.sh`. A
+  `.pkg` does not carry the executable bit, so the script will not be runnable
+  on its own after unpacking.
+- **Keep it portable, or fail clearly.** The command runs through the system
+  shell on whatever platform the user is on.
 
 ---
 
@@ -287,8 +353,8 @@ on disk all work; there's nothing to run.
 │   ├── strutil.json              per-package metadata `hive install` reads
 │   └── logger.json
 └── files/
-    ├── strutil-1.2.0.hive
-    └── logger-1.0.0.hive
+    ├── strutil-1.2.0.pkg
+    └── logger-1.0.0.pkg
 ```
 
 `packages/<name>.json`:
@@ -300,13 +366,13 @@ on disk all work; there's nothing to run.
   "homepage": "https://github.com/you/strutil",
   "versions": {
     "1.1.0": {
-      "url": "files/strutil-1.1.0.hive",
+      "url": "files/strutil-1.1.0.pkg",
       "sha256": "9f2c…",
       "dependencies": {},
       "yanked": true
     },
     "1.2.0": {
-      "url": "files/strutil-1.2.0.hive",
+      "url": "files/strutil-1.2.0.pkg",
       "sha256": "bbfa…",
       "dependencies": { "logger": "^1.0.0" }
     }
@@ -364,7 +430,7 @@ Hive is careful about the parts that install untrusted bytes:
   the registry's is discarded, never unpacked. Within an archive, every file has
   its own hash.
 - **Archives can't escape their directory.** Absolute paths, `..`, drive
-  letters and backslashes are rejected outright, so a crafted `.hive` can't
+  letters and backslashes are rejected outright, so a crafted `.pkg` can't
   write outside `hive_modules/<name>/`.
 - **Your files aren't collateral.** Hive records what it installed and refuses
   to delete a directory it didn't create unless you pass `--force`.

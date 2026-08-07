@@ -8,6 +8,76 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.3.1] — 2026-08-07
+
+Packaging. Installing a package that contains a native module no longer means
+compiling one by hand, packages are a binary format rather than a text file, and
+a bug that made 0.3.0's `.deb` unable to build *any* native module is fixed.
+
+### Fixed
+
+- **0.3.0's `.deb` shipped an unusable header set.** `packaging/build-deb.sh`
+  installed `src/*.hpp`, but `bee_buffer.h` is a plain C header — and
+  `bee_native.hpp` includes it. So every native module compiled against an
+  installed BeeLang failed with `fatal error: bee_buffer.h: No such file or
+  directory`. Both extensions are installed now, and the packaging script fails
+  rather than shipping a header set that can't compile a module.
+
+### Added
+
+- **Prebuilt native modules.** A package lists binaries per platform, and
+  `hive install` uses the matching one instead of compiling:
+
+  ```json
+  "binaries": {
+    "linux-x86_64":   "prebuilt/linux-x86_64/net_native.so",
+    "windows-x86_64": "prebuilt/windows-x86_64/net_native.dll"
+  }
+  ```
+
+  ```
+  $ hive install net
+    using prebuilt net for linux-x86_64
+  ```
+
+  Installing should be a download, not a build. Compiling is now only what
+  happens on a platform a package doesn't ship for.
+
+- **A package can declare how to build itself.** `hive.json` gains a `"build"`
+  command, run once in the package directory after install — the fallback when
+  no prebuilt matches:
+
+  ```json
+  { "name": "net", "main": "init.bee", "build": "bash build.sh" }
+  ```
+
+  The command is printed before it runs, since it came from a downloaded
+  package; `hive install --no-build` skips it. A failed build shows its output
+  and exits non-zero but leaves the files in place, because the cause is usually
+  a missing compiler and re-running it by hand is then the whole fix.
+
+  Note that a `.pkg` does not carry the executable bit, so a build command needs
+  to name its interpreter: `bash build.sh`, not `./build.sh`.
+
+### Changed
+
+- **Packages are now `.pkg`, and no longer plain text.** `hive pack` writes
+  `<name>-<version>.pkg` instead of `.hive`, in a new `BEEPKG1` container: the
+  payload is compressed with a small built-in LZSS and then XORed with a
+  keystream. That roughly halves a package and makes it a binary blob rather
+  than a text file with the sources sitting in it.
+
+  The obfuscation is worth naming for what it is: **it is not encryption.** The
+  key is a constant in `src/hive/archive.cpp`, and anything that can install a
+  package can extract one. It stops a package being browsed or hand-edited in a
+  text editor; it keeps nothing secret. Integrity is unchanged and is the part
+  that carries weight — per-file SHA-256, rejected paths, and a loud failure on
+  truncated, padded or tampered bytes. An old `HIVE1` archive is reported as
+  such, with the suggestion to repack it.
+
+  This is a breaking format change. No registry is running yet, so nothing
+  published needs migrating; repack any local archives with `hive pack`.
+
 ## [0.3.0] — 2026-08-07
 
 The interoperability release. BeeLang can now call C and C++ libraries without
@@ -15,7 +85,7 @@ rebuilding the interpreter: **native modules** import like any other module,
 **`beegen`** generates the binding for you from a header, and **buffers** give
 bulk data somewhere to live that isn't a million boxed `Value`s — and cross the
 native boundary without a copy. OpenCV 4.6 was bound and driven end to end to
-prove the set is sufficient for a real library, not just a toy one. 178 checks,
+prove the set is sufficient for a real library, not just a toy one. 180 checks,
 up from 100.
 
 ### Added
@@ -418,6 +488,7 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions — pass named functions (e.g. to `spawn`).
 
+[0.3.1]: https://github.com/beelang-project/bee/releases/tag/v0.3.1
 [0.3.0]: https://github.com/beelang-project/bee/releases/tag/v0.3.0
 [0.2.0]: https://github.com/beelang-project/bee/releases/tag/v0.2.0
 [0.1.1]: https://github.com/beelang-project/bee/releases/tag/v0.1.1

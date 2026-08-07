@@ -6,6 +6,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <sstream>
 
 namespace hive {
 
@@ -400,7 +401,7 @@ static Request parseSpec(const std::string& spec) {
 }
 
 static bool isArchiveSpec(const std::string& spec) {
-    if (spec.size() > 5 && spec.compare(spec.size() - 5, 5, ".hive") == 0) return true;
+    if (spec.size() > 4 && spec.compare(spec.size() - 4, 4, ".pkg") == 0) return true;
     // A path that exists on disk is a file install even without the extension.
     return isFile(spec);
 }
@@ -446,7 +447,7 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
     // Note: `root` is created lazily by the first unpack, so a failed install
     // doesn't leave an empty hive_modules/ behind.
 
-    // ---- local .hive archives ------------------------------------------
+    // ---- local .pkg packages -------------------------------------------
     std::map<std::string, VersionInfo> fromFiles;
     std::map<std::string, Archive> fileArchives;
     std::vector<Request> fileDeps;
@@ -502,6 +503,10 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
 
     // ---- fetch and unpack ------------------------------------------------
     std::vector<std::string> installed, unchanged;
+    // Packages that declared a "build" command, in the order they were
+    // installed. Collected here and run once below, so a package is never built
+    // before the dependencies it might build against are on disk.
+    std::vector<std::pair<std::string, Manifest>> needSetup;
     for (auto& [name, vi] : res.chosen) {
         const bool direct = res.direct.count(name) > 0;
         const bool fromFile = fromFiles.count(name) > 0;
@@ -522,6 +527,8 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
         if (fromFile) {
             if (!unpackInto(root, fileArchives[name], "file", "", vi.sha256, direct, o, err))
                 return fail(err);
+            const Manifest& fm = fileArchives[name].manifest;
+            if (!fm.build.empty() || !fm.binaries.empty()) needSetup.push_back({name, fm});
         } else {
             info(o, "fetching " + name + "@" + vi.version);
             std::string blob;
@@ -533,8 +540,67 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
             if (ar.manifest.version != vi.version)
                 return fail("registry served " + name + "@" + ar.manifest.version + ", expected " + vi.version);
             if (!unpackInto(root, ar, "registry", vi.url, vi.sha256, direct, o, err)) return fail(err);
+            if (!ar.manifest.build.empty() || !ar.manifest.binaries.empty())
+                needSetup.push_back({name, ar.manifest});
         }
         installed.push_back(name + "@" + vi.version);
+    }
+
+    // ---- native modules --------------------------------------------------
+    // Prefer a prebuilt binary for this platform: installing should be a
+    // download, not a compile. Building is the fallback for a platform the
+    // package doesn't ship, which is the only case where a user needs a
+    // toolchain at all.
+    std::vector<std::string> buildFailed;
+    const std::string platform = hostPlatform();
+    for (auto& [name, m] : needSetup) {
+        const std::string dir = joinPath(root, name);
+
+        std::string prebuilt;
+        for (auto& [key, path] : m.binaries)
+            if (key == platform) { prebuilt = path; break; }
+
+        if (!prebuilt.empty() && isFile(joinPath(dir, prebuilt))) {
+            // Move it to the package root under its own name, where `import`
+            // looks for it.
+            std::string data;
+            const std::string dest = joinPath(dir, baseName(prebuilt));
+            if (readFile(joinPath(dir, prebuilt), data) && writeFileMkdirs(dest, data, err)) {
+                info(o, "  using prebuilt " + name + " for " + platform);
+                continue;
+            }
+            std::cerr << "hive: could not install the prebuilt binary for " << name
+                      << " (" << err << "); building instead\n";
+        } else if (!prebuilt.empty()) {
+            std::cerr << "hive: " << name << " lists a prebuilt for " << platform
+                      << " but '" << prebuilt << "' is missing from the package\n";
+        }
+
+        if (m.build.empty()) {
+            if (!m.binaries.empty()) {
+                buildFailed.push_back(name);
+                std::string have;
+                for (auto& [key, path] : m.binaries) have += (have.empty() ? "" : ", ") + key;
+                std::cerr << "hive: " << name << " ships no binary for " << platform
+                          << " and declares no \"build\" command\n"
+                          << "      it has: " << have << "\n";
+            }
+            continue;
+        }
+        if (!o.build) {
+            info(o, "  skipping build for " + name + " (--no-build)");
+            continue;
+        }
+
+        if (!o.quiet) std::cout << "  building " << name << " (" << m.build << ")\n";
+        std::string output;
+        if (runInDir(dir, m.build, output) != 0) {
+            buildFailed.push_back(name);
+            std::cerr << "hive: build failed for " << name << "\n";
+            std::istringstream lines(output);
+            std::string line;
+            while (std::getline(lines, line)) std::cerr << "       " << line << "\n";
+        }
     }
 
     // ---- record what we did ---------------------------------------------
@@ -604,6 +670,20 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
         for (auto& s : unchanged) std::cout << "  = " << s << " (up to date)\n";
         std::cout << "installed " << installed.size() << " package"
                   << (installed.size() == 1 ? "" : "s") << " into " << root << "\n";
+    }
+    // The files are left in place: a build usually fails for a fixable reason
+    // (a missing compiler or -dev package), and re-running the command by hand
+    // in the package directory is then the whole fix.
+    if (!buildFailed.empty()) {
+        std::string names;
+        for (size_t i = 0; i < buildFailed.size(); ++i)
+            names += (i ? ", " : "") + buildFailed[i];
+        std::cerr << "hive: " << buildFailed.size() << " package"
+                  << (buildFailed.size() == 1 ? "" : "s") << " installed but failed to build: "
+                  << names << "\n"
+                  << "      the files are in place -- fix the cause and re-run the build in "
+                  << joinPath(root, buildFailed[0]) << "\n";
+        return 1;
     }
     return 0;
 }
@@ -794,7 +874,7 @@ static bool matchesPrefix(const std::string& rel, const std::string& pattern) {
 }
 
 int cmdPack(const std::vector<std::string>& args, const Options& o) {
-    if (args.size() > 1) return fail("usage: hive pack [directory] [-o out.hive]");
+    if (args.size() > 1) return fail("usage: hive pack [directory] [-o out.pkg]");
     const std::string dir = args.empty() ? currentDir() : args[0];
 
     std::string body;
@@ -815,7 +895,7 @@ int cmdPack(const std::vector<std::string>& args, const Options& o) {
         if (base == ".git" || base == ".hg" || base == ".svn") return true;
         if (base == kModulesName || base == ".hive") return true;
         if (base == ".DS_Store" || base == "Thumbs.db") return true;
-        if (rel.size() > 5 && rel.compare(rel.size() - 5, 5, ".hive") == 0) return true;
+        if (rel.size() > 4 && rel.compare(rel.size() - 4, 4, ".pkg") == 0) return true;
         if (rel.size() > 9 && rel.compare(rel.size() - 9, 9, ".hive-tmp") == 0) return true;
         for (auto& ex : m.exclude)
             if (matchesPrefix(rel, ex)) return true;
@@ -851,7 +931,7 @@ int cmdPack(const std::vector<std::string>& args, const Options& o) {
                     " (set \"main\" in " + std::string(kManifestName) + ", or add the file)");
 
     const std::string out = o.outFile.empty()
-        ? joinPath(dir, m.name + "-" + m.version + ".hive")
+        ? joinPath(dir, m.name + "-" + m.version + ".pkg")
         : o.outFile;
     if (!writeArchive(out, manifestJson, entries, err)) return fail(err);
 

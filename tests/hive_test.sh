@@ -19,6 +19,7 @@ HIVE="$ROOT/hive"
 [ -x "$HIVE" ] || { echo "tests: $HIVE not built -- run 'make' first" >&2; exit 1; }
 
 WORK="$(mktemp -d)"
+export WORK
 trap 'rm -rf "$WORK"' EXIT
 export HIVE_HOME="$WORK/hivehome"
 REG="$WORK/registry"
@@ -69,7 +70,7 @@ make_pkg() {  # make_pkg <name> <version> <deps-json> <body>
 }
 EOF
     printf '%s\n' "$body" > "$dir/init.bee"
-    "$HIVE" pack "$dir" -q -o "$REG/files/$name-$version.hive" >/dev/null || return 1
+    "$HIVE" pack "$dir" -q -o "$REG/files/$name-$version.pkg" >/dev/null || return 1
 }
 
 publish() {  # publish <name> <version...> -- writes registry metadata
@@ -77,12 +78,12 @@ publish() {  # publish <name> <version...> -- writes registry metadata
     local entries=""
     for v in "$@"; do
         local sha
-        sha="$(sha256sum "$REG/files/$name-$v.hive" | cut -d' ' -f1)"
+        sha="$(sha256sum "$REG/files/$name-$v.pkg" | cut -d' ' -f1)"
         local deps
         deps="$(sed -n 's/.*"dependencies": \(.*\)/\1/p' "$WORK/src/$name-$v/hive.json")"
         [ -z "$deps" ] && deps="{}"
         [ -n "$entries" ] && entries="$entries,"
-        entries="$entries\"$v\":{\"url\":\"files/$name-$v.hive\",\"sha256\":\"$sha\",\"dependencies\":$deps}"
+        entries="$entries\"$v\":{\"url\":\"files/$name-$v.pkg\",\"sha256\":\"$sha\",\"dependencies\":$deps}"
     done
     cat > "$REG/packages/$name.json" <<EOF
 {"name":"$name","description":"test package $name","versions":{$entries}}
@@ -107,7 +108,7 @@ EOF
 R=(--registry "$REG")
 
 echo "hive: archives and manifests"
-check "pack reports the package"        "packed logger@1.0.0" "$HIVE" pack "$WORK/src/logger-1.0.0" -o "$WORK/scratch.hive"
+check "pack reports the package"        "packed logger@1.0.0" "$HIVE" pack "$WORK/src/logger-1.0.0" -o "$WORK/scratch.pkg"
 check_fails "pack rejects a bad name"   "invalid package name" \
     bash -c "mkdir -p '$WORK/badname' && printf '{\"name\":\"Bad Name\",\"version\":\"1.0.0\"}' > '$WORK/badname/hive.json' && '$HIVE' pack '$WORK/badname'"
 check_fails "pack needs an entry module" "entry module 'init.bee' is missing" \
@@ -151,12 +152,12 @@ rm -f "$APP/logger.bee" "$APP/s.bee"
 check_fails "missing modules hint at hive" "hive install nosuchmodule" \
     bash -c "printf 'import nosuchmodule\n' > '$APP/m.bee' && '$BEE' '$APP/m.bee'"
 
-echo "hive: install from a .hive file"
+echo "hive: install from a .pkg file"
 FAPP="$WORK/fileapp"
 mkdir -p "$FAPP"
 "$HIVE" init "$FAPP" -q
 check "installs a local archive"         "+ greet@1.2.0" \
-    bash -c "cd '$FAPP' && '$HIVE' install '$REG/files/greet-1.2.0.hive' ${R[*]}"
+    bash -c "cd '$FAPP' && '$HIVE' install '$REG/files/greet-1.2.0.pkg' ${R[*]}"
 [ -f "$FAPP/hive_modules/logger/init.bee" ] && ok "resolves a file package's deps" || bad "resolves a file package's deps"
 
 echo "hive: constraints and conflicts"
@@ -170,40 +171,96 @@ check_fails "rejects an unknown package" "cannot find 'nosuch' in the registry" 
     bash -c "cd '$APP' && '$HIVE' install nosuch ${R[*]}"
 
 echo "hive: integrity"
-cp "$REG/files/logger-1.0.0.hive" "$WORK/trailing.hive"
-printf 'X' >> "$WORK/trailing.hive"
-check_fails "rejects trailing bytes"     "unexpected trailing bytes" \
-    bash -c "cd '$APP' && '$HIVE' install '$WORK/trailing.hive' ${R[*]}"
 
-python3 - "$REG/files/logger-1.0.0.hive" "$WORK/flipped.hive" <<'PY'
-import sys
-data = open(sys.argv[1], 'rb').read()
-i = data.rfind(b'[1.0.0]')
-open(sys.argv[2], 'wb').write(data[:i] + b'[9.9.9]' + data[i+7:])
-PY
+# A .pkg is compressed and whitened, so these tests build one from scratch
+# rather than patching bytes in a text file. An all-literal LZSS stream (a zero
+# flag byte before every eight literals) is valid input to the reader, which is
+# enough to forge a structurally correct package and check that the integrity
+# layer above it still says no.
+cat > "$WORK/mkpkg.py" <<'MKPKG'
+import json, struct
+
+def lzss_literals(data):
+    out = bytearray()
+    for i in range(0, len(data), 8):
+        out.append(0)                 # eight literals, no matches
+        out += data[i:i + 8]
+    return bytes(out)
+
+def whiten(data, seed):
+    seed &= 0xffffffff
+    x = seed if seed else 0x9e3779b9
+    out = bytearray()
+    for b in data:
+        x ^= (x << 13) & 0xffffffff
+        x ^= x >> 17
+        x ^= (x << 5) & 0xffffffff
+        out.append(b ^ ((x >> 24) & 0xff))
+    return bytes(out)
+
+def build(path, header, blobs):
+    head = json.dumps(header, separators=(',', ':')).encode()
+    payload = b"%d\n" % len(head) + head + b"\n" + b"".join(blobs)
+    packed = whiten(lzss_literals(payload), len(payload) * 2654435761)
+    with open(path, "wb") as f:
+        f.write(b"BEEPKG1\n")
+        f.write(struct.pack("<II", len(payload), len(packed)))
+        f.write(packed)
+MKPKG
+
+# --- a package whose recorded hash does not match its bytes ---------------
+python3 -c "
+import hashlib, sys, os
+sys.path.insert(0, os.environ['WORK'])
+from mkpkg import build
+data = b'print(\"logger 9.9.9\")\n'
+build(os.environ['WORK'] + '/flipped.pkg', {
+    'format': 1,
+    'manifest': {'name': 'logger', 'version': '1.0.0', 'main': 'init.bee'},
+    'files': [{'path': 'init.bee', 'size': len(data),
+               'sha256': hashlib.sha256(b'something else').hexdigest()}],
+}, [data])
+"
 check_fails "rejects a modified file"    "checksum mismatch" \
-    bash -c "cd '$APP' && '$HIVE' install '$WORK/flipped.hive' ${R[*]}"
+    bash -c "cd '$APP' && '$HIVE' install '$WORK/flipped.pkg' ${R[*]}"
 
-# A crafted archive must not be able to write outside its package directory.
-python3 - "$WORK/traversal.hive" <<'PY'
-import hashlib, json, sys
-data = b'print("escaped")\n'
-header = json.dumps({
-    "format": 1,
-    "manifest": {"name": "evil", "version": "1.0.0", "main": "init.bee"},
-    "files": [{"path": "../../escaped.bee", "size": len(data),
-               "sha256": hashlib.sha256(data).hexdigest()}],
-}, separators=(',', ':')).encode()
-open(sys.argv[1], 'wb').write(b"HIVE1\n%d\n" % len(header) + header + b"\n" + data)
-PY
+# --- trailing bytes ------------------------------------------------------
+cp "$REG/files/logger-1.0.0.pkg" "$WORK/trailing.pkg"
+printf 'X' >> "$WORK/trailing.pkg"
+check_fails "rejects trailing bytes"     "truncated or padded" \
+    bash -c "cd '$APP' && '$HIVE' install '$WORK/trailing.pkg' ${R[*]}"
+
+# --- truncation ----------------------------------------------------------
+head -c 200 "$REG/files/logger-1.0.0.pkg" > "$WORK/short.pkg"
+check_fails "rejects a truncated package" "truncated" \
+    bash -c "cd '$APP' && '$HIVE' install '$WORK/short.pkg' ${R[*]}"
+
+# --- an old .hive archive is named, not just rejected --------------------
+printf 'HIVE1\n7\n{"a":1}\n' > "$WORK/old.hive"
+check_fails "names an old .hive archive" "old .hive archive" \
+    bash -c "cd '$APP' && '$HIVE' install '$WORK/old.hive' ${R[*]}"
+
+# --- a crafted package must not write outside its directory --------------
+python3 -c "
+import hashlib, sys, os
+sys.path.insert(0, os.environ['WORK'])
+from mkpkg import build
+data = b'print(\"escaped\")\n'
+build(os.environ['WORK'] + '/traversal.pkg', {
+    'format': 1,
+    'manifest': {'name': 'evil', 'version': '1.0.0', 'main': 'init.bee'},
+    'files': [{'path': '../../escaped.bee', 'size': len(data),
+               'sha256': hashlib.sha256(data).hexdigest()}],
+}, [data])
+"
 check_fails "rejects paths escaping the package" "unsafe path" \
-    bash -c "cd '$APP' && '$HIVE' install '$WORK/traversal.hive' ${R[*]}"
+    bash -c "cd '$APP' && '$HIVE' install '$WORK/traversal.pkg' ${R[*]}"
 [ -f "$WORK/escaped.bee" ] && bad "traversal wrote outside the package" || ok "traversal wrote nothing"
 
 # A registry that lies about a hash must not get its bytes installed.
 mkdir -p "$WORK/badreg/packages"
 cp -r "$REG/files" "$WORK/badreg/files"
-printf '{"name":"logger","versions":{"1.0.0":{"url":"files/logger-1.0.0.hive","sha256":"%064d","dependencies":{}}}}' 0 \
+printf '{"name":"logger","versions":{"1.0.0":{"url":"files/logger-1.0.0.pkg","sha256":"%064d","dependencies":{}}}}' 0 \
     > "$WORK/badreg/packages/logger.json"
 check_fails "verifies downloads against the registry hash" "checksum mismatch" \
     bash -c "mkdir -p '$WORK/badapp' && '$HIVE' init '$WORK/badapp' -q && cd '$WORK/badapp' && '$HIVE' install logger --registry '$WORK/badreg'"
@@ -211,12 +268,12 @@ check_fails "verifies downloads against the registry hash" "checksum mismatch" \
 # Installing a package inside its own source tree is a mistyped directory, not a
 # request: it would create logger/hive_modules/logger.
 check_fails "refuses to install a package into itself" "is this package" \
-    bash -c "cd '$WORK/src/logger-1.0.0' && '$HIVE' install '$REG/files/logger-1.0.0.hive' ${R[*]}"
+    bash -c "cd '$WORK/src/logger-1.0.0' && '$HIVE' install '$REG/files/logger-1.0.0.pkg' ${R[*]}"
 [ -d "$WORK/src/logger-1.0.0/hive_modules" ] \
     && bad "no hive_modules inside the package itself" \
     || ok "no hive_modules inside the package itself"
 check "--force allows it anyway" "+ logger@1.0.0" \
-    bash -c "cd '$WORK/src/logger-1.0.0' && '$HIVE' install '$REG/files/logger-1.0.0.hive' --force ${R[*]}"
+    bash -c "cd '$WORK/src/logger-1.0.0' && '$HIVE' install '$REG/files/logger-1.0.0.pkg' --force ${R[*]}"
 # Check the dependencies object specifically: the manifest's own "name" field
 # also contains the package name.
 if python3 -c "
