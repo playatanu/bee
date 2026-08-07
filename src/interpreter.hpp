@@ -66,6 +66,12 @@ struct CallFrame {
     int callLine = 0;
 };
 
+// Row-major offset for a multi-dimensional buffer index, and the short form a
+// buffer prints as. Defined in builtins_buffer.cpp.
+size_t bufferOffset(const Buffer& b, const std::vector<Value>& indices, size_t first,
+                    const std::string& who);
+std::string bufferSummary(const Buffer& b);
+
 // A running (or finished) Bee thread spawned via spawn().
 struct ThreadRec {
     std::thread th;
@@ -160,9 +166,16 @@ private:
     void defineBuiltins();
     void defineSystemBuiltins();  // file I/O, time, random, env, processes, threads
     void defineExtraBuiltins();   // higher-order collection ops, math, JSON
+    void defineBufferBuiltins();  // contiguous typed arrays
     std::vector<std::string> scriptArgs;
     std::shared_ptr<Module> loadModule(const std::string& moduleName, int line);
+    // A shared library exporting bee_module_init(); see bee_native.hpp.
+    std::shared_ptr<Module> loadNativeModule(const std::string& moduleName,
+                                             const std::string& path, int line);
     std::string resolveModulePath(const std::string& moduleName);
+    // Loaded native libraries, kept open for the process's lifetime: values the
+    // module created hold lambdas whose code lives inside it.
+    std::vector<void*> nativeLibraries;
 
     // Program execution
     void execProgram(const Program& program, std::shared_ptr<Environment> env);

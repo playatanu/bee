@@ -9,12 +9,16 @@
 #
 set -euo pipefail
 
-VERSION="${VERSION:-0.2.0}"
+VERSION="${VERSION:-0.3.0}"
 ARCH="$(dpkg --print-architecture)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKG="bee"
-STAGE="$ROOT/dist/${PKG}_${VERSION}_${ARCH}"
-DEB="$ROOT/dist/${PKG}_${VERSION}_${ARCH}.deb"
+STAGE="$ROOT/dist/${PKG}-${VERSION}-${ARCH}"
+# Hyphens, not Debian's usual name_version_arch.deb, to match the naming of the
+# Windows installer. dpkg reads the package name, version and architecture from
+# DEBIAN/control, not the filename, so `apt install ./bee-0.3.0-amd64.deb`
+# installs exactly the same package either way.
+DEB="$ROOT/dist/${PKG}-${VERSION}-${ARCH}.deb"
 
 echo "[deb] building JIT-enabled binary (LLVM)..."
 mkdir -p "$ROOT/dist"
@@ -34,6 +38,10 @@ strip "$ROOT/dist/bee"
 # hive (the package manager) links no LLVM -- it just rides along.
 cp "$ROOT/hive" "$ROOT/dist/hive"
 strip "$ROOT/dist/hive"
+# beegen (the binding generator) finds libclang at run time, so it adds no
+# package dependency: without libclang installed it simply says so.
+cp "$ROOT/beegen" "$ROOT/dist/beegen"
+strip "$ROOT/dist/beegen"
 
 # Auto-detect the runtime packages the binary links against, so Depends is right
 # on whatever LLVM version this machine has (e.g. libllvm18).
@@ -49,10 +57,15 @@ echo "[deb] staging file tree at $STAGE ..."
 rm -rf "$STAGE"
 install -Dm0755 "$ROOT/dist/bee"                 "$STAGE/usr/bin/bee"
 install -Dm0755 "$ROOT/dist/hive"                "$STAGE/usr/bin/hive"
+install -Dm0755 "$ROOT/dist/beegen"              "$STAGE/usr/bin/beegen"
 for f in "$ROOT"/examples/*.bee; do
     install -Dm0644 "$f" "$STAGE/usr/share/bee/examples/$(basename "$f")"
 done
 install -Dm0644 "$ROOT/README.md"                "$STAGE/usr/share/doc/bee/README.md"
+# Native modules are compiled against these headers (see docs/BINDINGS.md).
+for h in "$ROOT"/src/*.hpp; do
+    install -Dm0644 "$h" "$STAGE/usr/include/bee/$(basename "$h")"
+done
 
 # copyright (Debian expects one)
 cat > "$STAGE/usr/share/doc/bee/copyright" <<'EOF'
@@ -73,7 +86,7 @@ Architecture: $ARCH
 Maintainer: Atanu Debnath <playatanu@gmail.com>
 Section: devel
 Priority: optional
-Homepage: https://github.com/playatanu/beelang
+Homepage: https://github.com/beelang-project/bee
 Depends: $DEPS
 Installed-Size: $INSTALLED_KB
 Description: BeeLang - a small dynamically-typed scripting language
@@ -87,6 +100,9 @@ Description: BeeLang - a small dynamically-typed scripting language
  The package also installs "hive", the BeeLang package manager:
  hive install <package> fetches a package into ./hive_modules so that
  "import <package>" finds it.
+ .
+ And "beegen", which generates BeeLang bindings from C++ headers. It needs a
+ libclang shared library at run time (install libclang-dev to use it).
 EOF
 
 echo "[deb] building package ..."

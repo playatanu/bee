@@ -2,6 +2,7 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "resolver.hpp"
+#include "bee_native.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -12,7 +13,10 @@
 #include <cstdlib>
 #include <filesystem>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
 #include <sys/resource.h>
 #endif
 
@@ -60,6 +64,25 @@ static bool readFileContents(const std::string& path, std::string& out) {
     ss << f.rdbuf();
     out = ss.str();
     return true;
+}
+
+// The extension a native module uses on this platform. Native modules are
+// looked up like any other module, so `import sqlite` finds sqlite.so next to
+// the script or inside an installed package.
+static const char* nativeExtension() {
+#ifdef _WIN32
+    return ".dll";
+#elif defined(__APPLE__)
+    return ".dylib";
+#else
+    return ".so";
+#endif
+}
+
+static bool isNativePath(const std::string& path) {
+    const std::string ext = nativeExtension();
+    return path.size() > ext.size() &&
+           path.compare(path.size() - ext.size(), ext.size(), ext) == 0;
 }
 
 // ---- Installed packages (see the `hive` package manager) -------------------
@@ -141,6 +164,7 @@ static std::string packageEntryPath(const std::string& pkgDir, const std::string
     candidates.push_back("init.be");
     candidates.push_back(lastName + ".bee");
     candidates.push_back(lastName + ".be");
+    candidates.push_back(std::string(lastName) + nativeExtension());
     candidates.push_back("main.bee");
 
     for (auto& c : candidates) {
@@ -200,6 +224,7 @@ Interpreter::Interpreter() {
     defineBuiltins();
     defineSystemBuiltins();
     defineExtraBuiltins();
+    defineBufferBuiltins();
 }
 
 void Interpreter::joinAllThreads() {
@@ -338,6 +363,7 @@ std::string Interpreter::stringify(const Value& v) {
         return "<fn " + n + ">";
     }
     if (v.isBuiltin()) return "<builtin " + v.asBuiltin()->name + ">";
+    if (v.isBuffer()) return bufferSummary(*v.asBuffer());
     if (v.isClass())   return "<class " + v.asClass()->name + ">";
     if (v.isInstance()) {
         auto inst = v.asInstance();
@@ -398,6 +424,11 @@ bool Interpreter::valuesEqual(const Value& a, const Value& b) {
             if (it == y->end() || !valuesEqual(kv.second, it->second)) return false;
         }
         return true;
+    }
+    if (a.isBuffer() && b.isBuffer()) {
+        auto x = a.asBuffer(), y = b.asBuffer();
+        if (x == y) return true;
+        return x->dtype == y->dtype && x->shape == y->shape && x->bytes == y->bytes;
     }
     if (a.isInstance() && b.isInstance()) return a.asInstance() == b.asInstance();
     if (a.isClass() && b.isClass())       return a.asClass() == b.asClass();
@@ -989,6 +1020,8 @@ std::string Interpreter::resolveModulePath(const std::string& moduleName) {
         const std::string base = root + "/" + moduleName;
         if (isRegularFile(base + ".bee")) return base + ".bee";
         if (isRegularFile(base + ".be")) return base + ".be";
+        // A native module (see bee_native.hpp) imports like any other.
+        if (isRegularFile(base + nativeExtension())) return base + nativeExtension();
         if (isRegularFile(base)) return base;
         // A directory is an installed package: import its entry module.
         if (isDirectory(base)) {
@@ -997,6 +1030,62 @@ std::string Interpreter::resolveModulePath(const std::string& moduleName) {
         }
     }
     return "";
+}
+
+std::shared_ptr<Module> Interpreter::loadNativeModule(const std::string& moduleName,
+                                                      const std::string& path, int line) {
+    // dlopen wants a path it recognises as a path, not a bare name it would
+    // search the system library directories for.
+    std::string target = path;
+    if (target.find('/') == std::string::npos && target.find('\\') == std::string::npos)
+        target = "./" + target;
+
+#ifdef _WIN32
+    HMODULE lib = LoadLibraryA(target.c_str());
+    if (!lib)
+        error("cannot load native module '" + moduleName + "' (" + target + "): error " +
+              std::to_string((long)GetLastError()), line);
+    auto symbol = [&](const char* name) -> void* {
+        return (void*)GetProcAddress(lib, name);
+    };
+#else
+    void* lib = dlopen(target.c_str(), RTLD_NOW | RTLD_LOCAL);
+    if (!lib)
+        error("cannot load native module '" + moduleName + "': " + std::string(dlerror()), line);
+    auto symbol = [&](const char* name) -> void* { return dlsym(lib, name); };
+#endif
+
+    auto abi = (const char* (*)())symbol("bee_native_abi");
+    auto init = (int (*)(NativeModule*))symbol("bee_module_init");
+    if (!abi || !init)
+        error("'" + path + "' is not a bee native module (it exports no bee_module_init)", line);
+
+    const char* moduleAbi = abi();
+    if (!moduleAbi || std::string(moduleAbi) != BEE_NATIVE_ABI)
+        error("native module '" + moduleName + "' was built for ABI '" +
+              std::string(moduleAbi ? moduleAbi : "?") + "', this bee expects '" +
+              BEE_NATIVE_ABI + "' -- rebuild it", line);
+
+    nativeLibraries.push_back((void*)lib);
+
+    auto modEnv = std::make_shared<Environment>(globals);
+    auto mod = std::make_shared<Module>();
+    mod->name = moduleName;
+    mod->path = path;
+    mod->env = modEnv;
+    moduleCache[path] = mod;   // cache before init, matching .bee module loading
+
+    NativeModule handle(*this, modEnv);
+    int rc = 0;
+    try {
+        rc = init(&handle);
+    } catch (const std::exception& e) {
+        error("native module '" + moduleName + "' failed to initialise: " + e.what(), line);
+    }
+    if (rc != 0)
+        error("native module '" + moduleName + "' failed to initialise (code " +
+              std::to_string(rc) + ")", line);
+    return mod;
 }
 
 std::shared_ptr<Module> Interpreter::loadModule(const std::string& moduleName, int line) {
@@ -1011,6 +1100,8 @@ std::shared_ptr<Module> Interpreter::loadModule(const std::string& moduleName, i
 
     auto cached = moduleCache.find(path);
     if (cached != moduleCache.end()) return cached->second;
+
+    if (isNativePath(path)) return loadNativeModule(moduleName, path, line);
 
     std::string src;
     if (!readFileContents(path, src))
@@ -1227,6 +1318,19 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
                     newVal = applyBinaryArith(e->op, cur, rhs, e->line);
                 }
                 (*d)[key] = newVal;
+                return newVal;
+            } else if (obj.isBuffer()) {
+                auto buf = obj.asBuffer();
+                if (!idx.isNumber()) error("buffer index must be a number", e->line);
+                long long i = (long long)idx.asNumber();
+                if (i < 0) i += (long long)buf->count();
+                if (i < 0 || (size_t)i >= buf->count())
+                    error("buffer index out of range (" + std::to_string(buf->count()) +
+                          " element(s))", e->line);
+                Value newVal = (e->op == TokenType::ASSIGN)
+                    ? rhs : applyBinaryArith(e->op, Value(buf->get((size_t)i)), rhs, e->line);
+                if (!newVal.isNumber()) error("a buffer holds numbers only", e->line);
+                buf->set((size_t)i, newVal.asNumber());
                 return newVal;
             }
             error("cannot assign by index to this type", e->line);
@@ -1498,6 +1602,18 @@ Value Interpreter::evalIndex(IndexExpr* e, std::shared_ptr<Environment>& env) {
             error("string index out of range", e->line);
         return Value(std::string(1, s[(size_t)i]));
     }
+    if (obj.isBuffer()) {
+        // Flat indexing, so b[0] works whatever the shape. Use at(b, i, j) for
+        // multi-dimensional access.
+        auto buf = obj.asBuffer();
+        if (!idx.isNumber()) error("buffer index must be a number", e->line);
+        long long i = (long long)idx.asNumber();
+        if (i < 0) i += (long long)buf->count();
+        if (i < 0 || (size_t)i >= buf->count())
+            error("buffer index out of range (" + std::to_string(buf->count()) + " element(s))",
+                  e->line);
+        return Value(buf->get((size_t)i));
+    }
     if (obj.isDict()) {
         auto d = obj.asDict();
         auto it = d->find(keyString(idx));
@@ -1524,8 +1640,25 @@ Value Interpreter::callValue(const Value& callee, std::vector<Value>& args, int 
             return b->fn(*this, args);
         } catch (TracedError&) {
             throw;
+        // Control flow and Bee-level throws travel through built-ins that call
+        // back into Bee code (map, sort, spawn); they must pass untouched.
+        } catch (BeeThrow&) {
+            throw;
+        } catch (ReturnSignal&) {
+            throw;
+        } catch (BreakSignal&) {
+            throw;
+        } catch (ContinueSignal&) {
+            throw;
         } catch (RuntimeError& e) {
             error(e.what(), line);
+        } catch (const std::exception& e) {
+            // A bound C++ library throwing its own exception type (cv::Exception,
+            // std::bad_alloc, Ort::Exception) would otherwise unwind past the
+            // interpreter and abort the process.
+            error(std::string("native error: ") + e.what(), line);
+        } catch (...) {
+            error("native code threw an exception that is not a std::exception", line);
         }
     }
     if (callee.isFunction())
@@ -1900,7 +2033,8 @@ void Interpreter::defineBuiltins() {
         if (v.isString()) return Value((double)v.asString().size());
         if (v.isList())   return Value((double)v.asList()->size());
         if (v.isDict())   return Value((double)v.asDict()->size());
-        throw RuntimeError("len: expected a string, list, or dict");
+        if (v.isBuffer()) return Value((double)v.asBuffer()->count());
+        throw RuntimeError("len: expected a string, list, dict, or buffer");
     });
 
     def("type", 1, [](Interpreter&, std::vector<Value>& a) -> Value {
@@ -1908,6 +2042,7 @@ void Interpreter::defineBuiltins() {
         if (v.isNil())     return Value(std::string("nil"));
         if (v.isBool())    return Value(std::string("bool"));
         if (v.isNumber())  return Value(std::string("number"));
+        if (v.isBuffer())  return Value(std::string("buffer"));
         if (v.isString())  return Value(std::string("string"));
         if (v.isList())    return Value(std::string("list"));
         if (v.isDict())    return Value(std::string("dict"));

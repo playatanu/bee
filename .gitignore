@@ -12,12 +12,22 @@ packaging/windows/bee.exe
 /hive.exe
 hive.exe
 packaging/windows/hive.exe
+/beegen
+/beegen.exe
+beegen.exe
+packaging/windows/beegen.exe
 
 # ---- Hive (package manager) --------------------------------------------
 # Installed packages, and archives built by `hive pack`, are never committed;
 # hive.json and hive.lock are.
 hive_modules/
 *.hive
+
+# ---- Native modules ------------------------------------------------------
+# Compiled bindings. The generated sources are yours to commit; the .so is not.
+*_native.so
+*_native.dll
+*_native.dylib
 
 # ---- Packaged output ----------------------------------------------------
 # Release artifacts produced by packaging/build-deb.sh and the Inno installer.

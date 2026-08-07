@@ -1,13 +1,13 @@
 ; Inno Setup script for the Bee language Windows installer.
 ; Compile this with Inno Setup (https://jrsoftware.org/isdl.php) to produce
-; a friendly BeeSetup-<version>.exe wizard that non-technical users just run.
+; a friendly bee-<version>-amd64.exe wizard that non-technical users just run.
 ;
 ;   1. Build the Windows binary first (see README-build.md) so that
 ;        packaging\windows\bee.exe   and   packaging\windows\hive.exe
 ;      exist next to this script.
 ;   2. Open this file in the Inno Setup Compiler and press F9 (Compile),
 ;      or from a terminal:   iscc bee-setup.iss
-;   3. The installer appears in   dist\BeeSetup-<version>.exe
+;   3. The installer appears in   dist\bee-<version>-amd64.exe
 ;
 ; What the installer does:
 ;   - installs bee.exe and hive.exe (the package manager) to
@@ -20,7 +20,7 @@
 #define MyAppName        "BeeLang"
 ; Version can be overridden from the command line: iscc /DMyAppVersion=1.2.3 ...
 #ifndef MyAppVersion
-  #define MyAppVersion   "0.2.0"
+  #define MyAppVersion   "0.3.0"
 #endif
 #define MyAppPublisher   "Atanu Debnath"
 #define MyAppExeName     "bee.exe"
@@ -30,14 +30,14 @@ AppId={{5E5C1B7A-6C2E-4E7C-9E4E-B0EE1A9C0001}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL=https://github.com/playatanu/beelang
-AppSupportURL=https://github.com/playatanu/beelang/issues
-AppUpdatesURL=https://github.com/playatanu/beelang/releases
+AppPublisherURL=https://github.com/beelang-project/bee
+AppSupportURL=https://github.com/beelang-project/bee/issues
+AppUpdatesURL=https://github.com/beelang-project/bee/releases
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\..\dist
-OutputBaseFilename=BeeSetup-{#MyAppVersion}
+OutputBaseFilename=bee-{#MyAppVersion}-amd64
 SetupIconFile=bee.ico
 UninstallDisplayIcon={app}\bee.ico
 Compression=lzma2
@@ -54,6 +54,7 @@ Name: "assoc";     Description: "Associate .be and .bee files with Bee (double-c
 [Files]
 Source: "bee.exe";          DestDir: "{app}\bin";      Flags: ignoreversion
 Source: "hive.exe";         DestDir: "{app}\bin";      Flags: ignoreversion
+Source: "beegen.exe";       DestDir: "{app}\bin";      Flags: ignoreversion
 Source: "bee.ico";          DestDir: "{app}";          Flags: ignoreversion
 Source: "..\..\examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\..\README.md";  DestDir: "{app}";          Flags: ignoreversion

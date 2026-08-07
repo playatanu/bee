@@ -1,6 +1,6 @@
-# Building the Windows installer (`BeeSetup.exe`)
+# Building the Windows installer (`bee-<version>-amd64.exe`)
 
-This produces a single double-click `BeeSetup-0.2.0.exe` that installs Bee for
+This produces a single double-click `bee-0.3.0-amd64.exe` that installs Bee for
 non-technical users (`bee` and `hive` on the PATH, `.be`/`.bee` file association
 with the bee icon, uninstaller in *Add or remove programs*).
 
@@ -24,17 +24,24 @@ From the repository root, in PowerShell:
 ```powershell
 # 1. Compile the interpreter (interpreter only, no LLVM needed).
 #    jit_llvm.cpp is #ifdef-guarded, so it compiles to nothing here.
-g++ -std=c++17 -O2 -pthread -DBEE_VERSION='\"0.2.0\"' (Get-ChildItem src\*.cpp).FullName -o packaging\windows\bee.exe -pthread
+g++ -std=c++17 -O2 -pthread -DBEE_VERSION='\"0.3.0\"' (Get-ChildItem src\*.cpp).FullName -o packaging\windows\bee.exe -pthread
 
 # 2. Compile the package manager (no LLVM either).
-g++ -std=c++17 -O2 -pthread -DHIVE_VERSION='\"0.2.0\"' (Get-ChildItem src\hive\*.cpp).FullName -o packaging\windows\hive.exe -pthread
+g++ -std=c++17 -O2 -pthread -DHIVE_VERSION='\"0.3.0\"' (Get-ChildItem src\hive\*.cpp).FullName -o packaging\windows\hive.exe -pthread
 
-# 3. Build the installer.
+# 3. Compile the binding generator. It loads libclang at run time, so there is
+#    nothing to link against here.
+g++ -std=c++17 -O2 -pthread -DBEEGEN_VERSION='\"0.3.0\"' (Get-ChildItem src\beegen\*.cpp).FullName -o packaging\windows\beegen.exe -pthread
+
+# 4. Build the installer.
 cd packaging\windows
 iscc bee-setup.iss
 ```
 
-The result is written to `dist\BeeSetup-0.2.0.exe`.
+All three `.exe` files must exist next to `bee-setup.iss` before step 4 — the
+installer ships `beegen.exe` too, and Inno Setup fails if it is missing.
+
+The result is written to `dist\bee-0.3.0-amd64.exe`.
 
 > If `iscc` isn't found, open `bee-setup.iss` in the **Inno Setup Compiler** GUI
 > and press **F9** (Compile) instead.
@@ -53,6 +60,7 @@ The result is written to `dist\BeeSetup-0.2.0.exe`.
 ## VS Code extension
 
 The installer does **not** bundle the VS Code extension (its install path is
-per-user and awkward under an elevated installer). Users who want editor
-support can copy the `editors/vscode-bee` folder into
-`%USERPROFILE%\.vscode\extensions\bee-lang-0.1.0`.
+per-user and awkward under an elevated installer). The extension ships from its
+own repository, [beelang-project/vscode-bee](https://github.com/beelang-project/vscode-bee);
+users who want editor support install the `.vsix` from its releases with
+`code --install-extension`.

@@ -4,6 +4,164 @@ All notable changes to **BeeLang** are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Nothing yet.
+
+## [0.3.0] — 2026-08-07
+
+The interoperability release. BeeLang can now call C and C++ libraries without
+rebuilding the interpreter: **native modules** import like any other module,
+**`beegen`** generates the binding for you from a header, and **buffers** give
+bulk data somewhere to live that isn't a million boxed `Value`s — and cross the
+native boundary without a copy. OpenCV 4.6 was bound and driven end to end to
+prove the set is sufficient for a real library, not just a toy one. 178 checks,
+up from 100.
+
+### Added
+
+- **Native modules.** A shared library can now be imported like any other
+  module, so calling a C or C++ library no longer means rebuilding the
+  interpreter:
+
+  ```cpp
+  extern "C" const char* bee_native_abi() { return BEE_NATIVE_ABI; }
+  extern "C" int bee_module_init(bee::NativeModule* m) {
+      m->def("add", 2, [](bee::Interpreter&, std::vector<bee::Value>& a) {
+          return bee::Value(bee::native::num(a[0], "add", 0) +
+                            bee::native::num(a[1], "add", 1));
+      });
+      return 0;
+  }
+  ```
+
+  `import demo` finds `demo.so` (`.dll`, `.dylib`) through the same lookup as a
+  `.bee` file, including inside an installed package — so a hive package can ship
+  a compiled module. [`src/bee_native.hpp`](src/bee_native.hpp) is the API, with
+  conversion helpers that report a bad argument as a normal BeeLang error, with a
+  stack trace.
+
+- **`beegen`, a binding generator.** It reads C++ headers with libclang and
+  writes a native module plus an idiomatic BeeLang wrapper:
+
+  ```bash
+  beegen shapes.hpp --module shapes && ./build.sh
+  ```
+
+  Free functions, classes (constructors, methods, public fields, statics) and
+  enums are mapped; C++ classes become BeeLang classes holding an opaque handle,
+  enums become dicts. Every declaration it can't map is **reported with a
+  reason** — templates, variadics, out-parameters, unbound types — because a
+  binding that silently omits half a library is worse than one that says so.
+  It also writes `hive.json`, so a binding installs like any other package. Full
+  documentation in [docs/BINDINGS.md](docs/BINDINGS.md).
+
+  libclang is loaded at run time through a hand-declared slice of its stable C
+  ABI, so building BeeLang needs no clang headers or libraries at all.
+
+- **Buffers: a contiguous typed array.** BeeLang's answer to an ndarray, and the
+  type bulk data travels in:
+
+  ```
+  let img = zeros([480, 640, 3], "u8")   # 900 KB contiguous, not 15 MB of Values
+  print(img)                             # buffer<u8>[480,640,3] [0, 0, ...]
+  ```
+
+  `f32`/`f64`/`i8`/`u8`/`i16`/`u16`/`i32`/`i64`, flat `[]` indexing plus `at` /
+  `set_at` per dimension, `zeros`/`ones`/`full`/`buffer_from`/`to_list`,
+  `shape`/`dtype`/`byte_len`, `reshape`/`astype`/`copy`/`fill`, and
+  `buf_add`/`sub`/`mul`/`div`/`sum`/`min`/`max`. Buffers compare by contents and
+  print with a preview rather than a million elements.
+
+- **Zero-copy buffers across the native boundary.** A shim declares a parameter
+  as `BeeBuffer` — a plain C struct in the new [`bee_buffer.h`](src/bee_buffer.h)
+  that needs no BeeLang header — and `beegen` hands the buffer's own memory over
+  by pointer. This is what makes binding an image or tensor library practical
+  rather than merely possible.
+
+- **Native code can call back into BeeLang.** `bee::native::callback()` wraps a
+  BeeLang function so a library's log or progress hook can invoke it, with
+  `GilLock` for callbacks arriving on the library's own threads and `GilOff` for
+  handing the lock back during a long call. The interpreter is now linked with
+  `-rdynamic` so a module can resolve `Interpreter::callValue`.
+
+- **Class hierarchies and factory-made interfaces.** A derived handle is accepted
+  where a base is expected, through a registered `static_cast` (so the pointer is
+  adjusted correctly even under multiple inheritance). Abstract classes get no
+  constructor and no `free()` — their instances come from a factory function and
+  are released by the API's own `destroy()`. This is the shape TensorRT and ONNX
+  Runtime expose, and it is now bindable directly.
+
+- **`std::vector<T>` maps to a list** in both directions, for numeric, bool and
+  string elements.
+
+- **Wrappers adopt factory handles.** `new Image(vision.imread("cat.png"))` works
+  as well as `new Image()`: a generated wrapper either constructs a new object or
+  takes over a handle a factory function returned. Library APIs of any size are
+  full of factories, so a wrapper that could only construct could not be used
+  with them at all.
+
+- **Verified against a real library.** OpenCV 4.6 was bound through a 40-line
+  shim and driven from BeeLang end to end -- pixels built in a buffer, handed to
+  OpenCV with no copy, resized, converted, blurred, Canny-detected, written as a
+  PNG, read back and pulled into a buffer again.
+
+- **C++ default arguments** become optional BeeLang arguments: `beegen` emits one
+  native entry point per callable arity and the wrapper dispatches on how many
+  arguments it was given, so the C++ compiler supplies the defaults and beegen
+  never has to parse them.
+
+- `tests/beegen_test.sh` — 53 checks covering generation, the skip report, the
+  wrapper's shape, compiling the generated module, calling it from BeeLang, the
+  boundary errors (wrong type, wrong arity, wrong handle, use-after-free), and
+  the capability set above against a header shaped like a real inference API.
+
+### Changed
+
+- The `.deb` and Windows installer also install `beegen`, and the `.deb` now
+  ships BeeLang's headers under `/usr/include/bee` so native modules can be
+  compiled against an installed interpreter.
+
+- **The VS Code extension moved to its own repository**,
+  [beelang-project/vscode-bee](https://github.com/beelang-project/vscode-bee),
+  with its history intact. It was `editors/vscode-bee/`, which tied its releases
+  to the interpreter's — the `vscode-beelang-v0.1.0` tag matched this repo's
+  `v*` release trigger and tried to build a `.deb` out of it. Editor tooling and
+  the language now version and ship independently. The release trigger here is
+  narrowed to `v[0-9]*` so only interpreter versions fire it.
+
+### Fixed
+
+- **A C++ parameter named like a BeeLang keyword** (`in`, `class`, `from` are all
+  ordinary C++ names) generated code that would not parse. Such names now get a
+  trailing underscore.
+- **A C++ library's own exception no longer aborts the process.** `cv::Exception`,
+  `Ort::Exception`, `std::bad_alloc` and friends thrown inside a native call are
+  converted to a BeeLang runtime error with a stack trace. Bee-level `throw` and
+  control flow still pass through built-ins that call back into Bee code.
+- `hive install` now refuses to install a package into its own source tree
+  (which produced `greet/hive_modules/greet`, helping nothing) and never records
+  a package as depending on itself. `--force` overrides the first if you really
+  mean it.
+
+### Known limitations
+
+- **`beegen` needs libclang at run time** — not to build BeeLang, but to read a
+  header. Without it (`apt install libclang-18-dev`, or `--libclang <path>`) it
+  says so and stops. Everything else, including running generated bindings,
+  works without it.
+- **Not every declaration can be bound.** Templates, variadics, out-parameters
+  and types beegen can't map are skipped — reported individually, with a reason,
+  rather than silently dropped. Hand-write a shim for those; the OpenCV binding
+  needed 40 lines of one.
+- Buffers are dense and contiguous only: no strides, no views, no broadcasting.
+  `reshape` and slicing a buffer copy.
+- The Windows installer still ships an interpreter-only build (no JIT), and now
+  no libclang either, so `beegen` on Windows needs one installed separately.
+- Carried from 0.2.0: no public registry is running, so `hive install <name>`
+  needs a `--registry`; `hive publish` doesn't exist; the REPL has no line
+  editing or history.
+
 ## [0.2.0] — 2026-08-06
 
 The sharing-and-diagnostics release. BeeLang gains **Hive**, a package manager,
@@ -244,7 +402,8 @@ a built-in native (LLVM) JIT. 🐝
 
 ### Editor support
 
-- **VS Code extension** ([`editors/vscode-bee/`](editors/vscode-bee/)) with
+- **VS Code extension** ([beelang-project/vscode-bee](https://github.com/beelang-project/vscode-bee),
+  then `editors/vscode-bee/` in this repo) with
   syntax highlighting, completions (keywords, built-ins, type methods, and file
   symbols), hovers, snippets, and a bee icon for `.be` / `.bee` files.
 
@@ -259,6 +418,7 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions — pass named functions (e.g. to `spawn`).
 
-[0.2.0]: https://github.com/playatanu/beelang/releases/tag/v0.2.0
-[0.1.1]: https://github.com/playatanu/beelang/releases/tag/v0.1.1
-[0.1.0]: https://github.com/playatanu/beelang/releases/tag/v0.1.0
+[0.3.0]: https://github.com/beelang-project/bee/releases/tag/v0.3.0
+[0.2.0]: https://github.com/beelang-project/bee/releases/tag/v0.2.0
+[0.1.1]: https://github.com/beelang-project/bee/releases/tag/v0.1.1
+[0.1.0]: https://github.com/beelang-project/bee/releases/tag/v0.1.0

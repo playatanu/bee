@@ -208,6 +208,26 @@ printf '{"name":"logger","versions":{"1.0.0":{"url":"files/logger-1.0.0.hive","s
 check_fails "verifies downloads against the registry hash" "checksum mismatch" \
     bash -c "mkdir -p '$WORK/badapp' && '$HIVE' init '$WORK/badapp' -q && cd '$WORK/badapp' && '$HIVE' install logger --registry '$WORK/badreg'"
 
+# Installing a package inside its own source tree is a mistyped directory, not a
+# request: it would create logger/hive_modules/logger.
+check_fails "refuses to install a package into itself" "is this package" \
+    bash -c "cd '$WORK/src/logger-1.0.0' && '$HIVE' install '$REG/files/logger-1.0.0.hive' ${R[*]}"
+[ -d "$WORK/src/logger-1.0.0/hive_modules" ] \
+    && bad "no hive_modules inside the package itself" \
+    || ok "no hive_modules inside the package itself"
+check "--force allows it anyway" "+ logger@1.0.0" \
+    bash -c "cd '$WORK/src/logger-1.0.0' && '$HIVE' install '$REG/files/logger-1.0.0.hive' --force ${R[*]}"
+# Check the dependencies object specifically: the manifest's own "name" field
+# also contains the package name.
+if python3 -c "
+import json, sys
+deps = json.load(open('$WORK/src/logger-1.0.0/hive.json')).get('dependencies', {})
+sys.exit(0 if 'logger' not in deps else 1)"; then
+    ok "self-dependency stays out of hive.json"
+else
+    bad "self-dependency stays out of hive.json"
+fi
+
 echo "hive: uninstall and global installs"
 check "uninstall removes a package"      "- greet@1.2.0" bash -c "cd '$APP' && '$HIVE' uninstall greet"
 [ -d "$APP/hive_modules/greet" ] && bad "uninstall deletes the directory" || ok "uninstall deletes the directory"

@@ -251,6 +251,82 @@ want "indexing still works" "2" <<'EOF'
 print([1, 2, 3][1])
 EOF
 
+echo "buffers: the typed array"
+want "creates a shaped buffer" "buffer<f32>[2,3]" <<'EOF'
+print(buffer([2, 3], "f32"))
+EOF
+want "defaults to f64" "buffer<f64>[4]" <<'EOF'
+print(zeros(4))
+EOF
+want "reports length, shape, dtype and bytes" "6 [2, 3] f32 24" <<'EOF'
+let b = buffer([2, 3], "f32")
+print(f"{len(b)} {shape(b)} {dtype(b)} {byte_len(b)}")
+EOF
+want "indexes flat, and assigns" "[1, 0, 9]" <<'EOF'
+let b = zeros(3)
+b[0] = 1
+b[-1] = 9
+print(to_list(b))
+EOF
+want "indexes multi-dimensionally" "7" <<'EOF'
+let b = zeros([2, 3])
+set_at(b, 7, 1, 2)
+print(at(b, 1, 2))
+EOF
+want "round-trips nested lists" "[[1, 2], [3, 4]]" <<'EOF'
+print(to_list(buffer_from([[1, 2], [3, 4]], "u8")))
+EOF
+want "stores u8 as bytes" "4" <<'EOF'
+print(byte_len(buffer_from([1, 2, 3, 4], "u8")))
+EOF
+want "truncates to the dtype" "[1, 2]" <<'EOF'
+print(to_list(buffer_from([1.7, 2.9], "i32")))
+EOF
+want "does arithmetic elementwise" "[10, 20, 30]" <<'EOF'
+print(to_list(buf_mul(buffer_from([1, 2, 3]), 10)))
+EOF
+want "adds two buffers" "[5, 7, 9]" <<'EOF'
+print(to_list(buf_add(buffer_from([1, 2, 3]), buffer_from([4, 5, 6]))))
+EOF
+want "reduces" "6 1 3" <<'EOF'
+let b = buffer_from([1, 2, 3])
+print(f"{buf_sum(b)} {buf_min(b)} {buf_max(b)}")
+EOF
+want "reshapes" "buffer<f64>[3,2]" <<'EOF'
+print(reshape(buffer_from([1, 2, 3, 4, 5, 6]), [3, 2]))
+EOF
+want "converts dtype" "f32" <<'EOF'
+print(dtype(astype(buffer_from([1, 2]), "f32")))
+EOF
+want "copies rather than aliases" "[1, 2] [9, 2]" <<'EOF'
+let a = buffer_from([1, 2])
+let b = copy(a)
+b[0] = 9
+print(f"{to_list(a)} {to_list(b)}")
+EOF
+want "compares by contents" "true false" <<'EOF'
+print(f"{buffer_from([1, 2]) == buffer_from([1, 2])} {buffer_from([1, 2]) == buffer_from([1, 3])}")
+EOF
+want "reports the type" "buffer" <<'EOF'
+print(type(zeros(1)))
+EOF
+want "rejects an out-of-range index" "buffer index out of range" <<'EOF'
+let b = zeros(2)
+print(b[5])
+EOF
+want "rejects an unknown dtype" "unknown dtype" <<'EOF'
+print(buffer([2], "float128"))
+EOF
+want "rejects a bad reshape" "cannot become shape" <<'EOF'
+print(reshape(zeros(5), [2, 3]))
+EOF
+want "rejects mismatched sizes" "same number of elements" <<'EOF'
+print(buf_add(zeros(2), zeros(3)))
+EOF
+want "previews long buffers" "more]" <<'EOF'
+print(zeros(100))
+EOF
+
 echo "entry points: -e, stdin, repl"
 out="$("$BEE" -e 'print(f"eval {1 + 1}")' 2>&1)"
 [[ "$out" == "eval 2" ]] && ok "-e runs code" || bad "-e runs code" "$out"

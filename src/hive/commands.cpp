@@ -489,6 +489,17 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
         return 0;
     }
 
+    // Installing a package into its own source tree produces
+    // greet/hive_modules/greet -- which shadows nothing, helps nothing, and is
+    // usually a mistyped directory.
+    if (!o.global && hasManifest && !o.force) {
+        const std::string selfName = manifestJson.str("name");
+        if (!selfName.empty() && res.chosen.count(selfName))
+            return fail("'" + selfName + "' is this package (" + joinPath(project, kManifestName) +
+                        ")\n       installing it into itself does nothing -- did you mean to run "
+                        "this somewhere else?\n       pass --force if you really want to");
+    }
+
     // ---- fetch and unpack ------------------------------------------------
     std::vector<std::string> installed, unchanged;
     for (auto& [name, vi] : res.chosen) {
@@ -551,8 +562,16 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
     if (o.save && !o.global && hasManifest && !args.empty()) {
         Json* deps = manifestJson.find("dependencies");
         if (!deps) deps = &manifestJson.set("dependencies", Json::object());
+        // Installing a package inside its own source tree must not record it as
+        // depending on itself -- easy to do by accident, and nonsense to resolve.
+        const std::string selfName = manifestJson.str("name");
         bool changed = false;
         for (auto& req : roots) {
+            if (!selfName.empty() && req.name == selfName) {
+                std::cerr << "hive: warning: not saving '" << req.name
+                          << "' as a dependency of itself\n";
+                continue;
+            }
             auto it = res.chosen.find(req.name);
             std::string constraint = saveConstraint(req, it == res.chosen.end() ? "" : it->second.version);
             const Json* have = deps->find(req.name);
@@ -561,6 +580,11 @@ int cmdInstall(const std::vector<std::string>& args, const Options& o) {
             changed = true;
         }
         for (auto& [name, vi] : fromFiles) {
+            if (!selfName.empty() && name == selfName) {
+                std::cerr << "hive: warning: not saving '" << name
+                          << "' as a dependency of itself\n";
+                continue;
+            }
             const Json* have = deps->find(name);
             std::string constraint = "^" + vi.version;
             if (have && have->isString()) continue;  // don't overwrite a real constraint
