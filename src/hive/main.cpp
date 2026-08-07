@@ -6,7 +6,7 @@
 #include <vector>
 
 #ifndef HIVE_VERSION
-#define HIVE_VERSION "0.2.0"
+#define HIVE_VERSION "0.3.0"
 #endif
 
 namespace {

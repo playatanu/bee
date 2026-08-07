@@ -1,9 +1,36 @@
 #include "clang.hpp"
 
 #include <cstdlib>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 namespace beegen {
+
+namespace {
+// libclang is loaded at run time, so beegen builds without clang headers or
+// import libraries on any platform. Only two calls differ between them.
+void* libOpen(const char* path) {
+#ifdef _WIN32
+    return reinterpret_cast<void*>(LoadLibraryA(path));
+#else
+    return dlopen(path, RTLD_LAZY | RTLD_LOCAL);
+#endif
+}
+
+void* libSym(void* lib, const char* name) {
+#ifdef _WIN32
+    // GetProcAddress returns FARPROC (a function pointer); every caller casts it
+    // straight back to the right signature, as dlsym's void* is used below.
+    return reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(lib), name));
+#else
+    return dlsym(lib, name);
+#endif
+}
+}  // namespace
 
 // ---------------------------------------------------------------------------
 // Loading
@@ -14,6 +41,13 @@ bool Clang::load(const std::string& explicitPath, std::string& err) {
     if (const char* env = std::getenv("LIBCLANG_PATH")) if (*env) candidates.push_back(env);
     // Plain sonames first (the dynamic loader knows where to look), then the
     // versioned directories distributions install alongside each LLVM release.
+#ifdef _WIN32
+    candidates.insert(candidates.end(), {
+        "libclang.dll", "clang.dll",
+        "C:\\Program Files\\LLVM\\bin\\libclang.dll",
+        "C:\\Program Files (x86)\\LLVM\\bin\\libclang.dll",
+    });
+#else
     candidates.insert(candidates.end(), {
         "libclang.so.1", "libclang.so", "libclang.dylib",
         "/usr/lib/llvm-19/lib/libclang.so.1", "/usr/lib/llvm-18/lib/libclang.so.1",
@@ -22,23 +56,29 @@ bool Clang::load(const std::string& explicitPath, std::string& err) {
         "/usr/local/lib/libclang.so", "/opt/homebrew/opt/llvm/lib/libclang.dylib",
         "/Library/Developer/CommandLineTools/usr/lib/libclang.dylib",
     });
+#endif
 
     for (auto& path : candidates) {
-        lib_ = dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL);
+        lib_ = libOpen(path.c_str());
         if (lib_) break;
     }
     if (!lib_) {
         err = "cannot find libclang. Tried: ";
         for (size_t i = 0; i < candidates.size(); ++i)
             err += (i ? ", " : "") + candidates[i];
+#ifdef _WIN32
+        err += "\n       Install LLVM (https://releases.llvm.org, or"
+               " winget install LLVM.LLVM) or set LIBCLANG_PATH to libclang.dll.";
+#else
         err += "\n       Install it (Debian/Ubuntu: sudo apt install libclang-dev)"
                " or set LIBCLANG_PATH to the library.";
+#endif
         return false;
     }
 
     std::string missing;
     auto sym = [&](const char* name) -> void* {
-        void* p = dlsym(lib_, name);
+        void* p = libSym(lib_, name);
         if (!p) missing += (missing.empty() ? "" : ", ") + std::string(name);
         return p;
     };
