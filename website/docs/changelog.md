@@ -1,3 +1,8 @@
+---
+description: >-
+  Release history and notable changes for the Bee language, Hive, and its tooling.
+---
+
 # Changelog
 
 All notable changes to **Bee** are documented here. The format is based on

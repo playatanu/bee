@@ -1,3 +1,8 @@
+---
+description: >-
+  Call C and C++ from Bee with native modules, and generate bindings automatically from a C++ header with beegen.
+---
+
 # Native modules and automatic bindings
 
 Bee can call C and C++ directly. There are two pieces:

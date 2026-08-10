@@ -1,3 +1,8 @@
+---
+description: >-
+  Download Bee for Windows or Linux, or build it from source. Free and open source.
+---
+
 # Download
 
 Bee is free and open source. Pick your platform below - each installer sets up

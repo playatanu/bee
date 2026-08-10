@@ -1,3 +1,8 @@
+---
+description: >-
+  The Bee VS Code extension: syntax highlighting, completions, hovers, and snippets for .be and .bee files.
+---
+
 # VS Code Extension
 
 Language support for Bee - **syntax highlighting, smart completions, hovers,

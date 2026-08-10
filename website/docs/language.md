@@ -1,3 +1,8 @@
+---
+description: >-
+  The complete Bee language reference: values, operators, control flow, functions, classes, modules, error handling, and the standard library.
+---
+
 # Bee Language Reference
 
 The complete language reference for **Bee**. New to the language? Start with

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+<!--
+  Extra <head> metadata: keywords + Open Graph / Twitter card tags so links to
+  the docs show a title, description and the bee logo when shared. The plain
+  <meta name="description"> and <title> are emitted by Material itself from
+  site_description / page `description` and `title` front matter.
+-->
+{#- Exact <title> control: a page's `title` front matter is used verbatim
+    (so the homepage is just "The Bee Scripting Language"); other pages read
+    "Page title - Bee". -#}
+{% block htmltitle %}
+  {%- if page.meta and page.meta.title -%}
+    <title>{{ page.meta.title }}</title>
+  {%- elif page.title and not page.is_homepage -%}
+    <title>{{ page.title | striptags }} - {{ config.site_name }}</title>
+  {%- else -%}
+    <title>{{ config.site_name }}</title>
+  {%- endif -%}
+{% endblock %}
+
+{% block extrahead %}
+  {%- set _title = page.meta.title if page.meta and page.meta.title
+        else (page.title ~ " - " ~ config.site_name if page.title and not page.is_homepage
+        else config.site_name) -%}
+  {%- set _desc = page.meta.description if page.meta and page.meta.description
+        else config.site_description -%}
+  {%- set _image = config.site_url ~ "assets/bee.png" -%}
+  <meta name="keywords" content="Bee, beelang, bee language, scripting language, programming language, LLVM JIT, hive package manager, VS Code">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:title" content="{{ _title }}">
+  <meta property="og:description" content="{{ _desc }}">
+  <meta property="og:image" content="{{ _image }}">
+  {% if page.canonical_url %}<meta property="og:url" content="{{ page.canonical_url }}">{% endif %}
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ _title }}">
+  <meta name="twitter:description" content="{{ _desc }}">
+  <meta name="twitter:image" content="{{ _image }}">
+{% endblock %}

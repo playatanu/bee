@@ -1,3 +1,8 @@
+---
+description: >-
+  How Bee performs and how its built-in LLVM JIT works - benchmarks, findings, and the optimisation plan.
+---
+
 # Bee Performance - findings and improvement plan
 
 A measured account of where Bee 0.3.1 spends its time, why it is slower than

@@ -1,3 +1,8 @@
+---
+description: >-
+  Install Bee and run your first program in three simple steps - no prior experience needed.
+---
+
 # Get started
 
 This page takes you from nothing installed to running your first Bee program.

@@ -1,8 +1,8 @@
 site_name: Bee
 site_description: >-
-  Bee - a friendly, dynamically-typed scripting language with a built-in
-  native (LLVM) JIT, a package manager (Hive), C++ bindings, and first-class
-  editor support.
+  The Bee scripting language: a small, friendly, dynamically-typed language
+  with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings,
+  and first-class VS Code support.
 site_author: Atanu Debnath
 site_url: https://beelang-project.github.io/bee/
 copyright: Copyright &copy; 2026 Atanu Debnath - released under the MIT License
@@ -13,6 +13,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: overrides
   logo: assets/bee.png
   favicon: assets/bee.png
   icon:

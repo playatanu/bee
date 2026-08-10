@@ -1,3 +1,8 @@
+---
+description: >-
+  Hive is Bee's package manager: install, publish, and manage packages with a lockfile and SHA-256 integrity checks.
+---
+
 # Hive - the Bee package manager
 
 Hive is to Bee what pip is to Python: one command that fetches a package,

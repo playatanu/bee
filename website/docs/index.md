@@ -1,4 +1,8 @@
 ---
+title: The Bee Scripting Language
+description: >-
+  Bee is a small, friendly scripting language that's easy to read and quick to
+  learn, with a built-in native (LLVM) JIT that keeps tight loops fast.
 hide:
   - navigation
   - toc
