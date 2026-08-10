@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-08-10
+
+### Fixed
+
+- **Windows release build.** The JIT backend DLL failed to link on MSYS2 with
+  `export ordinal too large`: MinGW auto-exports every global symbol, and with
+  LLVM folded in statically that far exceeds the 65535-entry PE export table.
+  The DLL now links with `--exclude-all-symbols` and exports only its one entry
+  point (`bee_jit_create`, via `__declspec(dllexport)`), which is all `bee.exe`
+  resolves. This is what kept the 0.3.2 release job red.
+
 ## [0.3.2] — 2026-08-10
 
 ### Language
@@ -752,6 +763,7 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions — pass named functions (e.g. to `spawn`).
 
+[0.3.3]: https://github.com/beelang-project/bee/releases/tag/v0.3.3
 [0.3.2]: https://github.com/beelang-project/bee/releases/tag/v0.3.2
 [0.3.1]: https://github.com/beelang-project/bee/releases/tag/v0.3.1
 [0.3.0]: https://github.com/beelang-project/bee/releases/tag/v0.3.0

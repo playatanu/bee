@@ -1,6 +1,6 @@
 # Building the Windows installer (`bee-<version>-amd64.exe`)
 
-This produces a single double-click `bee-0.3.2-amd64.exe` that installs Bee for
+This produces a single double-click `bee-0.3.3-amd64.exe` that installs Bee for
 non-technical users (`bee` and `hive` on the PATH, `.be`/`.bee` file association
 with the bee icon, uninstaller in *Add or remove programs*).
 
@@ -24,7 +24,7 @@ the release CI uses.)
 From the repository root, in the **MSYS2 UCRT64** shell:
 
 ```bash
-ver=0.3.2
+ver=0.3.3
 
 # 1. Compile the interpreter. It links no LLVM: src/*.cpp includes src/jit.cpp
 #    (the dlopen front end) and src/jit_llvm.cpp (guarded to nothing without
@@ -59,7 +59,7 @@ missing. (If you only want an interpreter-only build to test, skip step 2 and
 remove the `bee_jit.dll` line from `bee-setup.iss`; bee falls back to the
 interpreter when the backend is absent.)
 
-The result is written to `dist\bee-0.3.2-amd64.exe`.
+The result is written to `dist\bee-0.3.3-amd64.exe`.
 
 > If `iscc` isn't found, open `bee-setup.iss` in the **Inno Setup Compiler** GUI
 > and press **F9** (Compile) instead.

@@ -1,5 +1,5 @@
 # Build the `bee` interpreter, with an optional LLVM JIT backend.
-VERSION  ?= 0.3.2
+VERSION  ?= 0.3.3
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pthread
 CXXFLAGS += -DBEE_VERSION=\"$(VERSION)\"
@@ -52,6 +52,8 @@ PIC     := -fPIC
 # MSYS2/MinGW (uname reports MINGW64_NT.../MSYS_NT...): a DLL, no -fPIC, and LLVM
 # folded in statically so the backend is self-contained.
 LLVM_LINK :=
+# Extra linker flags for the JIT shared object, Windows-only (empty elsewhere).
+JIT_LDFLAGS :=
 ifeq ($(UNAME_S),Darwin)
   JIT_LIB := libbee_jit.dylib
 endif
@@ -59,6 +61,10 @@ ifneq (,$(filter MINGW% MSYS%,$(UNAME_S)))
   JIT_LIB := bee_jit.dll
   PIC :=
   LLVM_LINK := --link-static
+  # Without this MinGW auto-exports every global; with LLVM folded in statically
+  # that overflows the 65535-entry PE export table ("export ordinal too large").
+  # Only bee_jit_create needs exporting, kept via __declspec(dllexport).
+  JIT_LDFLAGS := -Wl,--exclude-all-symbols
 endif
 
 LLVM_CONFIG ?= $(shell which llvm-config-18 llvm-config-17 llvm-config 2>/dev/null | head -n1)
@@ -95,7 +101,7 @@ $(BIN): $(OBJ)
 # calls back into are left undefined here and resolved from `bee` at load time.
 # Only reachable when LLVM_CONFIG is set (else $(JIT_TARGET) is empty).
 $(JIT_LIB): src/jit_llvm.cpp $(wildcard src/*.hpp) src/bee_buffer.h
-	$(CXX) $(CXXFLAGS) -DBEE_JIT $(PIC) -fno-rtti -I$(LLVM_INC) -shared -o $@ \
+	$(CXX) $(CXXFLAGS) -DBEE_JIT $(PIC) -fno-rtti -I$(LLVM_INC) -shared $(JIT_LDFLAGS) -o $@ \
 	    src/jit_llvm.cpp $(LLVM_LIBS)
 
 $(HIVE_BIN): $(HIVE_OBJ)

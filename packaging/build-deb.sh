@@ -9,14 +9,14 @@
 #
 set -euo pipefail
 
-VERSION="${VERSION:-0.3.2}"
+VERSION="${VERSION:-0.3.3}"
 ARCH="$(dpkg --print-architecture)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKG="bee"
 STAGE="$ROOT/dist/${PKG}-${VERSION}-${ARCH}"
 # Hyphens, not Debian's usual name_version_arch.deb, to match the naming of the
 # Windows installer. dpkg reads the package name, version and architecture from
-# DEBIAN/control, not the filename, so `apt install ./bee-0.3.2-amd64.deb`
+# DEBIAN/control, not the filename, so `apt install ./bee-0.3.3-amd64.deb`
 # installs exactly the same package either way.
 DEB="$ROOT/dist/${PKG}-${VERSION}-${ARCH}.deb"
 

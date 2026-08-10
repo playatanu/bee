@@ -890,7 +890,16 @@ void LlvmJitBackend::compileLoop(const Stmt* loop, Interpreter& interp, Compiled
 } // namespace bee
 
 // The one symbol the shared object exports: the front end resolves it by name
-// (see jit.cpp) and calls it once to obtain the backend.
-extern "C" bee::JitBackend* bee_jit_create() { return new bee::LlvmJitBackend(); }
+// (see jit.cpp) and calls it once to obtain the backend. On Windows the DLL is
+// linked with --exclude-all-symbols (MinGW would otherwise auto-export every
+// global, and with LLVM folded in statically that overflows the 65535-entry PE
+// export table -- "export ordinal too large"). dllexport keeps this one symbol
+// exported anyway; everywhere else the attribute is a no-op.
+#if defined(_WIN32)
+#  define BEE_JIT_EXPORT __declspec(dllexport)
+#else
+#  define BEE_JIT_EXPORT
+#endif
+extern "C" BEE_JIT_EXPORT bee::JitBackend* bee_jit_create() { return new bee::LlvmJitBackend(); }
 
 #endif // BEE_JIT

@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-4c9a2a.svg?style=flat-square)](LICENSE)
 [![Language: C++17](https://img.shields.io/badge/C%2B%2B-17-00599c.svg?style=flat-square)](Makefile)
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](#-installation)
-[![Version](https://img.shields.io/badge/version-0.3.2-f5b51e.svg?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-0.3.3-f5b51e.svg?style=flat-square)](#)
 
 [Install](#-installation) · [Quick start](#-quick-start) · [Language tour](#-language-tour) · [Packages](#-packages) · [Bindings](#-c-bindings) · [Docs](docs/LANGUAGE.md) · [Examples](examples/)
 
@@ -50,8 +50,8 @@ Bee is a dynamically-typed language designed to be **easy to read and quick to p
 
 | Platform | Package | How |
 |----------|---------|-----|
-| **Windows** | `bee-0.3.2-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
-| **Debian / Ubuntu** | `bee-0.3.2-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.2-amd64.deb`. Installs `bee` and `hive`. |
+| **Windows** | `bee-0.3.3-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
+| **Debian / Ubuntu** | `bee-0.3.3-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.3-amd64.deb`. Installs `bee` and `hive`. |
 
 > Grab the latest packages from the [**Releases**](https://github.com/beelang-project/bee/releases) page.
 
@@ -99,7 +99,7 @@ A source file uses the `.be` or `.bee` extension. Statements may end with an
 optional semicolon; newlines are not significant.
 
 ```bash
-bee --version              # bee 0.3.2
+bee --version              # bee 0.3.3
 bee --help                 # usage and options
 bee                        # an interactive REPL
 bee -e 'print(1 + 1)'      # run one line
