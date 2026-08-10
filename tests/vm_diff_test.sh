@@ -474,6 +474,52 @@ fn f(name, n) { return f"{name} has {n * 2} items and {n > 1 ? "many" : "one"}" 
 print(f("bee", 3)) print(f("ant", 1))
 EOF
 
+# JIT parity: the native tier must produce byte-identical results to the
+# interpreter. The differential cases above cannot see JIT bugs -- both the VM
+# and the tree-walker share the same JIT, so a miscompile fails both identically.
+# These force the interpreter with BEE_NO_JIT=1 as the reference. The loops run
+# >40k trips so the loop JIT actually engages. Regression guard: a hot top-level
+# loop that called a function crashed the loop JIT (its bail flag was read from
+# the wrong argument), and a mid-loop bail dereferenced a garbage pointer.
+echo "jit parity: hot loops vs BEE_NO_JIT"
+
+jitcheck() {                               # jitcheck <name>  (program on stdin)
+    local name=$1
+    cat > "$tmp/j.bee"
+    BEE_NO_JIT=1 $BEE "$tmp/j.bee" >"$tmp/a.out" 2>"$tmp/a.err"; local ra=$?
+    $BEE "$tmp/j.bee" >"$tmp/b.out" 2>"$tmp/b.err"; local rb=$?
+    if [ "$ra" != "$rb" ]; then
+        echo "  FAIL $name: exit $ra (no jit) vs $rb (jit)"; fail=$((fail+1)); return
+    fi
+    if ! diff -q "$tmp/a.out" "$tmp/b.out" >/dev/null; then
+        echo "  FAIL $name: stdout differs"; diff "$tmp/a.out" "$tmp/b.out" | head -6; fail=$((fail+1)); return
+    fi
+    if ! diff -q "$tmp/a.err" "$tmp/b.err" >/dev/null; then
+        echo "  FAIL $name: stderr differs"; diff "$tmp/a.err" "$tmp/b.err" | head -6; fail=$((fail+1)); return
+    fi
+    echo "  ok   $name"; pass=$((pass+1))
+}
+
+jitcheck "hot loop calls a function" <<'EOF'
+fn add(a, b) { return a + b }
+let t = 0
+for (let i = 0; i < 60000; i = i + 1) { t = add(t, 1) }
+print(t)
+EOF
+
+jitcheck "hot loop calls a modulo helper" <<'EOF'
+fn m(a, b) { return a % b }
+let s = 0
+for (let i = 1; i < 60000; i = i + 1) { s = s + m(i, 7) }
+print(s)
+EOF
+
+jitcheck "hot loop hits a bail (division by zero)" <<'EOF'
+let s = 0
+for (let i = 1; i < 60000; i = i + 1) { s = s + 100 / (i - 30000) }
+print(s)
+EOF
+
 echo
 if [ "$fail" -eq 0 ]; then
     echo "all $pass differential checks passed"

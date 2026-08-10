@@ -13,6 +13,7 @@
 #include "jit.hpp"
 #include "interpreter.hpp"
 
+#include "llvm/Config/llvm-config.h"   // LLVM_VERSION_MAJOR, for API differences
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
@@ -205,8 +206,8 @@ public:
         loopRegion_ = true;
         Type* dbl = b_.getDoubleTy();
         argsArg_ = func_->getArg(0);   // double* vars (in/out)
-        interpArg_ = func_->getArg(3);
-        bailArg_ = func_->getArg(4);
+        interpArg_ = func_->getArg(2);
+        bailArg_ = func_->getArg(3);
 
         entry_ = BasicBlock::Create(ctx_, "entry", func_);
         b_.SetInsertPoint(entry_);
@@ -647,7 +648,13 @@ private:
                 guardNonZero(bb);
                 // fmod(a,b) == a - b*trunc(a/b)  (matches std::fmod for finite operands)
                 llvm::Value* q = b_.CreateFDiv(a, bb);
+                // Renamed in LLVM 19; the old name is gone by LLVM 20. Linux CI
+                // builds against 18, MSYS2 ships a newer LLVM, so support both.
+#if LLVM_VERSION_MAJOR >= 19
+                llvm::Function* trunc = Intrinsic::getOrInsertDeclaration(&mod_, Intrinsic::trunc, {b_.getDoubleTy()});
+#else
                 llvm::Function* trunc = Intrinsic::getDeclaration(&mod_, Intrinsic::trunc, {b_.getDoubleTy()});
+#endif
                 llvm::Value* qt = b_.CreateCall(trunc, {q});
                 return {b_.CreateFSub(a, b_.CreateFMul(bb, qt)), Ty::NUMBER};
             }
@@ -849,7 +856,11 @@ void LlvmJitBackend::compileLoop(const Stmt* loop, Interpreter& interp, Compiled
         Type* dbl = b.getDoubleTy();
         Type* ptr = PointerType::get(*ctx, 0);
         Type* i32 = b.getInt32Ty();
-        FunctionType* ft = FunctionType::get(dbl, {ptr, ptr, ptr, ptr, ptr}, false);
+        // Matches JitLoopFn: (double* vars, int nvars, void* interp, int* bail).
+        // The loop reads interp/bail from args 2/3; building five params here left
+        // bail pointing at an uninitialised register, crashing any hot top-level
+        // loop that calls a function or hits a bail (e.g. division by zero).
+        FunctionType* ft = FunctionType::get(dbl, {ptr, i32, ptr, ptr}, false);
         std::string entryName = "bee_loop_" + std::to_string(counter++);
         auto* entryF = llvm::Function::Create(ft, llvm::Function::ExternalLinkage,
                                               entryName, *mod);
