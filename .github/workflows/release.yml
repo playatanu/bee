@@ -2,7 +2,7 @@ name: Release
 
 # Build the Linux .deb and the Windows installer, and publish them to a
 # GitHub Release. Triggered by pushing a version tag, e.g.:
-#     git tag v0.3.1 && git push origin v0.3.1
+#     git tag v0.3.2 && git push origin v0.3.2
 # `workflow_dispatch` builds the artifacts too (without creating a release),
 # which is handy for testing the pipeline.
 #
@@ -30,7 +30,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             export VERSION="${GITHUB_REF_NAME#v}"
           else
-            export VERSION="0.3.1"
+            export VERSION="0.3.2"
           fi
           bash packaging/build-deb.sh
 
@@ -46,20 +46,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # A reliable MinGW-w64 toolchain (UCRT). The Windows build is
-      # interpreter-only: jit_llvm.cpp is #ifdef-guarded, so no LLVM is needed.
+      # A reliable MinGW-w64 toolchain (UCRT), plus LLVM built for the *same*
+      # toolchain so it is ABI-compatible with this g++. The JIT backend links
+      # against it; bee.exe itself links no LLVM (it dlopen's the backend).
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
           update: true
-          install: mingw-w64-ucrt-x86_64-gcc
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-llvm
 
-      - name: Compile bee.exe, hive.exe and beegen.exe
+      - name: Compile bee.exe, hive.exe, beegen.exe and the JIT backend
         shell: msys2 {0}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.3.1"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.3.2"; fi
+          # bee.exe links no LLVM. src/*.cpp includes src/jit.cpp (the dlopen
+          # front end) and src/jit_llvm.cpp (guarded to nothing without BEE_JIT).
           g++ -std=c++17 -O2 -static -pthread -DBEE_VERSION="\"$ver\"" \
               src/*.cpp -o packaging/windows/bee.exe
+          # The LLVM JIT backend, dlopen'd by bee.exe on first compile. -static
+          # makes the DLL self-contained; --link-static folds LLVM in too. It
+          # shares bee.exe's heap through ucrtbase.dll (UCRT), so std containers
+          # returned across the boundary are freed on the same heap.
+          g++ -std=c++17 -O2 -static -pthread -DBEE_VERSION="\"$ver\"" -DBEE_JIT -fno-rtti \
+              -I"$(llvm-config --includedir)" -shared -o packaging/windows/bee_jit.dll \
+              src/jit_llvm.cpp \
+              $(llvm-config --ldflags --link-static --libs core orcjit native passes --system-libs)
           g++ -std=c++17 -O2 -static -pthread -DHIVE_VERSION="\"$ver\"" \
               src/hive/*.cpp -o packaging/windows/hive.exe
           # beegen loads libclang at run time; nothing to link against here.
@@ -75,7 +88,7 @@ jobs:
           if ($env:GITHUB_REF -like 'refs/tags/v*') {
             $ver = $env:GITHUB_REF_NAME -replace '^v',''
           } else {
-            $ver = '0.3.1'
+            $ver = '0.3.2'
           }
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" packaging\windows\bee-setup.iss
 

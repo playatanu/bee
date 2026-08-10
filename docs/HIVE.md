@@ -1,6 +1,6 @@
-# Hive — the BeeLang package manager
+# Hive — the Bee package manager
 
-Hive is to BeeLang what pip is to Python: one command that fetches a package,
+Hive is to Bee what pip is to Python: one command that fetches a package,
 puts it somewhere the interpreter looks, and remembers what you installed.
 
 ```bash
@@ -137,7 +137,7 @@ The manifest describes a package — or, in an application, just what it needs.
 {
   "name": "strutil",
   "version": "1.2.0",
-  "description": "String helpers for BeeLang",
+  "description": "String helpers for Bee",
   "author": "Atanu Debnath",
   "license": "MIT",
   "homepage": "https://github.com/you/strutil",
@@ -362,7 +362,7 @@ on disk all work; there's nothing to run.
 ```json
 {
   "name": "strutil",
-  "description": "String helpers for BeeLang",
+  "description": "String helpers for Bee",
   "homepage": "https://github.com/you/strutil",
   "versions": {
     "1.1.0": {
@@ -388,7 +388,7 @@ resolutions without breaking a lockfile that already names it.
 
 ```json
 {"packages": [
-  {"name": "strutil", "version": "1.2.0", "description": "String helpers for BeeLang"},
+  {"name": "strutil", "version": "1.2.0", "description": "String helpers for Bee"},
   {"name": "logger",  "version": "1.0.0", "description": "Tiny logging helpers"}
 ]}
 ```

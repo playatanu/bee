@@ -9,7 +9,7 @@ namespace hive {
 // ------------------------------------------------------------------ names
 bool validPackageName(const std::string& name) {
     // Lowercase, digits, '-' and '_'; must start with a letter. Deliberately
-    // narrow: a package name becomes a directory name *and* a BeeLang
+    // narrow: a package name becomes a directory name *and* a Bee
     // identifier in `import <name>`, so it has to be legal as both.
     if (name.size() < 2 || name.size() > 64) return false;
     if (!(name[0] >= 'a' && name[0] <= 'z')) return false;

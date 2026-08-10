@@ -9,32 +9,37 @@
 #
 set -euo pipefail
 
-VERSION="${VERSION:-0.3.1}"
+VERSION="${VERSION:-0.3.2}"
 ARCH="$(dpkg --print-architecture)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKG="bee"
 STAGE="$ROOT/dist/${PKG}-${VERSION}-${ARCH}"
 # Hyphens, not Debian's usual name_version_arch.deb, to match the naming of the
 # Windows installer. dpkg reads the package name, version and architecture from
-# DEBIAN/control, not the filename, so `apt install ./bee-0.3.1-amd64.deb`
+# DEBIAN/control, not the filename, so `apt install ./bee-0.3.2-amd64.deb`
 # installs exactly the same package either way.
 DEB="$ROOT/dist/${PKG}-${VERSION}-${ARCH}.deb"
 
 echo "[deb] building JIT-enabled binary (LLVM)..."
 mkdir -p "$ROOT/dist"
-# Build via the Makefile: it auto-detects llvm-config and links the native JIT
-# (handling -fno-rtti for the LLVM translation unit correctly).
+# Build via the Makefile: it auto-detects llvm-config and builds the JIT backend
+# as libbee_jit.so (handling -fPIC/-fno-rtti for the LLVM translation unit).
 make -C "$ROOT" clean >/dev/null
 make -C "$ROOT" VERSION="$VERSION"
 
-# Fail loudly if the JIT did not get linked -- this package must ship with it.
-if ! ldd "$ROOT/bee" | grep -qi 'libLLVM'; then
-    echo "[deb] error: bee was built WITHOUT the LLVM JIT." >&2
+# The JIT now lives in libbee_jit.so, dlopen'd on first compile -- `bee` itself
+# links no LLVM. Fail loudly if the backend did not get built, and confirm it is
+# the piece that carries libLLVM.
+if [ ! -f "$ROOT/libbee_jit.so" ] || ! ldd "$ROOT/libbee_jit.so" | grep -qi 'libLLVM'; then
+    echo "[deb] error: libbee_jit.so was not built (no LLVM JIT)." >&2
     echo "       Install LLVM dev headers first, e.g.: sudo apt install llvm-18-dev" >&2
     exit 1
 fi
 cp "$ROOT/bee" "$ROOT/dist/bee"
 strip "$ROOT/dist/bee"
+# The JIT backend. bee finds it via /usr/lib/bee (its own dir's ../lib/bee).
+cp "$ROOT/libbee_jit.so" "$ROOT/dist/libbee_jit.so"
+strip "$ROOT/dist/libbee_jit.so"
 # hive (the package manager) links no LLVM -- it just rides along.
 cp "$ROOT/hive" "$ROOT/dist/hive"
 strip "$ROOT/dist/hive"
@@ -43,10 +48,10 @@ strip "$ROOT/dist/hive"
 cp "$ROOT/beegen" "$ROOT/dist/beegen"
 strip "$ROOT/dist/beegen"
 
-# Auto-detect the runtime packages the binary links against, so Depends is right
-# on whatever LLVM version this machine has (e.g. libllvm18).
+# Auto-detect the runtime packages the JIT backend links against, so Depends is
+# right on whatever LLVM version this machine has (e.g. libllvm18).
 DEPS="libc6, libstdc++6"
-LLVM_SO="$(ldd "$ROOT/dist/bee" | awk '/libLLVM/{print $3; exit}')"
+LLVM_SO="$(ldd "$ROOT/dist/libbee_jit.so" | awk '/libLLVM/{print $3; exit}')"
 LLVM_PKG="$(dpkg -S "$(readlink -f "$LLVM_SO")" 2>/dev/null | cut -d: -f1 | head -n1)"
 if [ -n "$LLVM_PKG" ]; then
     DEPS="$DEPS, $LLVM_PKG"
@@ -56,6 +61,7 @@ fi
 echo "[deb] staging file tree at $STAGE ..."
 rm -rf "$STAGE"
 install -Dm0755 "$ROOT/dist/bee"                 "$STAGE/usr/bin/bee"
+install -Dm0755 "$ROOT/dist/libbee_jit.so"       "$STAGE/usr/lib/bee/libbee_jit.so"
 install -Dm0755 "$ROOT/dist/hive"                "$STAGE/usr/bin/hive"
 install -Dm0755 "$ROOT/dist/beegen"              "$STAGE/usr/bin/beegen"
 for f in "$ROOT"/examples/*.bee; do
@@ -65,7 +71,7 @@ install -Dm0644 "$ROOT/README.md"                "$STAGE/usr/share/doc/bee/READM
 # Native modules are compiled against these headers (see docs/BINDINGS.md).
 # Both extensions: bee_buffer.h is a plain C header, and bee_native.hpp includes
 # it, so shipping only *.hpp breaks every native module built against an
-# installed BeeLang.
+# installed Bee.
 for h in "$ROOT"/src/*.hpp "$ROOT"/src/*.h; do
     [ -e "$h" ] || continue
     install -Dm0644 "$h" "$STAGE/usr/include/bee/$(basename "$h")"
@@ -82,7 +88,7 @@ done
 # copyright (Debian expects one)
 cat > "$STAGE/usr/share/doc/bee/copyright" <<'EOF'
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: BeeLang
+Upstream-Name: Bee
 Files: *
 Copyright: Atanu Debnath
 License: MIT
@@ -101,19 +107,19 @@ Priority: optional
 Homepage: https://github.com/beelang-project/bee
 Depends: $DEPS
 Installed-Size: $INSTALLED_KB
-Description: BeeLang - a small dynamically-typed scripting language
- BeeLang (the "bee" language) has first-class functions and closures, classes
+Description: Bee - a small dynamically-typed scripting language
+ Bee (the "bee" language) has first-class functions and closures, classes
  with single inheritance, lists and dicts, a module system, and a standard
  library. Hot numeric functions are compiled to native code by a built-in LLVM
  JIT. Run a program with: bee script.bee
  .
  Example programs are installed under /usr/share/bee/examples.
  .
- The package also installs "hive", the BeeLang package manager:
+ The package also installs "hive", the Bee package manager:
  hive install <package> fetches a package into ./hive_modules so that
  "import <package>" finds it.
  .
- And "beegen", which generates BeeLang bindings from C++ headers. It needs a
+ And "beegen", which generates Bee bindings from C++ headers. It needs a
  libclang shared library at run time (install libclang-dev to use it).
 EOF
 

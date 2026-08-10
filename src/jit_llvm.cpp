@@ -26,41 +26,59 @@
 #include <vector>
 #include <string>
 #include <set>
+#include <cstdlib>
 
 using namespace llvm;
 
 namespace bee {
 
 // A statically-typed SSA value produced by codegen.
-enum class Ty { NUMBER, BOOL };
-struct TVal { llvm::Value* v = nullptr; Ty ty = Ty::NUMBER; };
+//
+// BUFFER carries two values, the data pointer and the element count, because an
+// indexed read needs both. A buffer only ever arrives as a parameter -- nothing
+// in the compiled subset produces one -- so it lives in a slot and is read from,
+// never assigned.
+enum class Ty { NUMBER, BOOL, BUFFER };
+struct TVal {
+    llvm::Value* v = nullptr;      // the double, the i1, or the double* base
+    Ty ty = Ty::NUMBER;
+    llvm::Value* len = nullptr;    // element count, for BUFFER
+};
 
 // Thrown internally to abort compilation of a function that leaves the subset.
 struct JitBail {};
 
-// ---- static candidate pre-filter (no LLVM) -------------------------------
-bool jitCandidate(const FunctionStmt* fn) {
-    return fn->restParam < 0 && fn->paramStart == 0;
-}
+// jitCandidate() is a trivial, LLVM-free pre-filter and lives inline in jit.hpp,
+// shared with the front end.
 
-// ---- ORC JIT engine (one per interpreter) --------------------------------
-struct Jit::Impl {
+// ---- ORC JIT engine + backend (one per interpreter) ----------------------
+// The concrete JitBackend the shared object hands back from bee_jit_create().
+// The front end (jit.cpp) owns the caches and the eligibility pre-check; this
+// does the LLVM work: standing up an ORC session and generating code.
+struct LlvmJitBackend : JitBackend {
     std::unique_ptr<orc::LLJIT> jit;
     unsigned counter = 0;
-    Impl() {
-        static bool inited = false;
-        if (!inited) {
+    bool started = false;
+
+    // Built on first use, not when the backend is created. Initialising the
+    // native target and standing up an ORC session costs milliseconds; a caller
+    // that dlopen'd us may still turn out to have nothing compilable, so this
+    // stays off the load path.
+    orc::LLJIT* engine() {
+        if (!started) {
+            started = true;
             InitializeNativeTarget();
             InitializeNativeTargetAsmPrinter();
-            inited = true;
+            auto j = orc::LLJITBuilder().create();
+            if (j) jit = std::move(*j);
         }
-        auto j = orc::LLJITBuilder().create();
-        if (j) jit = std::move(*j);
+        return jit.get();
     }
-};
 
-Jit::Jit() : impl(std::make_unique<Impl>()) {}
-Jit::~Jit() = default;
+    JitFn compile(const FunctionStmt* fn, JitSig sig, Interpreter& interp,
+                  std::vector<JitCacheEntry>& extra) override;
+    void compileLoop(const Stmt* loop, Interpreter& interp, CompiledLoop& out) override;
+};
 
 // ---- per-function code generator -----------------------------------------
 namespace {
@@ -68,8 +86,10 @@ namespace {
 struct Scope {
     const void* owner;                       // AST node that owns this scope
     std::vector<AllocaInst*> allocas;        // per slot (null until declared)
+    std::vector<AllocaInst*> lenAllocas;     // per slot, for BUFFER slots
     std::vector<Ty> types;                   // per slot
-    Scope(const void* o, int n) : owner(o), allocas(n, nullptr), types(n, Ty::NUMBER) {}
+    Scope(const void* o, int n)
+        : owner(o), allocas(n, nullptr), lenAllocas(n, nullptr), types(n, Ty::NUMBER) {}
 };
 
 // Owns one LLVM module into which a whole numeric call graph is compiled.
@@ -87,15 +107,15 @@ struct ModuleCompiler {
     std::map<const FunctionStmt*, llvm::Function*> declared;
     std::vector<const FunctionStmt*> worklist;
 
-    // The shared numeric-function ABI: double f(double* args, i32 argc, i8* interp, i32* bail)
+    // The shared ABI (see jit.hpp):
+    //   double f(double* nums, double** bufs, i64* bufLens, i8* interp, i32* bail)
     llvm::Function* declare(const FunctionStmt* fn) {
         auto it = declared.find(fn);
         if (it != declared.end()) return it->second;
         IRBuilder<> b(ctx);
         Type* dbl = b.getDoubleTy();
         Type* ptr = PointerType::get(ctx, 0);
-        Type* i32 = b.getInt32Ty();
-        FunctionType* ft = FunctionType::get(dbl, {ptr, i32, ptr, ptr}, false);
+        FunctionType* ft = FunctionType::get(dbl, {ptr, ptr, ptr, ptr, ptr}, false);
         std::string name = "bee_fn_" + std::to_string(counter++);
         auto* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, mod);
         declared[fn] = f;
@@ -120,27 +140,44 @@ struct ModuleCompiler {
 
 class Codegen {
 public:
-    Codegen(ModuleCompiler& mc, const FunctionStmt* fn, llvm::Function* func)
-        : mc_(mc), ctx_(mc.ctx), mod_(mc.mod), b_(mc.ctx), fn_(fn), func_(func) {}
+    Codegen(ModuleCompiler& mc, const FunctionStmt* fn, llvm::Function* func, JitSig sig = 0)
+        : mc_(mc), ctx_(mc.ctx), mod_(mc.mod), b_(mc.ctx), fn_(fn), func_(func), sig_(sig) {}
 
     llvm::Function* emit() {
-        // Signature (double f(double*, i32, i8*, i32*)) was fixed by declare().
         Type* dbl = b_.getDoubleTy();
+        Type* ptr = PointerType::get(ctx_, 0);
+        Type* i64 = b_.getInt64Ty();
         argsArg_ = func_->getArg(0);
-        interpArg_ = func_->getArg(2);
-        bailArg_ = func_->getArg(3);
+        bufsArg_ = func_->getArg(1);
+        bufLensArg_ = func_->getArg(2);
+        interpArg_ = func_->getArg(3);
+        bailArg_ = func_->getArg(4);
 
         entry_ = BasicBlock::Create(ctx_, "entry", func_);
         b_.SetInsertPoint(entry_);
 
-        // Frame scope: load each parameter from args[] into an alloca.
+        // Frame scope: bring each parameter in, as the signature describes it.
         pushScope(fn_, fn_->frameSlots);
         size_t np = fn_->params.size();
         for (size_t i = 0; i < np; ++i) {
+            int slot = fn_->paramStart + (int)i;
+            if (jitSigAt(sig_, i) == ArgKind::BufF64) {
+                // A buffer arrives as a base pointer and a count, both loop
+                // invariant, so every later index is a bounds check and a load.
+                AllocaInst* pa = mkAlloca(ptr);
+                AllocaInst* la = mkAlloca(i64);
+                b_.CreateStore(b_.CreateLoad(ptr, b_.CreateGEP(ptr, bufsArg_,
+                                                               b_.getInt32((uint32_t)i))), pa);
+                b_.CreateStore(b_.CreateLoad(i64, b_.CreateGEP(i64, bufLensArg_,
+                                                               b_.getInt32((uint32_t)i))), la);
+                scopes_.back().allocas[slot] = pa;
+                scopes_.back().lenAllocas[slot] = la;
+                scopes_.back().types[slot] = Ty::BUFFER;
+                continue;
+            }
             AllocaInst* a = mkAlloca(dbl);
             llvm::Value* gep = b_.CreateGEP(dbl, argsArg_, b_.getInt32((uint32_t)i));
             b_.CreateStore(b_.CreateLoad(dbl, gep), a);
-            int slot = fn_->paramStart + (int)i;
             scopes_.back().allocas[slot] = a;
             scopes_.back().types[slot] = Ty::NUMBER;
         }
@@ -168,8 +205,8 @@ public:
         loopRegion_ = true;
         Type* dbl = b_.getDoubleTy();
         argsArg_ = func_->getArg(0);   // double* vars (in/out)
-        interpArg_ = func_->getArg(2);
-        bailArg_ = func_->getArg(3);
+        interpArg_ = func_->getArg(3);
+        bailArg_ = func_->getArg(4);
 
         entry_ = BasicBlock::Create(ctx_, "entry", func_);
         b_.SetInsertPoint(entry_);
@@ -203,8 +240,11 @@ private:
     IRBuilder<> b_;
     const FunctionStmt* fn_;
     llvm::Function* func_ = nullptr;
+    JitSig sig_ = 0;
     BasicBlock* entry_ = nullptr;
     llvm::Value* argsArg_ = nullptr;
+    llvm::Value* bufsArg_ = nullptr;
+    llvm::Value* bufLensArg_ = nullptr;
     llvm::Value* interpArg_ = nullptr;
     llvm::Value* bailArg_ = nullptr;
     BasicBlock* bailBB_ = nullptr;
@@ -361,7 +401,9 @@ private:
     }
 
     void sFor(ForStmt* s) {
-        pushScope(s, s->slotCount);
+        // A merged loop scope declares into the enclosing frame, so there is no
+        // scope to push here -- pushing one would shift every depth by one.
+        if (s->ownScope) pushScope(s, s->slotCount);
         if (s->init) stmt(s->init.get());
 
         BasicBlock* condBB = BasicBlock::Create(ctx_, "fcond", func_);
@@ -385,7 +427,7 @@ private:
         b_.CreateBr(condBB);
 
         b_.SetInsertPoint(endBB);
-        popScope();
+        if (s->ownScope) popScope();
     }
 
     void sReturn(ReturnStmt* s) {
@@ -409,6 +451,7 @@ private:
             case Expr::Kind::Grouping: return expr(static_cast<GroupingExpr*>(e)->inner.get());
             case Expr::Kind::Ternary:  return eTernary(static_cast<TernaryExpr*>(e));
             case Expr::Kind::Call:     return eCall(static_cast<CallExpr*>(e));
+            case Expr::Kind::Index:    return eIndex(static_cast<IndexExpr*>(e));
             default: throw JitBail{}; // strings/lists/dicts/get/set/index/this/super/...
         }
     }
@@ -434,8 +477,35 @@ private:
         AllocaInst* a = sc.allocas[e->slot];
         if (!a) throw JitBail{};
         Ty ty = sc.types[e->slot];
+        if (ty == Ty::BUFFER) {
+            Type* ptr = PointerType::get(ctx_, 0);
+            return {b_.CreateLoad(ptr, a), Ty::BUFFER,
+                    b_.CreateLoad(b_.getInt64Ty(), sc.lenAllocas[e->slot])};
+        }
         Type* lt = (ty == Ty::BOOL) ? (Type*)b_.getInt1Ty() : (Type*)b_.getDoubleTy();
         return {b_.CreateLoad(lt, a), ty};
+    }
+
+    // buf[i] on an f64 buffer: a bounds check and a load. Out of range bails to
+    // the interpreter, which reproduces the error with the right message and
+    // line -- safe to re-run, because the compiled subset writes nothing.
+    TVal eIndex(IndexExpr* e) {
+        TVal obj = expr(e->object.get());
+        if (obj.ty != Ty::BUFFER) throw JitBail{};
+        llvm::Value* idx = d2i(toNum(expr(e->index.get())));
+
+        // Negative indices count from the end, as everywhere else in Bee.
+        llvm::Value* neg = b_.CreateICmpSLT(idx, b_.getInt64(0));
+        idx = b_.CreateSelect(neg, b_.CreateAdd(idx, obj.len), idx);
+
+        llvm::Value* low = b_.CreateICmpSLT(idx, b_.getInt64(0));
+        llvm::Value* high = b_.CreateICmpSGE(idx, obj.len);
+        BasicBlock* okBB = BasicBlock::Create(ctx_, "inbounds", func_);
+        emitBailOn(b_.CreateOr(low, high), okBB);
+        b_.SetInsertPoint(okBB);
+
+        Type* dbl = b_.getDoubleTy();
+        return {b_.CreateLoad(dbl, b_.CreateGEP(dbl, obj.v, idx)), Ty::NUMBER};
     }
 
     TVal eAssign(AssignExpr* e) {
@@ -548,7 +618,8 @@ private:
         }
         llvm::Value* argsPtr = b_.CreateGEP(arrTy, argsBuf,
                                             {b_.getInt32(0), b_.getInt32(0)});
-        llvm::Value* ret = b_.CreateCall(calleeFn, {argsPtr, b_.getInt32((uint32_t)np),
+        llvm::Value* nullPtr = ConstantPointerNull::get(PointerType::get(ctx_, 0));
+        llvm::Value* ret = b_.CreateCall(calleeFn, {argsPtr, nullPtr, nullPtr,
                                                     interpArg_, bailArg_});
         // Propagate a bail from the callee.
         llvm::Value* bv = b_.CreateLoad(b_.getInt32Ty(), bailArg_);
@@ -715,13 +786,11 @@ void optimize(llvm::Module& mod) {
 
 } // anonymous namespace
 
-JitFn Jit::getCompiled(const FunctionStmt* fn, Interpreter& interp) {
-    auto it = cache_.find(fn);
-    if (it != cache_.end()) return it->second;
-    if (tried_[fn]) return nullptr;
-    tried_[fn] = true;
-
-    if (!impl->jit || !jitCandidate(fn)) { cache_[fn] = nullptr; return nullptr; }
+// The front end (jit.cpp) has already applied BEE_NO_JIT, the caches, and the
+// jitCandidate() pre-filter; this just does the LLVM work.
+JitFn LlvmJitBackend::compile(const FunctionStmt* fn, JitSig sig, Interpreter& interp,
+                              std::vector<JitCacheEntry>& extra) {
+    if (!engine()) return nullptr;
 
     JitFn result = nullptr;
     // (FunctionStmt, symbol name) for every function compiled into this module.
@@ -729,13 +798,15 @@ JitFn Jit::getCompiled(const FunctionStmt* fn, Interpreter& interp) {
     try {
         auto ctx = std::make_unique<LLVMContext>();
         auto mod = std::make_unique<llvm::Module>("bee_jit", *ctx);
-        ModuleCompiler mc{*ctx, *mod, interp, impl->counter, {}, {}};
+        ModuleCompiler mc{*ctx, *mod, interp, counter, {}, {}};
 
         mc.declare(fn);                  // seed the worklist with the entry
-        // Drain: compiling a body may enqueue the callees it references.
+        // Drain: compiling a body may enqueue the callees it references. Only
+        // the entry is specialised; a callee is compiled for all-numeric
+        // arguments, which is what a call inside the subset can pass.
         for (size_t i = 0; i < mc.worklist.size(); ++i) {
             const FunctionStmt* cur = mc.worklist[i];
-            Codegen cg(mc, cur, mc.declared[cur]);
+            Codegen cg(mc, cur, mc.declared[cur], cur == fn ? sig : 0);
             cg.emit();                   // throws JitBail if outside the subset
         }
         optimize(*mod);
@@ -743,77 +814,72 @@ JitFn Jit::getCompiled(const FunctionStmt* fn, Interpreter& interp) {
         for (auto& kv : mc.declared)
             compiled.push_back({kv.first, kv.second->getName().str()});
 
-        if (impl->jit->addIRModule(orc::ThreadSafeModule(std::move(mod), std::move(ctx))))
+        if (engine()->addIRModule(orc::ThreadSafeModule(std::move(mod), std::move(ctx))))
             throw JitBail{};
 
-        // Resolve every function's entry point; cache the callees too so a
-        // later direct call reuses this native code instead of recompiling.
+        // Resolve every function's entry point; hand the callees back so a later
+        // direct call reuses this native code instead of recompiling.
         for (auto& [stmt, symName] : compiled) {
-            auto sym = impl->jit->lookup(symName);
+            auto sym = engine()->lookup(symName);
             if (!sym) { if (stmt == fn) throw JitBail{}; continue; }
             JitFn p = sym->toPtr<JitFn>();
             if (stmt == fn) result = p;
-            else { cache_[stmt] = p; tried_[stmt] = true; }
+            else extra.push_back({stmt, 0, p});   // callees took the all-numeric form
         }
         if (!result) throw JitBail{};
     } catch (JitBail&) {
-        result = nullptr;                // callees stay retryable on their own
+        result = nullptr;                // other signatures stay retryable
     }
-
-    cache_[fn] = result;
     return result;
 }
 
-const CompiledLoop& Jit::getCompiledLoop(const Stmt* loop, Interpreter& interp) {
-    auto it = loopCache_.find(loop);
-    if (it != loopCache_.end()) return it->second;
-
-    CompiledLoop cl;   // fn == nullptr sentinel == "cannot compile"
+void LlvmJitBackend::compileLoop(const Stmt* loop, Interpreter& interp, CompiledLoop& out) {
     bool isLoop = loop->kind == Stmt::Kind::While || loop->kind == Stmt::Kind::For;
-    if (impl->jit && isLoop) {
-        std::vector<std::string> globals = collectLoopGlobals(loop);
-        try {
-            auto ctx = std::make_unique<LLVMContext>();
-            auto mod = std::make_unique<llvm::Module>("bee_loop", *ctx);
-            ModuleCompiler mc{*ctx, *mod, interp, impl->counter, {}, {}};
+    if (!isLoop || !engine()) return;   // out.fn stays nullptr == "cannot compile"
 
-            // The loop entry has the JitLoopFn ABI; it is not keyed to a
-            // FunctionStmt, so create it directly (callees still go via mc).
-            IRBuilder<> b(*ctx);
-            Type* dbl = b.getDoubleTy();
-            Type* ptr = PointerType::get(*ctx, 0);
-            Type* i32 = b.getInt32Ty();
-            FunctionType* ft = FunctionType::get(dbl, {ptr, i32, ptr, ptr}, false);
-            std::string entryName = "bee_loop_" + std::to_string(impl->counter++);
-            auto* entryF = llvm::Function::Create(ft, llvm::Function::ExternalLinkage,
-                                                  entryName, *mod);
+    std::vector<std::string> globals = collectLoopGlobals(loop);
+    try {
+        auto ctx = std::make_unique<LLVMContext>();
+        auto mod = std::make_unique<llvm::Module>("bee_loop", *ctx);
+        ModuleCompiler mc{*ctx, *mod, interp, counter, {}, {}};
 
-            Codegen cg(mc, /*fn*/nullptr, entryF);
-            cg.emitLoop(loop, globals);   // may enqueue called functions into mc
+        // The loop entry has the JitLoopFn ABI; it is not keyed to a
+        // FunctionStmt, so create it directly (callees still go via mc).
+        IRBuilder<> b(*ctx);
+        Type* dbl = b.getDoubleTy();
+        Type* ptr = PointerType::get(*ctx, 0);
+        Type* i32 = b.getInt32Ty();
+        FunctionType* ft = FunctionType::get(dbl, {ptr, ptr, ptr, ptr, ptr}, false);
+        std::string entryName = "bee_loop_" + std::to_string(counter++);
+        auto* entryF = llvm::Function::Create(ft, llvm::Function::ExternalLinkage,
+                                              entryName, *mod);
 
-            // Drain: compile any functions the loop calls (cross-calls).
-            for (size_t i = 0; i < mc.worklist.size(); ++i) {
-                const FunctionStmt* cur = mc.worklist[i];
-                Codegen c2(mc, cur, mc.declared[cur]);
-                c2.emit();
-            }
-            optimize(*mod);
+        Codegen cg(mc, /*fn*/nullptr, entryF);
+        cg.emitLoop(loop, globals);   // may enqueue called functions into mc
 
-            if (impl->jit->addIRModule(orc::ThreadSafeModule(std::move(mod), std::move(ctx))))
-                throw JitBail{};
-            auto sym = impl->jit->lookup(entryName);
-            if (!sym) throw JitBail{};
-            cl.fn = sym->toPtr<JitLoopFn>();
-            cl.globals = std::move(globals);
-        } catch (JitBail&) {
-            cl.fn = nullptr;
+        // Drain: compile any functions the loop calls (cross-calls).
+        for (size_t i = 0; i < mc.worklist.size(); ++i) {
+            const FunctionStmt* cur = mc.worklist[i];
+            Codegen c2(mc, cur, mc.declared[cur]);
+            c2.emit();
         }
-    }
+        optimize(*mod);
 
-    auto res = loopCache_.emplace(loop, std::move(cl));
-    return res.first->second;
+        if (engine()->addIRModule(orc::ThreadSafeModule(std::move(mod), std::move(ctx))))
+            throw JitBail{};
+        auto sym = engine()->lookup(entryName);
+        if (!sym) throw JitBail{};
+        out.fn = sym->toPtr<JitLoopFn>();
+        out.globals = std::move(globals);
+    } catch (JitBail&) {
+        out.fn = nullptr;
+    }
 }
 
 } // namespace bee
+
+// The one symbol the shared object exports: the front end resolves it by name
+// (see jit.cpp) and calls it once to obtain the backend.
+extern "C" bee::JitBackend* bee_jit_create() { return new bee::LlvmJitBackend(); }
 
 #endif // BEE_JIT

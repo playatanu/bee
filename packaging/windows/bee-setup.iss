@@ -2,9 +2,9 @@
 ; Compile this with Inno Setup (https://jrsoftware.org/isdl.php) to produce
 ; a friendly bee-<version>-amd64.exe wizard that non-technical users just run.
 ;
-;   1. Build the Windows binary first (see README-build.md) so that
-;        packaging\windows\bee.exe   and   packaging\windows\hive.exe
-;      exist next to this script.
+;   1. Build the Windows binaries first (see README-build.md) so that
+;        bee.exe, bee_jit.dll, hive.exe and beegen.exe
+;      exist next to this script under packaging\windows.
 ;   2. Open this file in the Inno Setup Compiler and press F9 (Compile),
 ;      or from a terminal:   iscc bee-setup.iss
 ;   3. The installer appears in   dist\bee-<version>-amd64.exe
@@ -20,7 +20,7 @@
 #define MyAppName        "BeeLang"
 ; Version can be overridden from the command line: iscc /DMyAppVersion=1.2.3 ...
 #ifndef MyAppVersion
-  #define MyAppVersion   "0.3.1"
+  #define MyAppVersion   "0.3.2"
 #endif
 #define MyAppPublisher   "Atanu Debnath"
 #define MyAppExeName     "bee.exe"
@@ -53,6 +53,9 @@ Name: "assoc";     Description: "Associate .be and .bee files with Bee (double-c
 
 [Files]
 Source: "bee.exe";          DestDir: "{app}\bin";      Flags: ignoreversion
+; The LLVM JIT backend, dlopen'd by bee.exe from its own directory on first
+; compile. Without it bee still runs, on the interpreter/VM.
+Source: "bee_jit.dll";      DestDir: "{app}\bin";      Flags: ignoreversion
 Source: "hive.exe";         DestDir: "{app}\bin";      Flags: ignoreversion
 Source: "beegen.exe";       DestDir: "{app}\bin";      Flags: ignoreversion
 Source: "bee.ico";          DestDir: "{app}";          Flags: ignoreversion

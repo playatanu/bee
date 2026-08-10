@@ -1,6 +1,6 @@
 # 11 — Threads & the GIL
 #
-# BeeLang has a global interpreter lock (like CPython): threads share data
+# Bee has a global interpreter lock (like CPython): threads share data
 # safely, and blocking calls (sleep, exec, I/O) release the lock so peers run.
 #
 #     bee examples/11_threads.bee

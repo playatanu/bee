@@ -1,15 +1,15 @@
 <div align="center">
 
-<img src="docs/assets/bee.png" width="120" alt="BeeLang logo" />
+<img src="docs/assets/bee.png" width="120" alt="Bee logo" />
 
-# BeeLang
+# Bee
 
-**Build Everything Easily** — a small, friendly scripting language with a built-in native (LLVM) JIT.
+**Bee** - a friendly scripting language with a built-in native (LLVM) JIT.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4c9a2a.svg?style=flat-square)](LICENSE)
 [![Language: C++17](https://img.shields.io/badge/C%2B%2B-17-00599c.svg?style=flat-square)](Makefile)
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](#-installation)
-[![Version](https://img.shields.io/badge/version-0.3.1-f5b51e.svg?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-0.3.2-f5b51e.svg?style=flat-square)](#)
 
 [Install](#-installation) · [Quick start](#-quick-start) · [Language tour](#-language-tour) · [Packages](#-packages) · [Bindings](#-c-bindings) · [Docs](docs/LANGUAGE.md) · [Examples](examples/)
 
@@ -23,7 +23,7 @@ fn greet(name) {
 print(greet("world"))     # Hello, world!
 ```
 
-BeeLang is a dynamically-typed language designed to be **easy to read and quick to pick up** — familiar C-style syntax, first-class functions and closures, classes, a real module system, threads, and a batteries-included standard library. BeeLang runs on a compact C++17 runtime that transparently compiles hot numeric functions to native code with a built-in LLVM JIT, so tight loops run at near-native speed.
+Bee is a dynamically-typed language designed to be **easy to read and quick to pick up** — familiar C-style syntax, first-class functions and closures, classes, a real module system, threads, and a batteries-included standard library. Bee runs on a compact C++17 runtime that transparently compiles hot numeric functions to native code with a built-in LLVM JIT, so tight loops run at near-native speed.
 
 ---
 
@@ -36,7 +36,7 @@ BeeLang is a dynamically-typed language designed to be **easy to read and quick 
 - **Classes & single inheritance** — constructors, methods, `this`, `super`, and custom `str()` for printing.
 - **Module system** — `import`, `from … import`, aliases, and a sibling `lib/` search path.
 - **A package manager** — `hive install <package>` fetches a package into `hive_modules/`, where `import` finds it. See the [Hive guide](docs/HIVE.md).
-- **Native modules & automatic bindings** — call C/C++ from BeeLang, and generate the glue from a header with `beegen`. See the [bindings guide](docs/BINDINGS.md).
+- **Native modules & automatic bindings** — call C/C++ from Bee, and generate the glue from a header with `beegen`. See the [bindings guide](docs/BINDINGS.md).
 - **Error handling** — `try` / `catch` / `finally` with `throw` of *any* value.
 - **Real stack traces** — every error names the file, line and function it came from, all the way back to `<main>`.
 - **Threads with a GIL** — safe shared state and real overlap for I/O-bound work.
@@ -50,8 +50,8 @@ BeeLang is a dynamically-typed language designed to be **easy to read and quick 
 
 | Platform | Package | How |
 |----------|---------|-----|
-| **Windows** | `bee-0.3.1-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
-| **Debian / Ubuntu** | `bee-0.3.1-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.1-amd64.deb`. Installs `bee` and `hive`. |
+| **Windows** | `bee-0.3.2-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
+| **Debian / Ubuntu** | `bee-0.3.2-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.2-amd64.deb`. Installs `bee` and `hive`. |
 
 > Grab the latest packages from the [**Releases**](https://github.com/beelang-project/bee/releases) page.
 
@@ -99,7 +99,7 @@ A source file uses the `.be` or `.bee` extension. Statements may end with an
 optional semicolon; newlines are not significant.
 
 ```bash
-bee --version              # bee 0.3.1
+bee --version              # bee 0.3.2
 bee --help                 # usage and options
 bee                        # an interactive REPL
 bee -e 'print(1 + 1)'      # run one line
@@ -107,7 +107,7 @@ bee -e 'print(1 + 1)'      # run one line
 
 ## 📚 Packages
 
-`hive`, BeeLang's package manager, ships with `bee`:
+`hive`, Bee's package manager, ships with `bee`:
 
 ```bash
 hive init                     # start a project (writes hive.json)
@@ -122,7 +122,7 @@ Then import it by name:
 ```
 import greet
 
-print(greet.hello("BeeLang"))
+print(greet.hello("Bee"))
 ```
 
 Dependencies resolve transitively, every download is checked against its
@@ -135,7 +135,7 @@ file on any web server.
 ## 🔗 C++ bindings
 
 `beegen` reads a C++ header and writes the bindings for you — a native module
-plus a BeeLang wrapper:
+plus a Bee wrapper:
 
 ```bash
 beegen shapes.hpp --module shapes   # parses the header with libclang
@@ -146,13 +146,13 @@ beegen shapes.hpp --module shapes   # parses the header with libclang
 import shapes
 from shapes import Rect
 
-print(shapes.greet("BeeLang"))
+print(shapes.greet("Bee"))
 let r = new Rect(3, 4)
 print(r.area())                     # calls the real C++
 r.free()
 ```
 
-C++ classes become BeeLang classes, enums become dicts, and anything that can't
+C++ classes become Bee classes, enums become dicts, and anything that can't
 be mapped is *reported* rather than silently dropped. Native modules load with
 `import`, so binding a library never means rebuilding the interpreter.
 
@@ -231,7 +231,7 @@ operators, control flow, the standard library, type methods, and more.
 
 ## ⚡ Performance
 
-BeeLang ships with a built-in **LLVM ORCv2 JIT**. Functions that stay within a
+Bee ships with a built-in **LLVM ORCv2 JIT**. Functions that stay within a
 numeric subset are compiled to native code operating on unboxed doubles; the
 rest of your program runs on the runtime, with identical results. The JIT is
 enabled by default — just make sure LLVM (17/18) is installed before you build:
@@ -260,7 +260,7 @@ lives in its own repository and is versioned independently; see its
 ## 🗂️ Project layout
 
 ```
-BeeLang/
+Bee/
 ├── src/               # the C++17 interpreter (lexer, parser, resolver, VM, JIT)
 ├── examples/          # sample .bee programs
 ├── lib/               # standard-library modules search path
@@ -278,7 +278,7 @@ make run FILE=examples/01_hello.bee
 make clean
 ```
 
-BeeLang is plain C++17. The built-in native JIT uses LLVM (17/18) — install it
+Bee is plain C++17. The built-in native JIT uses LLVM (17/18) — install it
 to build the default JIT-enabled `bee`; without it the build still works, just
 without native compilation. Sources live in [`src/`](src/).
 

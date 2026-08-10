@@ -1,4 +1,4 @@
-// hive -- the BeeLang package manager.
+// hive -- the Bee package manager.
 #include "hive.hpp"
 
 #include <iostream>
@@ -6,13 +6,13 @@
 #include <vector>
 
 #ifndef HIVE_VERSION
-#define HIVE_VERSION "0.3.1"
+#define HIVE_VERSION "0.3.2"
 #endif
 
 namespace {
 
 void usage(std::ostream& out, const char* prog) {
-    out << "hive " << HIVE_VERSION << " - the BeeLang package manager\n\n"
+    out << "hive " << HIVE_VERSION << " - the Bee package manager\n\n"
         << "usage: " << prog << " <command> [arguments] [options]\n\n"
         << "commands:\n"
         << "  install                    install the dependencies in hive.json\n"

@@ -3,6 +3,7 @@
 #include "value.hpp"
 #include "environment.hpp"
 #include "jit.hpp"
+#include "vm.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -13,10 +14,13 @@
 
 namespace bee {
 
-// Control-flow signals implemented as exceptions.
-struct ReturnSignal { Value value; };
-struct BreakSignal {};
-struct ContinueSignal {};
+// How a statement finished. `return`, `break` and `continue` used to be C++
+// exceptions, which cost ~2-4 us each to throw -- 50-100x an entire interpreted
+// loop iteration, on paths that are not exceptional at all (every call returns).
+// They are ordinary return values now: each statement reports how it left, and
+// the enclosing loop or call frame absorbs it. Genuine errors (a Bee `throw`, a
+// runtime error) stay exceptions, because those really are rare.
+enum class Flow : uint8_t { Normal, Break, Continue, Return };
 
 // A runtime error that already carries its full message *and* its stack trace.
 // Native built-ins throw a plain RuntimeError with no location; the interpreter
@@ -60,10 +64,41 @@ struct BeeThrow {
 
 // One entry per active Bee call. A frame records where the call was *written*,
 // which is what lets a trace show the path taken into the error.
+//
+// The function is stored as a bare pointer rather than its formatted name: a
+// frame is pushed on every call, but the name is only ever read when a trace is
+// printed. Building it eagerly cost a string copy per call for nothing. The
+// caller holds a reference to the Function for the whole call, so the pointer
+// cannot dangle while the frame is live.
 struct CallFrame {
-    std::string name;                             // the function being called
+    const Function* fn = nullptr;                 // the function being called
     std::shared_ptr<const std::string> callFile;  // file containing the call
     int callLine = 0;
+};
+
+// "name", or "Class.name" for a method -- how a function appears in a trace.
+std::string functionName(const Function& fn);
+
+// Does `v` satisfy `t`? An undeclared (Any) annotation accepts everything, so
+// unannotated code pays nothing. A class annotation accepts instances of that
+// class and of anything deriving from it.
+bool typeAccepts(const TypeAnn& t, const Value& v);
+
+// The name of a value's type, as a type annotation would spell it -- used to
+// say what arrived when a check fails.
+std::string typeNameOf(const Value& v);
+
+// Everything entering a Bee call has to do besides binding arguments: check the
+// depth limit, record the frame a trace will need, and make errors report the
+// callee's file. The VM calls a compiled function directly rather than through
+// callFunction, so it needs this as a piece it can hold on its own.
+struct CallScope {
+    CallScope(Interpreter& I, const std::shared_ptr<Function>& fn, int line);
+    ~CallScope();
+    CallScope(const CallScope&) = delete;
+    CallScope& operator=(const CallScope&) = delete;
+private:
+    std::shared_ptr<const std::string> savedFile;
 };
 
 // Row-major offset for a multi-dimensional buffer index, and the short form a
@@ -107,6 +142,32 @@ public:
     bool valuesEqual(const Value& a, const Value& b);
     std::string keyString(const Value& v);
 
+    // Every binary operator, on two already-evaluated operands. The tree-walker
+    // and the bytecode VM share this, so `+` has one definition.
+    Value applyBinary(TokenType op, const Value& l, const Value& r, int line);
+    // The `+`/`-`/`*`/`/` of a compound assignment, which has its own messages.
+    Value applyBinaryArith(TokenType op, const Value& l, const Value& r, int line);
+    // `super.name` bound to `self`, given the superclass value.
+    Value superMethod(const Value& superV, const Value& self, const std::string& name, int line);
+
+    // Property/index access and assignment, shared with the VM.
+    Value getProperty(const Value& object, const std::string& name, int line);
+    Value indexGet(const Value& obj, const Value& idx, int line);
+    void indexSet(const Value& obj, const Value& idx, const Value& v, int line);
+    Value sliceValue(const Value& obj, const Value& start, const Value& end, int line);
+
+    // Raise a runtime error attributed to `line` in the file being executed.
+    [[noreturn]] void error(const std::string& msg, int line);
+
+    // Deepest Bee call nesting allowed; see maxCallDepth.
+    size_t callDepthLimit() const { return maxCallDepth; }
+
+    // Enforce a declared parameter, return, `let` or assignment type; all
+    // no-ops when the thing in question was not annotated.
+    void checkParamType(const FunctionStmt& decl, size_t i, const Value& v, int line);
+    void checkReturnType(const FunctionStmt& decl, const Value& v, int line);
+    void checkDeclared(const TypeAnn& t, const std::string& name, const Value& v, int line);
+
     // Command-line arguments after the script path (exposed via args()).
     void setScriptArgs(const std::vector<std::string>& a) { scriptArgs = a; }
 
@@ -126,8 +187,13 @@ public:
 
     std::shared_ptr<Environment> globals;
 
-    // Optional LLVM JIT for numeric functions (a no-op stub without BEE_JIT).
+    // Optional LLVM JIT for numeric functions. The backend is dlopen'd from
+    // libbee_jit.so on first compile; without it every query is a no-op.
     Jit jit;
+
+    // The register VM. Functions it can compile skip the tree-walker entirely;
+    // the rest are unaffected.
+    Vm vm;
 
     // Turn a bare message into "Runtime error: <msg>" plus a stack trace ending
     // at `line` of the file currently executing. Public so built-ins that call
@@ -178,11 +244,16 @@ private:
     std::vector<void*> nativeLibraries;
 
     // Program execution
-    void execProgram(const Program& program, std::shared_ptr<Environment> env);
+    Flow execProgram(const Program& program, std::shared_ptr<Environment> env);
 
-    // Statements
-    void execute(Stmt* stmt, std::shared_ptr<Environment>& env);
-    void execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<Environment> env);
+    // Statements. Each returns how it finished; see Flow.
+    Flow execute(Stmt* stmt, std::shared_ptr<Environment>& env);
+    Flow execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<Environment> env);
+
+    // The value of the `return` currently propagating. Set when a statement
+    // reports Flow::Return, and consumed by the call frame that absorbs it --
+    // which happens before any other Bee code runs, so a single slot is enough.
+    Value returnValue_;
     // Try to run a top-level numeric loop as native code. Returns true if it did.
     bool tryJitLoop(Stmt* stmt, std::shared_ptr<Environment>& env);
     // If `e` is `x = x + rhs` with x currently a string, return a pointer to x's
@@ -191,26 +262,22 @@ private:
     Value* selfStringAppend(AssignExpr* e, std::shared_ptr<Environment>& env);
     void execImport(ImportStmt* stmt, std::shared_ptr<Environment>& env);
     void execClass(ClassStmt* stmt, std::shared_ptr<Environment>& env);
-    void execTry(TryStmt* stmt, std::shared_ptr<Environment>& env);
-    void runCatch(TryStmt* stmt, const Value& err, std::shared_ptr<Environment>& env);
+    Flow execTry(TryStmt* stmt, std::shared_ptr<Environment>& env);
+    Flow runCatch(TryStmt* stmt, const Value& err, std::shared_ptr<Environment>& env);
 
     // Expressions
     Value evaluate(Expr* expr, std::shared_ptr<Environment>& env);
     Value evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env);
-    Value applyBinaryArith(TokenType op, const Value& l, const Value& r, int line); // +,-,*,/ for compound assign
     Value evalCall(CallExpr* e, std::shared_ptr<Environment>& env);
     Value evalGet(GetExpr* e, std::shared_ptr<Environment>& env);
     Value evalIndex(IndexExpr* e, std::shared_ptr<Environment>& env);
     Value evalSlice(SliceExpr* e, std::shared_ptr<Environment>& env);
 
-    Value callFunction(std::shared_ptr<Function> fn, std::vector<Value>& args, int line);
+    Value callFunction(const std::shared_ptr<Function>& fn, std::vector<Value>& args, int line);
     std::shared_ptr<Function> bindMethod(std::shared_ptr<Function> method,
                                          std::shared_ptr<Instance> self,
                                          std::shared_ptr<Class> definingClass);
 
-    // Helpers
-    Value getProperty(const Value& object, const std::string& name, int line);
-    [[noreturn]] void error(const std::string& msg, int line);
 };
 
 } // namespace bee

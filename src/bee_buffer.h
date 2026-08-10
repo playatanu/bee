@@ -5,7 +5,7 @@
  *
  * A plain C struct on purpose: a shim that binds OpenCV, ONNX Runtime, TensorRT
  * or any other library can take BeeBuffer parameters without including a single
- * BeeLang header, and `beegen` recognises the type and passes a BeeLang buffer
+ * Bee header, and `beegen` recognises the type and passes a Bee buffer
  * straight through. `data` points at the buffer's own memory, so nothing is
  * copied -- a 4K image crosses as one pointer.
  *

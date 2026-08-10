@@ -1,4 +1,4 @@
-// Buffer built-ins: BeeLang's contiguous typed array.
+// Buffer built-ins: Bee's contiguous typed array.
 //
 // This is the type bulk data travels in. A list of numbers costs 16 bytes per
 // element and has to be converted one element at a time on the way to C++; a
@@ -168,7 +168,7 @@ void Interpreter::defineBufferBuiltins() {
         return Value(b);
     });
 
-    // A list is the only way to get data in from BeeLang source, so the
+    // A list is the only way to get data in from Bee source, so the
     // conversion goes both ways and keeps nesting.
     def("buffer_from", -1, [](Interpreter& I, std::vector<Value>& a) -> Value {
         if (a.empty() || a.size() > 3)

@@ -1,6 +1,6 @@
 # 08 — Modules
 #
-# BeeLang resolves modules relative to this file (and a sibling lib/ folder).
+# Bee resolves modules relative to this file (and a sibling lib/ folder).
 # The module imported here lives in mathutil.bee.
 #
 #     bee examples/08_modules.bee

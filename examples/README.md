@@ -1,4 +1,4 @@
-# BeeLang examples
+# Bee examples
 
 A topic-by-topic tour of the language. Run any file with the `bee` interpreter:
 

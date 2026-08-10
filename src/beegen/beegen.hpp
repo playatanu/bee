@@ -1,5 +1,5 @@
 #pragma once
-// beegen -- generate BeeLang bindings from C++ headers.
+// beegen -- generate Bee bindings from C++ headers.
 //
 // The pipeline is deliberately two-stage:
 //
@@ -9,7 +9,7 @@
 //
 // The native module exposes flat C-like functions -- `Rect_new`, `Rect_area(h)` --
 // because that keeps the C++ side simple and the ABI narrow. The generated `.bee`
-// wrapper then turns those into real BeeLang classes and enum dicts, so what a
+// wrapper then turns those into real Bee classes and enum dicts, so what a
 // user imports looks hand-written. Anything the mapper can't represent is
 // skipped *and reported*: silence must never imply coverage.
 #include "clang.hpp"
@@ -34,9 +34,9 @@ struct Mapped {
         Enum,        // -> number
         Handle,      // pointer/reference to a bound class -> opaque handle
         HandleValue, // class returned by value -> heap copy behind a handle
-        BufferView,  // BeeBuffer -> a BeeLang buffer, passed by pointer, no copy
+        BufferView,  // BeeBuffer -> a Bee buffer, passed by pointer, no copy
         Vector,      // std::vector<T> of a scalar or string -> a list
-        Callback,    // a BeeLang function a native call can invoke
+        Callback,    // a Bee function a native call can invoke
         Unsupported,
     };
 
@@ -58,7 +58,7 @@ struct Mapped {
 struct Param {
     std::string name;   // may be empty in the header; then a0, a1, ... is used
     Mapped type;
-    // C++ default arguments have no BeeLang equivalent, so instead of trying to
+    // C++ default arguments have no Bee equivalent, so instead of trying to
     // read the default *value* we emit one native entry point per arity and let
     // the C++ compiler fill the rest in.
     bool hasDefault = false;

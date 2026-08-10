@@ -1,6 +1,6 @@
 # 13 — Native JIT benchmark
 #
-# Both functions stay inside BeeLang's numeric subset, so a JIT-enabled build
+# Both functions stay inside Bee's numeric subset, so a JIT-enabled build
 # compiles them to native code. Compare a JIT build against a JIT-less one to
 # measure the speedup.
 #

@@ -1,0 +1,10 @@
+# Instance method dispatch, separated from field access: the body is trivial so
+# what is measured is the call itself.
+class P { fn init() { this.n = 0 } fn one() { return 1 } }
+fn run(n) {
+  let p = new P()
+  let s = 0
+  for (let i = 0; i < n; i = i + 1) { s = s + p.one() }
+  return s
+}
+print(run(3000000))

@@ -1,11 +1,11 @@
-// beegen -- the BeeLang binding generator.
+// beegen -- the Bee binding generator.
 #include "beegen.hpp"
 
 #include <filesystem>
 #include <iostream>
 
 #ifndef BEEGEN_VERSION
-#define BEEGEN_VERSION "0.3.1"
+#define BEEGEN_VERSION "0.3.2"
 #endif
 
 namespace fs = std::filesystem;
@@ -13,12 +13,12 @@ namespace fs = std::filesystem;
 namespace {
 
 void usage(std::ostream& out, const char* prog) {
-    out << "beegen " << BEEGEN_VERSION << " - generate BeeLang bindings from C++ headers\n\n"
+    out << "beegen " << BEEGEN_VERSION << " - generate Bee bindings from C++ headers\n\n"
         << "usage: " << prog << " <header...> --module <name> [options] [-- clang args]\n\n"
-        << "Reads the headers with libclang and writes a native module plus a BeeLang\n"
+        << "Reads the headers with libclang and writes a native module plus a Bee\n"
         << "wrapper, so `import <name>` calls into the real library.\n\n"
         << "options:\n"
-        << "  -m, --module <name>    the BeeLang module to generate (required)\n"
+        << "  -m, --module <name>    the Bee module to generate (required)\n"
         << "  -o, --out-dir <dir>    where to write the output (default: .)\n"
         << "      --namespace <ns>   only bind declarations in this namespace (repeatable)\n"
         << "      --prefix <p>       only bind names starting with this (repeatable)\n"

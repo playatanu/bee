@@ -186,6 +186,7 @@ std::vector<Token> Lexer::tokenize() {
                 break;
             case '-':
                 if (match('-')) out.emplace_back(TokenType::MINUS_MINUS, "--", line);
+                else if (match('>')) out.emplace_back(TokenType::ARROW, "->", line);
                 else out.emplace_back(match('=') ? TokenType::MINUS_EQ : TokenType::MINUS, "-", line);
                 break;
             case '*': out.emplace_back(match('=') ? TokenType::STAR_EQ : TokenType::STAR, "*", line); break;

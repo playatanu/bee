@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# End-to-end tests for `hive`, the BeeLang package manager, and for the
+# End-to-end tests for `hive`, the Bee package manager, and for the
 # interpreter's side of the contract (finding installed packages).
 #
 # Run from anywhere:  bash tests/hive_test.sh
@@ -137,11 +137,11 @@ cat > "$APP/main.bee" <<'EOF'
 import greet
 from logger import log
 
-print(greet.hello("BeeLang"))
+print(greet.hello("Bee"))
 log("done")
 EOF
-check "import finds a package"           "Hello, BeeLang!" "$BEE" "$APP/main.bee"
-check "a package imports its own deps"   "greeting BeeLang" "$BEE" "$APP/main.bee"
+check "import finds a package"           "Hello, Bee!" "$BEE" "$APP/main.bee"
+check "a package imports its own deps"   "greeting Bee" "$BEE" "$APP/main.bee"
 
 # A local module of the same name must win, or a project could never override a
 # package it has installed.

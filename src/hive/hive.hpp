@@ -1,5 +1,5 @@
 #pragma once
-// Hive -- the BeeLang package manager. Shared declarations.
+// Hive -- the Bee package manager. Shared declarations.
 //
 // Hive is a separate binary from `bee` on purpose: the interpreter stays a
 // self-contained language runtime with no networking, and the package manager

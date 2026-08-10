@@ -5,6 +5,6 @@
 import greet
 from greet import hello_in
 
-print(greet.hello("BeeLang"))
+print(greet.hello("Bee"))
 print(hello_in("fr", "monde"))
 print(hello_in("hi", "duniya"))

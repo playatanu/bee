@@ -1,0 +1,14 @@
+# Instance fields (a std::map today) and method dispatch through a class.
+class Point {
+  fn init(x, y) { this.x = x this.y = y }
+  fn add(o) { this.x = this.x + o.x this.y = this.y + o.y return this }
+  fn norm() { return this.x * this.x + this.y * this.y }
+}
+fn run(n) {
+  let a = new Point(0, 0)
+  let b = new Point(1, 2)
+  let s = 0
+  for (let i = 0; i < n; i = i + 1) { a.add(b) s = s + a.norm() }
+  return s
+}
+print(run(400000))

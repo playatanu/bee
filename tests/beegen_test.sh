@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
 # End-to-end tests for `beegen`, the binding generator: parse a C++ header,
-# generate a native module and a BeeLang wrapper, compile them, and call the
-# real C++ from BeeLang.
+# generate a native module and a Bee wrapper, compile them, and call the
+# real C++ from Bee.
 #
 # Run from anywhere:  bash tests/beegen_test.sh
 # Requires `bee` and `beegen` to be built (`make`), plus a C++ compiler and a
 # libclang shared library. Without those last two the suite skips rather than
-# fails, since neither is needed to build BeeLang itself.
+# fails, since neither is needed to build Bee itself.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -147,7 +147,7 @@ print(shapes.add(2, 3))
 print(shapes.scale(2.5, 4))
 print(shapes.is_even(10))
 print(shapes.library_name())
-print(shapes.greet("BeeLang"))
+print(shapes.greet("Bee"))
 print(shapes.nothing())
 print(shapes.maybe_null(false))
 print(Color.COLOR_BLUE)
@@ -163,7 +163,7 @@ print(shapes.Rect_unit_area())
 r.free()
 EOF
         run_out="$("$BEE" use.bee 2>&1)"
-        expect_lines=("5" "10" "true" "shapes 1.0" "Hello, BeeLang!" "nil" "nil" "7" "12" "4" "50" "50" "1")
+        expect_lines=("5" "10" "true" "shapes 1.0" "Hello, Bee!" "nil" "nil" "7" "12" "4" "50" "50" "1")
         i=0
         matched=1
         while IFS= read -r line; do
@@ -367,7 +367,7 @@ $run"
 fi
 
 # `in`, `class` and `from` are ordinary parameter names in C++ and keywords in
-# BeeLang; generated code has to stay parseable.
+# Bee; generated code has to stay parseable.
 printf '#include "bee_buffer.h"\nint copy_into(BeeBuffer in, int from, int class_);\n' > kw.hpp
 "$BEEGEN" kw.hpp -m kw -o "$WORK/kw" -I"$ROOT/src" >/dev/null 2>&1
 if grep -q "fn copy_into(in_, from_, class_)" "$WORK/kw/kw.bee" 2>/dev/null; then

@@ -1,0 +1,13 @@
+# Closures created per iteration: the case scope merging must NOT touch, so
+# this is the tree-walker path plus one environment allocation per iteration.
+fn make(n) {
+  let fns = []
+  for (let i = 0; i < n; i = i + 1) {
+    let v = i
+    fns.push(fn () { return v })
+  }
+  let s = 0
+  for f in fns { s = s + f() }
+  return s
+}
+print(make(300000))

@@ -1,0 +1,11 @@
+# Dict insert and lookup: a std::map keyed by std::string today.
+fn run(n) {
+  let d = {}
+  for (let i = 0; i < n; i = i + 1) { d[str(i % 5000)] = i }
+  let s = 0
+  for (let r = 0; r < 4; r = r + 1) {
+    for (let i = 0; i < n; i = i + 1) { s = s + d[str(i % 5000)] }
+  }
+  return s
+}
+print(run(200000))

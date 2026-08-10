@@ -1,0 +1,8 @@
+# String building, and the in-place append fast path.
+fn run(n) {
+  let s = ""
+  for (let i = 0; i < n; i = i + 1) { s = s + "abcdefghij" }
+  let parts = s.split("j")
+  return [len(s), len(parts)]
+}
+print(run(300000))

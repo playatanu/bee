@@ -1,11 +1,11 @@
 # Native modules and automatic bindings
 
-BeeLang can call C and C++ directly. There are two pieces:
+Bee can call C and C++ directly. There are two pieces:
 
 - **Native modules** — a shared library that `import` loads, so calling a C++
   library doesn't mean rebuilding the interpreter.
 - **`beegen`** — a generator that reads C++ headers with libclang and writes the
-  native module *and* an idiomatic BeeLang wrapper for you.
+  native module *and* an idiomatic Bee wrapper for you.
 
 ```bash
 beegen sqlite3.h --module sqlite     # read the header, write the bindings
@@ -21,7 +21,7 @@ bee -e 'import sqlite; print(sqlite.libversion())'
 - [What the output looks like](#what-the-output-looks-like)
 - [How types map](#how-types-map)
 - [Buffers: bulk data without a copy](#buffers-bulk-data-without-a-copy)
-- [Calling back into BeeLang](#calling-back-into-beelang)
+- [Calling back into Bee](#calling-back-into-beelang)
 - [Class hierarchies and factories](#class-hierarchies-and-factories)
 - [Errors from a C++ library](#errors-from-a-c-library)
 - [What gets skipped, and why](#what-gets-skipped-and-why)
@@ -76,7 +76,7 @@ import shapes
 from shapes import Rect, Color
 
 print(shapes.add(2, 3))            # 5
-print(shapes.greet("BeeLang"))     # Hello, BeeLang!
+print(shapes.greet("Bee"))     # Hello, Bee!
 print(Color.COLOR_BLUE)            # 7
 
 let r = new Rect(3, 4)
@@ -109,7 +109,7 @@ Four files, with a deliberate split:
 | `hive.json` | a manifest, so the binding installs like any other package |
 
 The C++ side stays flat on purpose: it keeps the generated code simple enough to
-read and the ABI narrow. The BeeLang side is where a C++ class becomes something
+read and the ABI narrow. The Bee side is where a C++ class becomes something
 that looks hand-written:
 
 ```bee
@@ -135,7 +135,7 @@ the flags and re-run. `hive.json` is the exception: it's yours to edit, and
 
 ## How types map
 
-| C++ | BeeLang | Notes |
+| C++ | Bee | Notes |
 |---|---|---|
 | `void` | `nil` | |
 | `bool` | bool | |
@@ -147,7 +147,7 @@ the flags and re-run. `hive.json` is the exception: it's yours to edit, and
 | `T*`, `T&`, `const T&` | opaque handle | when `T` is a class that also got bound |
 | `T` returned by value | handle to a heap copy | the caller owns it; call `free()` |
 | public field | `get_x()` / `set_x(v)` | read-only when the field is `const` or a handle |
-| `static` method | a module-level function, `Class_method()` | BeeLang classes have no static members |
+| `static` method | a module-level function, `Class_method()` | Bee classes have no static members |
 | `BeeBuffer` | a [buffer](#buffers-bulk-data-without-a-copy) | **no copy** — the library gets a pointer to the buffer's own memory |
 | `std::vector<T>` | list | for numeric, bool and string elements, in both directions |
 | default arguments | optional arguments | one native entry point per arity; C++ supplies the defaults |
@@ -162,14 +162,14 @@ Runtime error: Canvas_draw: argument 1 must be a Canvas handle, got a Rect handl
 ```
 
 Overloads get a numeric suffix — `open`, `open_2`, `open_3` — in declaration
-order, because BeeLang dispatches on name alone.
+order, because Bee dispatches on name alone.
 
 ---
 
 ## Buffers: bulk data without a copy
 
 This is the part that decides whether a binding to an image or tensor library is
-usable at all. A 640×480 RGB image is 921,600 numbers; as a BeeLang list that is
+usable at all. A 640×480 RGB image is 921,600 numbers; as a Bee list that is
 a `std::vector<Value>` at 16 bytes each — about 15 MB, rebuilt element by element
 at every boundary. A **buffer** is raw bytes with a dtype and a shape, so it
 crosses as a single pointer:
@@ -180,7 +180,7 @@ vision.to_gray(img, out)                # the library writes straight into it
 ```
 
 On the C++ side, a shim declares its parameters as `BeeBuffer` (from
-[`bee_buffer.h`](../src/bee_buffer.h), a plain C struct that needs no BeeLang
+[`bee_buffer.h`](../src/bee_buffer.h), a plain C struct that needs no Bee
 header) and `beegen` maps them automatically:
 
 ```cpp
@@ -203,17 +203,17 @@ typedef struct BeeBuffer {
 The pointer is valid **for the duration of the call only**. A library that keeps
 the memory — an async inference queue, a GPU upload that outlives the call — must
 copy it. And check `dtype` before casting: a `u8` buffer read as `float*` is
-exactly the kind of bug that has no BeeLang-level symptom.
+exactly the kind of bug that has no Bee-level symptom.
 
 To allocate a buffer from native code, use `bee::native::makeBuffer(DType::F32,
-{rows, cols})`. The BeeLang-side API — `buffer`, `zeros`, `ones`, `full`,
+{rows, cols})`. The Bee-side API — `buffer`, `zeros`, `ones`, `full`,
 `buffer_from`, `to_list`, `shape`, `dtype`, `at`, `set_at`, `reshape`, `astype`,
 `copy`, `buf_add`/`sub`/`mul`/`div`, `buf_sum`/`min`/`max` — is in the
 [language reference](LANGUAGE.md#buffers).
 
 ---
 
-## Calling back into BeeLang
+## Calling back into Bee
 
 Libraries that log, report progress, or ask a question mid-call need to run your
 code. Hold the callable and invoke it:
@@ -239,7 +239,7 @@ interface like TensorRT's `ILogger`, implement the interface in your shim and
 forward to a stored `Callback`. `beegen` skips raw function-pointer parameters
 with a note pointing here.
 
-While a long native call runs, hand the lock back so other BeeLang threads can
+While a long native call runs, hand the lock back so other Bee threads can
 work: `bee::native::GilOff off(interp);`.
 
 ---
@@ -287,7 +287,7 @@ being reinterpreted and silently corrupting.
 ## Errors from a C++ library
 
 A bound library throwing its own exception type — `cv::Exception`,
-`Ort::Exception`, `std::bad_alloc` — becomes an ordinary BeeLang error with a
+`Ort::Exception`, `std::bad_alloc` — becomes an ordinary Bee error with a
 stack trace instead of unwinding past the interpreter and aborting:
 
 ```
@@ -323,7 +323,7 @@ The usual causes:
 - **Variadics.** `printf`-style functions can't be called safely without knowing
   the argument types at the call site.
 - **Non-const references.** `int&` is usually an out-parameter, which has no
-  BeeLang equivalent. Wrap it in C++ with a return value instead.
+  Bee equivalent. Wrap it in C++ with a return value instead.
 - **Unbound types.** A pointer or reference to a class that wasn't bound — often
   because it's only forward-declared, or because a `--prefix` / `--namespace`
   filter excluded it. Note that filtering out a class also unbinds every function
@@ -345,7 +345,7 @@ Everything after `--` goes to clang verbatim.
 
 | Option | Effect |
 |---|---|
-| `-m`, `--module <name>` | the BeeLang module to generate (required) |
+| `-m`, `--module <name>` | the Bee module to generate (required) |
 | `-o`, `--out-dir <dir>` | where to write the files (default: `.`) |
 | `--namespace <ns>` | only bind declarations in this namespace (repeatable) |
 | `--prefix <p>` | only bind names starting with this (repeatable) |
@@ -417,7 +417,7 @@ mismatch, which the interpreter reports at the call site with a full stack trace
 
 ## Memory, threads and safety
 
-**Handles are not garbage collected.** BeeLang collects its own values, but a
+**Handles are not garbage collected.** Bee collects its own values, but a
 handle points at memory only C++ knows about. Call `free()` when you're done:
 
 ```bee
@@ -445,7 +445,7 @@ m->def("slow", 0, [](Interpreter& I, std::vector<Value>&) {
 ```
 
 **A native module can crash the process.** It is real C++ with real pointers —
-a wrong cast segfaults, and no BeeLang error handling can catch that. Argument
+a wrong cast segfaults, and no Bee error handling can catch that. Argument
 types are checked at the boundary; what the library does afterwards is on the
 library.
 
@@ -480,7 +480,7 @@ Write the shim so that:
 | **OpenCV** | `cv::Mat`, heavy overloads, `InputArray` proxies, defaults everywhere | Wrap `Mat` as a handle *or* pass pixels as a `BeeBuffer` with `(rows, cols, type)`. Bind the ~20 functions you use (`imread`, `resize`, `cvtColor`, `Canny`, `imwrite`), not `cv::`. Link with `pkg-config --libs opencv4`. |
 | **ONNX Runtime** | a C API reached through `OrtGetApiBase()->GetApi()` — a struct of function pointers, so there is almost nothing for a generator to see | Shim it to flat functions: `ort_session_open(path)`, `ort_run(session, BeeBuffer in, BeeBuffer out)`, `ort_input_shape(session, i)` returning `std::vector<long long>`. Session/env are handles with explicit close. |
 | **TensorRT** | abstract interfaces (`IBuilder`, `ICudaEngine`), factory functions, a mandatory `ILogger` **callback**, CUDA device memory | The interface/factory/destroy shape is supported directly. Implement `ILogger` in the shim forwarding to a `Callback`. Device memory never becomes a buffer: `cudaMemcpy` from a host `BeeBuffer` inside the shim. |
-| **NumPy** | not a C++ library at all — it's a Python package | Nothing to bind. The BeeLang equivalent is the **buffer** type above. For heavy numerics, bind Eigen or xtensor through a shim, or add buffer operations to the interpreter. |
+| **NumPy** | not a C++ library at all — it's a Python package | Nothing to bind. The Bee equivalent is the **buffer** type above. For heavy numerics, bind Eigen or xtensor through a shim, or add buffer operations to the interpreter. |
 
 The abstract-interface, factory, callback, buffer and default-argument support
 above exists precisely so those shims stay small.
@@ -491,21 +491,21 @@ above exists precisely so those shims stay small.
 
 - **`beegen` needs a libclang shared library at run time**, not at build time —
   it's loaded with `dlopen` through a hand-declared slice of the stable C ABI, so
-  building BeeLang needs no clang headers at all. Install `libclang-dev` (Debian
+  building Bee needs no clang headers at all. Install `libclang-dev` (Debian
   and Ubuntu) or point `LIBCLANG_PATH`/`--libclang` at the library.
 - **Native modules use a C++ ABI, not a C one.** `Value` holds `std::variant` and
   `std::shared_ptr`, so a module must be built with the same compiler and standard
   library as the `bee` that loads it. `bee_native_abi()` catches version drift;
   it can't catch a toolchain mismatch, which usually shows up as a crash on
   import.
-- **Native modules that call back into BeeLang need the interpreter's symbols
+- **Native modules that call back into Bee need the interpreter's symbols
   exported.** The bundled build does this with `-rdynamic`; a custom build of
   `bee` must too, or `Interpreter::callValue` will be undefined at load time. On
   Windows this needs an import library, which the build doesn't produce yet — so
   callbacks are POSIX-only for now.
 - Not mapped yet: containers other than `std::vector` (`std::map`, `std::array`,
   `std::optional`), raw function-pointer parameters (write a trampoline — see
-  [Calling back into BeeLang](#calling-back-into-beelang)), templates, operator
+  [Calling back into Bee](#calling-back-into-beelang)), templates, operator
   overloads, nested classes, and out-parameters (`int&`).
 - Buffers are dense and row-major only: no strides, so a non-contiguous
   `cv::Mat` ROI has to be cloned before it crosses.

@@ -201,7 +201,7 @@ inline T* handle(const Value& v, const std::string& type, const char* who, int i
 // ---------------------------------------------------------------------------
 // Buffers -- bulk data, without a copy
 // ---------------------------------------------------------------------------
-// A BeeLang buffer becomes a BeeBuffer (see bee_buffer.h) pointing at the same
+// A Bee buffer becomes a BeeBuffer (see bee_buffer.h) pointing at the same
 // memory, so an image or a tensor crosses the boundary as one pointer. The view
 // is valid for the duration of the call only.
 inline int dtypeCode(DType t) {
@@ -233,7 +233,7 @@ inline BeeBuffer bufferView(const Value& v, const char* who, int index) {
     return out;
 }
 
-// Allocate a BeeLang buffer from native code -- for a shim that has to hand back
+// Allocate a Bee buffer from native code -- for a shim that has to hand back
 // data whose size it only knows at run time.
 inline Value makeBuffer(DType dtype, const std::vector<long long>& shape) {
     auto b = std::make_shared<Buffer>();
@@ -246,11 +246,11 @@ inline Value makeBuffer(DType dtype, const std::vector<long long>& shape) {
 }
 
 // ---------------------------------------------------------------------------
-// Calling back into BeeLang
+// Calling back into Bee
 // ---------------------------------------------------------------------------
 // Libraries that report progress or log through a callback (TensorRT's ILogger,
 // ONNX Runtime's logging function, OpenCV's trackbars) need to call *into*
-// BeeLang. Hold the callable in a shim object and invoke it through this.
+// Bee. Hold the callable in a shim object and invoke it through this.
 //
 // The GIL must be held. It already is when the call came from Bee code; a
 // callback arriving on a thread the library created must take it first -- see

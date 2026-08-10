@@ -22,7 +22,7 @@ using ValueDict = std::map<std::string, Value>;
 // ---------------------------------------------------------------------------
 // Buffer -- a contiguous typed array
 // ---------------------------------------------------------------------------
-// BeeLang's numbers are doubles and its lists are vectors of 16-byte Values, so
+// Bee's numbers are doubles and its lists are vectors of 16-byte Values, so
 // a 640x480 RGB image held as a list costs ~15 MB and has to be converted
 // element by element every time it crosses into C++. A Buffer is the opposite:
 // raw bytes with a dtype and a shape, so image and tensor data can be handed to
@@ -48,7 +48,7 @@ struct Buffer {
     size_t count() const { return itemSize() ? bytes.size() / itemSize() : 0; }
 
     // Elements are read and written as doubles, because that is the only number
-    // BeeLang has. The dtype decides how they are stored.
+    // Bee has. The dtype decides how they are stored.
     double get(size_t i) const {
         const void* p = bytes.data() + i * itemSize();
         switch (dtype) {
@@ -161,8 +161,35 @@ struct Value {
     bool isBuiltin() const { return std::holds_alternative<std::shared_ptr<Builtin>>(data); }
     bool isCallable() const { return isFunction() || isClass() || isBuiltin(); }
 
+    // Borrowing accessors for hot paths (indexing, iteration). The by-value
+    // asList()/asDict() below each cost a pair of atomic refcount operations,
+    // which is most of the work in `xs[i]`; these hand back a reference to the
+    // pointer the Value already holds. Only valid while the Value is alive.
+    // Const like shared_ptr's operator*: the Value owns the handle, not the
+    // container, so a const Value still hands out a mutable list.
+    ValueList& listRef() const { return *std::get<std::shared_ptr<ValueList>>(data); }
+    ValueDict& dictRef() const { return *std::get<std::shared_ptr<ValueDict>>(data); }
+    Buffer& bufRef() const { return *std::get<std::shared_ptr<Buffer>>(data); }
+    // The string handle itself, for the in-place append fast path, which has to
+    // ask whether anything else is holding the same buffer.
+    const std::shared_ptr<std::string>& strPtr() const {
+        return std::get<std::shared_ptr<std::string>>(data);
+    }
+    // The function handle without a refcount bump, for the VM's direct-call
+    // path. Valid only while this Value is alive.
+    const std::shared_ptr<Function>& funcRef() const {
+        return std::get<std::shared_ptr<Function>>(data);
+    }
+    const std::shared_ptr<Instance>& instRef() const {
+        return std::get<std::shared_ptr<Instance>>(data);
+    }
+
     bool asBool()   const { return std::get<bool>(data); }
     double asNumber() const { return std::get<double>(data); }
+    // The number without the alternative check std::get performs. Only for code
+    // that already knows this is a number -- the typed opcodes, where a declared
+    // annotation was enforced when the value entered.
+    double num() const { return *std::get_if<double>(&data); }
     const std::string& asString() const { return *std::get<std::shared_ptr<std::string>>(data); }
     std::shared_ptr<ValueList> asList() const { return std::get<std::shared_ptr<ValueList>>(data); }
     std::shared_ptr<ValueDict> asDict() const { return std::get<std::shared_ptr<ValueDict>>(data); }
@@ -210,10 +237,59 @@ struct Class {
     }
 };
 
+// ---------------------------------------------------------------------------
+// Shapes (hidden classes)
+// ---------------------------------------------------------------------------
+// An instance's fields used to live in a std::map<std::string, Value>, so every
+// `p.x` was a tree walk with string comparisons -- measured at ~41 ns, which was
+// most of the cost of object-oriented code.
+//
+// A Shape records which field names an instance has and which slot each one
+// occupies. Instances that acquired their fields in the same order (which, for
+// a class with a normal `init`, means all of them) share a single Shape, so the
+// fields themselves are a flat vector and a field access is an array index. A
+// call site can then cache "shape S => slot 3" and skip the lookup entirely
+// while it keeps seeing the same shape.
+struct Shape {
+    std::map<std::string, int> index;            // field name -> slot
+    std::vector<std::string> names;              // slot -> field name
+    std::map<std::string, Shape*> transitions;   // adding this name leads here
+
+    int slotOf(const std::string& n) const {
+        auto it = index.find(n);
+        return it == index.end() ? -1 : it->second;
+    }
+    // The shape reached by adding `n` to this one. Cached, so every instance of
+    // a class walks the same chain and they all end up sharing one shape.
+    Shape* with(const std::string& n);
+};
+
+// The shape of an instance with no fields yet; every chain starts here. Shapes
+// are allocated for the process's lifetime -- there is one per distinct field
+// sequence, which is bounded by the program text.
+Shape* emptyShape();
+
 // An instance of a class.
 struct Instance {
     std::shared_ptr<Class> klass;
-    std::map<std::string, Value> fields;
+    Shape* shape = emptyShape();
+    std::vector<Value> slots;
+
+    // Null when there is no such field. Valid until the instance gains a field.
+    Value* field(const std::string& n) {
+        int i = shape->slotOf(n);
+        return i < 0 ? nullptr : &slots[(size_t)i];
+    }
+    const Value* field(const std::string& n) const {
+        int i = shape->slotOf(n);
+        return i < 0 ? nullptr : &slots[(size_t)i];
+    }
+    void setField(const std::string& n, const Value& v) {
+        int i = shape->slotOf(n);
+        if (i >= 0) { slots[(size_t)i] = v; return; }
+        shape = shape->with(n);          // a new field: move to the next shape
+        slots.push_back(v);
+    }
 };
 
 // An imported module: a named namespace of top-level bindings.

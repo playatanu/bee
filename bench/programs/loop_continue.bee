@@ -1,0 +1,14 @@
+# The same again, written with `continue` -- once 50x slower than the `if` form.
+fn run(n) {
+  let xs = []
+  for (let i = 0; i < n; i = i + 1) { xs.push(i) }
+  let s = 0
+  for (let r = 0; r < 3000; r = r + 1) {
+    for (let i = 0; i < n; i = i + 1) {
+      if (xs[i] % 2 == 0) { continue }
+      s = s + xs[i]
+    }
+  }
+  return s
+}
+print(run(3000))

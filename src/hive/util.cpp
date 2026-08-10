@@ -17,7 +17,7 @@
 #endif
 
 #ifndef HIVE_VERSION
-#define HIVE_VERSION "0.3.1"
+#define HIVE_VERSION "0.3.2"
 #endif
 
 namespace fs = std::filesystem;

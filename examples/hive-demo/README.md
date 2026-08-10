@@ -1,6 +1,6 @@
 # Hive demo — building, installing and importing a package
 
-A two-directory walkthrough of [Hive](../../docs/HIVE.md), BeeLang's package
+A two-directory walkthrough of [Hive](../../docs/HIVE.md), Bee's package
 manager. No registry and no network needed: you pack a package locally and
 install the archive straight into the app.
 
@@ -42,7 +42,7 @@ bee main.bee
 ```
 
 ```
-Hello, BeeLang!
+Hello, Bee!
 Bonjour, monde!
 Namaste, duniya!
 ```

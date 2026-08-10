@@ -7,6 +7,55 @@
 
 namespace bee {
 
+// ---------------------------------------------------------------------------
+// Type annotations
+// ---------------------------------------------------------------------------
+// Bee is gradually typed: annotations are optional, an unannotated binding is
+// `Any`, and a program with no annotations at all behaves exactly as before.
+// What an annotation buys is a *guarantee* -- checked where the value enters
+// (a parameter, an annotated `let`, a `return`) and therefore relied on
+// afterwards, which is what lets a compiler stop re-asking what a value is.
+//
+//   fn dot(a: buffer, b: buffer, n: num) -> num { ... }
+//   let total: num = 0
+//
+struct TypeAnn {
+    enum class Kind : uint8_t { Any, Num, Str, Bool, List, Dict, Buffer, Nil, Fn, Class };
+    Kind kind = Kind::Any;
+    std::string className;   // when kind == Class
+    int line = 0;
+
+    bool declared() const { return kind != Kind::Any; }
+    std::string name() const {
+        switch (kind) {
+            case Kind::Num:    return "num";
+            case Kind::Str:    return "str";
+            case Kind::Bool:   return "bool";
+            case Kind::List:   return "list";
+            case Kind::Dict:   return "dict";
+            case Kind::Buffer: return "buffer";
+            case Kind::Nil:    return "nil";
+            case Kind::Fn:     return "fn";
+            case Kind::Class:  return className;
+            case Kind::Any:    break;
+        }
+        return "any";
+    }
+    // The annotation a name spells, or Any if it is not a built-in type name --
+    // in which case it is taken to be a class.
+    static Kind builtinNamed(const std::string& s) {
+        if (s == "num")    return Kind::Num;
+        if (s == "str")    return Kind::Str;
+        if (s == "bool")   return Kind::Bool;
+        if (s == "list")   return Kind::List;
+        if (s == "dict")   return Kind::Dict;
+        if (s == "buffer") return Kind::Buffer;
+        if (s == "nil")    return Kind::Nil;
+        if (s == "fn")     return Kind::Fn;
+        return Kind::Any;   // `any`, or a class name
+    }
+};
+
 // ---- Expressions ----
 struct Expr {
     enum class Kind {
@@ -60,6 +109,10 @@ struct AssignExpr : Expr {
     int depth = 0;      // resolver-filled, mirrors VariableExpr
     int slot = -1;
     bool global = true;
+    // The type this name was declared with, if any. An annotation has to hold
+    // for the variable's whole life, not just its initialiser -- otherwise
+    // nothing downstream could rely on it.
+    TypeAnn declaredType;
     // Inline cache for name-based (global) assignment; see VariableExpr.
     Environment* cacheEnv = nullptr;
     Value* cacheSlot = nullptr;
@@ -152,6 +205,7 @@ struct ListCompExpr : Expr {    // [ elem for name in iterable (if cond)? ]
     ExprPtr cond;               // may be null
     int varSlot = 0;
     int slotCount = 0;
+    bool ownScope = true;       // false => merged into the enclosing frame
     ListCompExpr() : Expr(Kind::ListComp) {}
 };
 
@@ -180,6 +234,7 @@ struct LetStmt : Stmt {
     int slot = -1;       // resolver-filled slot in the current scope
     bool global = true;  // true => define by name in a named (global/module) scope
     bool isConst = false;
+    TypeAnn type;        // `let x: num = 0`; Any when unannotated
 
     // Destructuring: `let [a, b] = ...` or `let {x, y} = ...`.
     bool isDestructure = false;
@@ -209,12 +264,17 @@ struct WhileStmt : Stmt {
     WhileStmt() : Stmt(Kind::While) {}
 };
 
+// A scope that declares names normally needs a runtime Environment. It does not
+// when the resolver could merge it into the enclosing frame -- see
+// Resolver::canMerge(). `ownScope == false` means the declarations live in slots
+// of the enclosing frame, so no environment is allocated for this node at all.
 struct ForStmt : Stmt {           // C-style: for (init; cond; incr) body
     StmtPtr init;                 // may be null
     ExprPtr condition;            // may be null (=> true)
     ExprPtr increment;            // may be null
     StmtPtr body;
     int slotCount = 0;            // slots for the loop's own scope (the init var)
+    bool ownScope = true;         // false => merged into the enclosing frame
     ForStmt() : Stmt(Kind::For) {}
 };
 
@@ -224,6 +284,7 @@ struct ForInStmt : Stmt {         // for x in iterable { }
     StmtPtr body;
     int slotCount = 0;            // slots for the loop's own scope
     int varSlot = 0;             // slot of the loop variable in that scope
+    bool ownScope = true;         // false => merged into the enclosing frame
     ForInStmt() : Stmt(Kind::ForIn) {}
 };
 
@@ -231,6 +292,11 @@ struct FunctionStmt : Stmt {
     std::string name;
     std::vector<std::string> params;
     std::vector<ExprPtr> defaults;  // parallel to params; null where no default
+    std::vector<TypeAnn> paramTypes; // parallel to params; Any where unannotated
+    TypeAnn returnType;             // `-> num`; Any when unannotated
+    // True when any parameter or the return is annotated, so the common
+    // unannotated case skips the per-call check with a single test.
+    bool typed = false;
     int restParam = -1;             // index of a `...rest` param, or -1
     std::vector<StmtPtr> body;
     // Resolver-filled frame layout: total slots, and where params begin (after
@@ -297,6 +363,7 @@ struct TryStmt : Stmt {                 // try { } catch (e) { } finally { }
     // Resolver-filled scope wrapping the catch binding.
     int catchSlot = 0;
     int catchScopeSlots = 0;
+    bool catchOwnScope = true;     // false => merged into the enclosing frame
     TryStmt() : Stmt(Kind::Try) {}
 };
 

@@ -25,6 +25,7 @@ enum class TokenType {
     EQ, NEQ, LT, GT, LE, GE,
     PLUS_EQ, MINUS_EQ, STAR_EQ, SLASH_EQ,
     PLUS_PLUS, MINUS_MINUS,
+    ARROW,          // -> , introducing a return type
     BIT_AND, BIT_OR, BIT_XOR, BIT_NOT, SHL, SHR,
 
     EOF_TOK

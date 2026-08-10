@@ -1,0 +1,6 @@
+# A top-level numeric nested loop: the shape the LLVM JIT compiles natively.
+let s = 0
+for (let i = 0; i < 30000; i = i + 1) {
+  for (let j = 0; j < 3000; j = j + 1) { s = s + j }
+}
+print(s)

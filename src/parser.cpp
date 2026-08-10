@@ -143,14 +143,30 @@ StmtPtr Parser::letStatement(bool isConst) {
         stmt->initializer = expression();
     } else {
         stmt->name = consume(TokenType::IDENTIFIER, std::string("expected variable name after '") + kw + "'").lexeme;
+        if (match(TokenType::COLON)) stmt->type = typeAnnotation();
         if (match(TokenType::ASSIGN)) stmt->initializer = expression();
     }
     match(TokenType::SEMICOLON); // optional
     return stmt;
 }
 
-// Parse a parenthesized parameter list, including `name = default` and a
-// trailing `...rest` parameter.
+// A type annotation, after the ':' or '->' that introduces it. Any identifier
+// is accepted: the built-in type names are recognised, and anything else is
+// taken to name a class, which is checked when a value actually arrives.
+TypeAnn Parser::typeAnnotation() {
+    TypeAnn t;
+    Token name = consume(TokenType::IDENTIFIER, "expected a type name");
+    t.line = name.line;
+    t.kind = TypeAnn::builtinNamed(name.lexeme);
+    if (t.kind == TypeAnn::Kind::Any && name.lexeme != "any") {
+        t.kind = TypeAnn::Kind::Class;
+        t.className = name.lexeme;
+    }
+    return t;
+}
+
+// Parse a parenthesized parameter list, including `name: type`, `name = default`
+// and a trailing `...rest` parameter.
 void Parser::parseParams(FunctionStmt* fn) {
     consume(TokenType::LPAREN, "expected '(' before parameters");
     if (!check(TokenType::RPAREN)) {
@@ -160,14 +176,20 @@ void Parser::parseParams(FunctionStmt* fn) {
                 fn->restParam = (int)fn->params.size();
                 fn->params.push_back(rn);
                 fn->defaults.push_back(nullptr);
+                fn->paramTypes.push_back(TypeAnn{});   // a rest param is a list of anything
                 break; // a rest parameter must be last
             }
             std::string pn = consume(TokenType::IDENTIFIER, "expected parameter name").lexeme;
             fn->params.push_back(pn);
+            fn->paramTypes.push_back(match(TokenType::COLON) ? typeAnnotation() : TypeAnn{});
             fn->defaults.push_back(match(TokenType::ASSIGN) ? expression() : nullptr);
         } while (match(TokenType::COMMA));
     }
     consume(TokenType::RPAREN, "expected ')' after parameters");
+    if (match(TokenType::ARROW)) fn->returnType = typeAnnotation();
+
+    fn->typed = fn->returnType.declared();
+    for (auto& t : fn->paramTypes) if (t.declared()) fn->typed = true;
 }
 
 std::unique_ptr<FunctionStmt> Parser::functionDecl(const std::string& kind) {

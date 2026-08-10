@@ -204,7 +204,7 @@ private:
                     }
                     Mapped elem = mapType(clang_.templateArg(canon, 0), false);
                     // Only element types that convert on their own: a vector of
-                    // handles would need ownership rules BeeLang doesn't have.
+                    // handles would need ownership rules Bee doesn't have.
                     switch (elem.kind) {
                         case Mapped::Kind::Bool:
                         case Mapped::Kind::Integer:
@@ -506,7 +506,7 @@ std::string sanitizeIdentifier(const std::string& name) {
     }
     if (!out.empty() && out[0] >= '0' && out[0] <= '9') out.insert(out.begin(), '_');
 
-    // A C++ name that happens to be a BeeLang keyword -- `in`, `class`, `from`
+    // A C++ name that happens to be a Bee keyword -- `in`, `class`, `from`
     // are all ordinary parameter names in C++ -- would not parse in generated
     // code, so it gets a trailing underscore.
     static const char* keywords[] = {

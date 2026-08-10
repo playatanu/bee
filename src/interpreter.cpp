@@ -12,6 +12,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
+#include <deque>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -246,6 +247,39 @@ void Interpreter::joinAllThreads() {
 static thread_local std::shared_ptr<const std::string> tlsCurrentFile;
 static thread_local std::vector<CallFrame> tlsCallStack;
 
+// ---- environment and argument recycling -----------------------------------
+// A call used to allocate its frame (a shared_ptr control block plus the slots
+// vector) and throw it away on return. Almost every frame dies at the end of the
+// call that made it -- only a closure keeps one alive -- so frames are recycled
+// through a small free list instead, and the slots vector keeps its capacity.
+// Both pools are thread-local: Bee code only runs while holding the GIL, but
+// keeping them per-thread means no assumption about that is baked in here.
+static thread_local std::vector<std::shared_ptr<Environment>> tlsEnvPool;
+static thread_local std::vector<std::vector<Value>> tlsArgPool;
+static const size_t kPoolLimit = 64;
+
+static std::shared_ptr<Environment> acquireEnv(const std::shared_ptr<Environment>& parent,
+                                               int slotCount) {
+    if (!tlsEnvPool.empty()) {
+        auto e = std::move(tlsEnvPool.back());
+        tlsEnvPool.pop_back();
+        e->parent = parent;
+        e->slots.assign((size_t)slotCount, Value());   // reuses the existing capacity
+        return e;
+    }
+    return std::make_shared<Environment>(parent, slotCount);
+}
+
+// Give a frame back, but only if nothing else still points at it -- a closure
+// created during the call holds a reference, and that frame has to keep living.
+static void recycleEnv(std::shared_ptr<Environment>& e) {
+    if (!e || e.use_count() != 1 || tlsEnvPool.size() >= kPoolLimit) return;
+    e->parent.reset();                    // don't pin the parent chain alive
+    for (auto& v : e->slots) v = Value();  // drop the values' references now
+    if (!e->values.empty()) e->values.clear();
+    tlsEnvPool.push_back(std::move(e));
+}
+
 // Swap in a file (and restore the previous one) for the duration of a scope.
 namespace {
 struct FileScope {
@@ -259,6 +293,116 @@ struct FileScope {
 };
 }
 
+// ---- gradual types --------------------------------------------------------
+
+std::string typeNameOf(const Value& v) {
+    if (v.isNil())      return "nil";
+    if (v.isBool())     return "bool";
+    if (v.isNumber())   return "num";
+    if (v.isString())   return "str";
+    if (v.isList())     return "list";
+    if (v.isDict())     return "dict";
+    if (v.isBuffer())   return "buffer";
+    if (v.isInstance()) return v.asInstance()->klass->name;
+    if (v.isClass())    return "class";
+    if (v.isModule())   return "module";
+    return "fn";   // functions and built-ins are both callable values
+}
+
+bool typeAccepts(const TypeAnn& t, const Value& v) {
+    switch (t.kind) {
+        case TypeAnn::Kind::Any:    return true;
+        case TypeAnn::Kind::Num:    return v.isNumber();
+        case TypeAnn::Kind::Str:    return v.isString();
+        case TypeAnn::Kind::Bool:   return v.isBool();
+        case TypeAnn::Kind::List:   return v.isList();
+        case TypeAnn::Kind::Dict:   return v.isDict();
+        case TypeAnn::Kind::Buffer: return v.isBuffer();
+        case TypeAnn::Kind::Nil:    return v.isNil();
+        case TypeAnn::Kind::Fn:     return v.isFunction() || v.isBuiltin();
+        case TypeAnn::Kind::Class: {
+            if (!v.isInstance()) return false;
+            // A derived instance satisfies a base class annotation.
+            for (Class* k = v.asInstance()->klass.get(); k; k = k->superclass.get())
+                if (k->name == t.className) return true;
+            return false;
+        }
+    }
+    return true;
+}
+
+void Interpreter::checkParamType(const FunctionStmt& decl, size_t i, const Value& v, int line) {
+    if (i >= decl.paramTypes.size()) return;
+    const TypeAnn& t = decl.paramTypes[i];
+    if (!t.declared() || typeAccepts(t, v)) return;
+    error("parameter '" + decl.params[i] + "' of '" +
+          (decl.name.empty() ? std::string("<anonymous>") : decl.name) + "' is declared " +
+          t.name() + " but got " + typeNameOf(v), line);
+}
+
+void Interpreter::checkDeclared(const TypeAnn& t, const std::string& name, const Value& v,
+                                int line) {
+    if (!t.declared() || typeAccepts(t, v)) return;
+    error("'" + name + "' is declared " + t.name() + " but got " + typeNameOf(v), line);
+}
+
+void Interpreter::checkReturnType(const FunctionStmt& decl, const Value& v, int line) {
+    if (!decl.returnType.declared() || typeAccepts(decl.returnType, v)) return;
+    error("'" + (decl.name.empty() ? std::string("<anonymous>") : decl.name) +
+          "' is declared to return " + decl.returnType.name() + " but returned " +
+          typeNameOf(v), line);
+}
+
+// ---- shapes ---------------------------------------------------------------
+// Shapes live for the process's lifetime: there is one per distinct sequence of
+// field names, which the program text bounds, and instances point at them
+// without owning them. A deque is used because it never moves what it holds, so
+// a Shape* stays valid as more shapes appear.
+namespace {
+std::deque<Shape>& shapeArena() {
+    static std::deque<Shape> arena;
+    return arena;
+}
+}
+
+Shape* emptyShape() {
+    static Shape* root = [] {
+        shapeArena().emplace_back();
+        return &shapeArena().back();
+    }();
+    return root;
+}
+
+Shape* Shape::with(const std::string& n) {
+    auto it = transitions.find(n);
+    if (it != transitions.end()) return it->second;   // this chain was walked before
+
+    shapeArena().emplace_back();
+    Shape* next = &shapeArena().back();
+    next->index = index;
+    next->names = names;
+    next->index[n] = (int)next->names.size();
+    next->names.push_back(n);
+    transitions[n] = next;
+    return next;
+}
+
+CallScope::CallScope(Interpreter& I, const std::shared_ptr<Function>& fn, int line)
+    : savedFile(tlsCurrentFile) {
+    if (tlsCallStack.size() >= I.callDepthLimit())
+        I.error("call stack overflow in '" + functionName(*fn) + "' (deeper than " +
+                std::to_string(I.callDepthLimit()) + " nested calls) -- unbounded recursion?\n"
+                "       if the depth is intentional, raise it with BEE_MAX_DEPTH "
+                "(and the stack with 'ulimit -s')", line);
+    tlsCallStack.push_back({fn.get(), tlsCurrentFile, line});
+    if (fn->file) tlsCurrentFile = fn->file;
+}
+
+CallScope::~CallScope() {
+    tlsCallStack.pop_back();
+    tlsCurrentFile = std::move(savedFile);
+}
+
 std::shared_ptr<const std::string> Interpreter::internFile(const std::string& path) {
     auto it = fileNames.find(path);
     if (it != fileNames.end()) return it->second;
@@ -267,6 +411,17 @@ std::shared_ptr<const std::string> Interpreter::internFile(const std::string& pa
     std::string display = path;
     while (display.rfind("./", 0) == 0) display.erase(0, 2);
     return fileNames.emplace(path, std::make_shared<const std::string>(display)).first->second;
+}
+
+std::string functionName(const Function& fn) {
+    const FunctionStmt* decl = fn.decl;
+    std::string name = !fn.name.empty() ? fn.name
+                     : (decl && !decl->name.empty() ? decl->name : "<anonymous>");
+    // Qualify methods with their class: two classes can both have `draw`, and a
+    // trace saying which one is running is the whole point.
+    if (fn.definingClass && !fn.definingClass->name.empty())
+        name = fn.definingClass->name + "." + name;
+    return name;
 }
 
 std::string Interpreter::formatTrace(int line) const {
@@ -282,7 +437,8 @@ std::string Interpreter::formatTrace(int line) const {
     auto file = tlsCurrentFile;
     int ln = line;
     for (size_t i = tlsCallStack.size(); i-- > 0;) {
-        rows.push_back({tlsCallStack[i].name + "()", place(file, ln)});
+        const Function* f = tlsCallStack[i].fn;
+        rows.push_back({(f ? functionName(*f) : std::string("<fn>")) + "()", place(file, ln)});
         file = tlsCallStack[i].callFile;
         ln = tlsCallStack[i].callLine;
     }
@@ -485,13 +641,13 @@ void Interpreter::runSource(const std::string& src, const std::string& name,
     } guard{ this };
 
     try {
-        execProgram(*prog, globals);
-    } catch (ReturnSignal&) {
-        // A top-level `return` just ends the program.
-    } catch (BreakSignal&) {
-        throw TracedError("Runtime error: 'break' used outside of a loop");
-    } catch (ContinueSignal&) {
-        throw TracedError("Runtime error: 'continue' used outside of a loop");
+        // A top-level `return` just ends the program; a stray break/continue is
+        // an error, because there is no loop here to absorb it.
+        Flow f = execProgram(*prog, globals);
+        if (f == Flow::Break)
+            throw TracedError("Runtime error: 'break' used outside of a loop");
+        if (f == Flow::Continue)
+            throw TracedError("Runtime error: 'continue' used outside of a loop");
     } catch (BeeThrow& t) {
         // The trace was captured where the throw happened; those frames are
         // already unwound by the time we get here.
@@ -565,19 +721,20 @@ void Interpreter::runRepl() {
                 if (stmt->kind == Stmt::Kind::Expression) {
                     Value v = evaluate(static_cast<ExprStmt*>(stmt.get())->expr.get(), env);
                     if (!v.isNil()) std::cout << reprString(v) << "\n";
-                } else {
-                    execute(stmt.get(), env);
+                    continue;
                 }
+                Flow f = execute(stmt.get(), env);
+                if (f == Flow::Return)
+                    std::cout << "Runtime error: 'return' outside of a function\n";
+                else if (f == Flow::Break)
+                    std::cout << "Runtime error: 'break' outside of a loop\n";
+                else if (f == Flow::Continue)
+                    std::cout << "Runtime error: 'continue' outside of a loop\n";
+                if (f != Flow::Normal) break;
             }
         } catch (BeeThrow& t) {
             std::cout << "Uncaught: " << stringify(t.value) << "\n";
             if (!t.trace.empty()) std::cout << t.trace << "\n";
-        } catch (ReturnSignal&) {
-            std::cout << "Runtime error: 'return' outside of a function\n";
-        } catch (BreakSignal&) {
-            std::cout << "Runtime error: 'break' outside of a loop\n";
-        } catch (ContinueSignal&) {
-            std::cout << "Runtime error: 'continue' outside of a loop\n";
         } catch (const std::exception& e) {
             std::cout << e.what() << "\n";
         }
@@ -587,12 +744,20 @@ void Interpreter::runRepl() {
     }
 }
 
-void Interpreter::execProgram(const Program& program, std::shared_ptr<Environment> env) {
-    for (auto& s : program) execute(s.get(), env);
+Flow Interpreter::execProgram(const Program& program, std::shared_ptr<Environment> env) {
+    for (auto& s : program) {
+        Flow f = execute(s.get(), env);
+        if (f != Flow::Normal) return f;
+    }
+    return Flow::Normal;
 }
 
-void Interpreter::execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<Environment> env) {
-    for (auto& s : stmts) execute(s.get(), env);
+Flow Interpreter::execBlock(const std::vector<StmtPtr>& stmts, std::shared_ptr<Environment> env) {
+    for (auto& s : stmts) {
+        Flow f = execute(s.get(), env);
+        if (f != Flow::Normal) return f;   // stop here; the caller decides what it means
+    }
+    return Flow::Normal;
 }
 
 // Below this many iterations, interpreting a flat loop is cheaper than paying
@@ -712,7 +877,7 @@ Value* Interpreter::selfStringAppend(AssignExpr* e, std::shared_ptr<Environment>
     return slot;
 }
 
-void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
+Flow Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
     switch (stmt->kind) {
         case Stmt::Kind::Expression: {
             auto* s = static_cast<ExprStmt*>(stmt);
@@ -722,6 +887,7 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         case Stmt::Kind::Let: {
             auto* s = static_cast<LetStmt*>(stmt);
             Value v = s->initializer ? evaluate(s->initializer.get(), env) : Value();
+            checkDeclared(s->type, s->name, v, s->line);
             if (!s->isDestructure) {
                 if (s->global) env->define(s->name, v);
                 else env->slots[(size_t)s->slot] = v;
@@ -747,49 +913,39 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         }
         case Stmt::Kind::Block: {
             auto* s = static_cast<BlockStmt*>(stmt);
-            if (s->transparent) {
-                execBlock(s->statements, env);
-            } else {
-                auto child = std::make_shared<Environment>(env, s->slotCount);
-                execBlock(s->statements, child);
-            }
-            break;
+            if (s->transparent)
+                return execBlock(s->statements, env);
+            auto child = std::make_shared<Environment>(env, s->slotCount);
+            return execBlock(s->statements, child);
         }
         case Stmt::Kind::If: {
             auto* s = static_cast<IfStmt*>(stmt);
             if (evaluate(s->condition.get(), env).truthy())
-                execute(s->thenBranch.get(), env);
-            else if (s->elseBranch)
-                execute(s->elseBranch.get(), env);
+                return execute(s->thenBranch.get(), env);
+            if (s->elseBranch)
+                return execute(s->elseBranch.get(), env);
             break;
         }
         case Stmt::Kind::While: {
             auto* s = static_cast<WhileStmt*>(stmt);
             if (tryJitLoop(stmt, env)) break;
             while (evaluate(s->condition.get(), env).truthy()) {
-                try {
-                    execute(s->body.get(), env);
-                } catch (BreakSignal&) {
-                    break;
-                } catch (ContinueSignal&) {
-                    // fall through to re-test condition
-                }
+                Flow f = execute(s->body.get(), env);
+                if (f == Flow::Break) break;
+                if (f == Flow::Return) return f;   // Continue: re-test the condition
             }
             break;
         }
         case Stmt::Kind::For: {
             auto* s = static_cast<ForStmt*>(stmt);
             if (tryJitLoop(stmt, env)) break;
-            auto loopEnv = std::make_shared<Environment>(env, s->slotCount);
+            // A merged loop scope lives in the enclosing frame: no allocation.
+            auto loopEnv = s->ownScope ? std::make_shared<Environment>(env, s->slotCount) : env;
             if (s->init) execute(s->init.get(), loopEnv);
             while (s->condition ? evaluate(s->condition.get(), loopEnv).truthy() : true) {
-                try {
-                    execute(s->body.get(), loopEnv);
-                } catch (BreakSignal&) {
-                    break;
-                } catch (ContinueSignal&) {
-                    // fall through to increment
-                }
+                Flow f = execute(s->body.get(), loopEnv);
+                if (f == Flow::Break) break;
+                if (f == Flow::Return) return f;   // Continue: fall through to the increment
                 if (s->increment) evaluate(s->increment.get(), loopEnv);
             }
             break;
@@ -797,31 +953,36 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         case Stmt::Kind::ForIn: {
             auto* s = static_cast<ForInStmt*>(stmt);
             Value iter = evaluate(s->iterable.get(), env);
-            auto loopEnv = std::make_shared<Environment>(env, s->slotCount);
+            auto loopEnv = s->ownScope ? std::make_shared<Environment>(env, s->slotCount) : env;
 
-            auto runOne = [&](const Value& item) -> bool {
+            // Returns Normal to keep iterating, Break to stop, Return to unwind.
+            auto runOne = [&](const Value& item) -> Flow {
                 loopEnv->slots[(size_t)s->varSlot] = item;
-                try {
-                    execute(s->body.get(), loopEnv);
-                } catch (BreakSignal&) {
-                    return false;
-                } catch (ContinueSignal&) {
-                }
-                return true;
+                Flow f = execute(s->body.get(), loopEnv);
+                return (f == Flow::Continue) ? Flow::Normal : f;
             };
 
             if (iter.isList()) {
                 auto l = iter.asList();
-                for (size_t i = 0; i < l->size(); ++i)
-                    if (!runOne((*l)[i])) break;
+                for (size_t i = 0; i < l->size(); ++i) {
+                    Flow f = runOne((*l)[i]);
+                    if (f == Flow::Return) return f;
+                    if (f == Flow::Break) break;
+                }
             } else if (iter.isString()) {
                 const std::string& str = iter.asString();
-                for (char c : str)
-                    if (!runOne(Value(std::string(1, c)))) break;
+                for (char c : str) {
+                    Flow f = runOne(Value(std::string(1, c)));
+                    if (f == Flow::Return) return f;
+                    if (f == Flow::Break) break;
+                }
             } else if (iter.isDict()) {
                 auto d = iter.asDict();
-                for (auto& kv : *d)
-                    if (!runOne(Value(kv.first))) break;
+                for (auto& kv : *d) {
+                    Flow f = runOne(Value(kv.first));
+                    if (f == Flow::Return) return f;
+                    if (f == Flow::Break) break;
+                }
             } else {
                 error("value is not iterable", s->line);
             }
@@ -840,8 +1001,8 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         }
         case Stmt::Kind::Return: {
             auto* s = static_cast<ReturnStmt*>(stmt);
-            Value v = s->value ? evaluate(s->value.get(), env) : Value();
-            throw ReturnSignal{v};
+            returnValue_ = s->value ? evaluate(s->value.get(), env) : Value();
+            return Flow::Return;
         }
         case Stmt::Kind::Class:
             execClass(static_cast<ClassStmt*>(stmt), env);
@@ -852,65 +1013,73 @@ void Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
         case Stmt::Kind::Match: {
             auto* s = static_cast<MatchStmt*>(stmt);
             Value subj = evaluate(s->subject.get(), env);
-            bool matched = false;
             for (auto& c : s->cases) {
                 for (auto& v : c.values) {
-                    if (valuesEqual(subj, evaluate(v.get(), env))) {
-                        execute(c.body.get(), env);
-                        matched = true;
-                        break;
-                    }
+                    if (valuesEqual(subj, evaluate(v.get(), env)))
+                        return execute(c.body.get(), env);
                 }
-                if (matched) break;
             }
-            if (!matched && s->hasDefault) execute(s->defaultBody.get(), env);
+            if (s->hasDefault) return execute(s->defaultBody.get(), env);
             break;
         }
         case Stmt::Kind::Try:
-            execTry(static_cast<TryStmt*>(stmt), env);
-            break;
+            return execTry(static_cast<TryStmt*>(stmt), env);
         case Stmt::Kind::Throw: {
             auto* s = static_cast<ThrowStmt*>(stmt);
             Value thrown = evaluate(s->value.get(), env);
             throw BeeThrow{ thrown, formatTrace(s->line) };
         }
         case Stmt::Kind::Break:
-            throw BreakSignal{};
+            return Flow::Break;
         case Stmt::Kind::Continue:
-            throw ContinueSignal{};
+            return Flow::Continue;
     }
+    return Flow::Normal;
 }
 
-void Interpreter::runCatch(TryStmt* s, const Value& err, std::shared_ptr<Environment>& env) {
-    auto catchEnv = std::make_shared<Environment>(env, s->catchScopeSlots);
+Flow Interpreter::runCatch(TryStmt* s, const Value& err, std::shared_ptr<Environment>& env) {
+    auto catchEnv = s->catchOwnScope ? std::make_shared<Environment>(env, s->catchScopeSlots) : env;
     if (!s->catchName.empty())
         catchEnv->slots[(size_t)s->catchSlot] = err;
-    execute(s->catchBody.get(), catchEnv);
+    return execute(s->catchBody.get(), catchEnv);
 }
 
-void Interpreter::execTry(TryStmt* s, std::shared_ptr<Environment>& env) {
+Flow Interpreter::execTry(TryStmt* s, std::shared_ptr<Environment>& env) {
     // `finally` must run on every exit path: normal completion, a handled or
-    // rethrown Bee exception, or a return/break/continue tunnelling through.
+    // rethrown Bee exception, or a return/break/continue leaving the block.
+    Flow f = Flow::Normal;
     try {
         try {
-            execute(s->body.get(), env);
+            f = execute(s->body.get(), env);
         } catch (BeeThrow& t) {
             if (!s->hasCatch) throw;
-            runCatch(s, t.value, env);
+            f = runCatch(s, t.value, env);
         } catch (TracedError& e) {
             if (!s->hasCatch) throw;
             // One line: a handler usually prints this inside a message of its
             // own, and a stack trace embedded there would be noise.
-            runCatch(s, Value(e.brief()), env);
+            f = runCatch(s, Value(e.brief()), env);
         } catch (RuntimeError& e) {
             if (!s->hasCatch) throw;
-            runCatch(s, Value(std::string(e.what())), env); // a built-in's own message
+            f = runCatch(s, Value(std::string(e.what())), env); // a built-in's own message
         }
     } catch (...) {
         if (s->hasFinally) execute(s->finallyBody.get(), env);
         throw;
     }
-    if (s->hasFinally) execute(s->finallyBody.get(), env);
+    if (s->hasFinally) {
+        // The body's pending `return` value has to survive the finally block,
+        // which runs arbitrary code -- including calls that set returnValue_.
+        Value pending;
+        if (f == Flow::Return) pending = std::move(returnValue_);
+        Flow ff = execute(s->finallyBody.get(), env);
+        // A jump out of `finally` wins over one out of the body, matching the
+        // old behaviour where a signal thrown from finally replaced the one in
+        // flight.
+        if (ff != Flow::Normal) return ff;
+        if (f == Flow::Return) returnValue_ = std::move(pending);
+    }
+    return f;
 }
 
 void Interpreter::execClass(ClassStmt* c, std::shared_ptr<Environment>& env) {
@@ -1218,6 +1387,9 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             }
 
             Value v = e->value ? evaluate(e->value.get(), env) : Value();
+            // An annotation binds the name for its whole life, not just its
+            // initialiser, so an assignment has to satisfy it too.
+            checkDeclared(e->declaredType, e->name, v, e->line);
             if (!e->global) {
                 env->setAt(e->depth, e->slot, v);
             } else {
@@ -1276,12 +1448,12 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             if (e->op == TokenType::ASSIGN) {
                 newVal = rhs;
             } else {
-                auto it = inst->fields.find(e->name);
-                if (it == inst->fields.end())
+                Value* cur = inst->field(e->name);
+                if (!cur)
                     error("compound assignment to undefined field '" + e->name + "'", e->line);
-                newVal = applyBinaryArith(e->op, it->second, rhs, e->line);
+                newVal = applyBinaryArith(e->op, *cur, rhs, e->line);
             }
-            inst->fields[e->name] = newVal;
+            inst->setField(e->name, newVal);
             return newVal;
         }
 
@@ -1295,45 +1467,11 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             Value obj = evaluate(e->object.get(), env);
             Value idx = evaluate(e->index.get(), env);
             Value rhs = evaluate(e->value.get(), env);
-            if (obj.isList()) {
-                auto lst = obj.asList();
-                if (!idx.isNumber()) error("list index must be a number", e->line);
-                long long i = (long long)idx.asNumber();
-                if (i < 0) i += (long long)lst->size();
-                if (i < 0 || i >= (long long)lst->size())
-                    error("list index out of range", e->line);
-                Value newVal = (e->op == TokenType::ASSIGN)
-                    ? rhs : applyBinaryArith(e->op, (*lst)[(size_t)i], rhs, e->line);
-                (*lst)[(size_t)i] = newVal;
-                return newVal;
-            } else if (obj.isDict()) {
-                auto d = obj.asDict();
-                std::string key = keyString(idx);
-                Value newVal;
-                if (e->op == TokenType::ASSIGN) {
-                    newVal = rhs;
-                } else {
-                    auto it = d->find(key);
-                    Value cur = it != d->end() ? it->second : Value();
-                    newVal = applyBinaryArith(e->op, cur, rhs, e->line);
-                }
-                (*d)[key] = newVal;
-                return newVal;
-            } else if (obj.isBuffer()) {
-                auto buf = obj.asBuffer();
-                if (!idx.isNumber()) error("buffer index must be a number", e->line);
-                long long i = (long long)idx.asNumber();
-                if (i < 0) i += (long long)buf->count();
-                if (i < 0 || (size_t)i >= buf->count())
-                    error("buffer index out of range (" + std::to_string(buf->count()) +
-                          " element(s))", e->line);
-                Value newVal = (e->op == TokenType::ASSIGN)
-                    ? rhs : applyBinaryArith(e->op, Value(buf->get((size_t)i)), rhs, e->line);
-                if (!newVal.isNumber()) error("a buffer holds numbers only", e->line);
-                buf->set((size_t)i, newVal.asNumber());
-                return newVal;
-            }
-            error("cannot assign by index to this type", e->line);
+            Value newVal = (e->op == TokenType::ASSIGN)
+                ? rhs
+                : applyBinaryArith(e->op, indexGet(obj, idx, e->line), rhs, e->line);
+            indexSet(obj, idx, newVal, e->line);
+            return newVal;
         }
 
         case Expr::Kind::This: {
@@ -1347,13 +1485,9 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             auto* e = static_cast<SuperExpr*>(expr);
             if (e->depth < 0)
                 error("'super' used outside of a subclass method", e->line);
-            Value superV = env->getAt(e->depth, 1); // superclass is slot 1
-            Value thisV = env->getAt(e->depth, 0);  // `this` is slot 0
-            auto superClass = superV.asClass();
-            auto m = superClass->findMethod(e->method);
-            if (!m)
-                error("undefined method '" + e->method + "' on superclass", e->line);
-            return Value(bindMethod(m, thisV.asInstance(), superClass));
+            return superMethod(env->getAt(e->depth, 1),   // superclass is slot 1
+                               env->getAt(e->depth, 0),   // `this` is slot 0
+                               e->method, e->line);
         }
 
         case Expr::Kind::Grouping:
@@ -1380,7 +1514,7 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             auto* e = static_cast<ListCompExpr*>(expr);
             Value iter = evaluate(e->iterable.get(), env);
             auto out = std::make_shared<ValueList>();
-            auto compEnv = std::make_shared<Environment>(env, e->slotCount);
+            auto compEnv = e->ownScope ? std::make_shared<Environment>(env, e->slotCount) : env;
             auto one = [&](const Value& item) {
                 compEnv->slots[(size_t)e->varSlot] = item;
                 if (!e->cond || evaluate(e->cond.get(), compEnv).truthy())
@@ -1428,16 +1562,17 @@ Value Interpreter::applyBinaryArith(TokenType op, const Value& l, const Value& r
     }
 }
 
-Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) {
-    Value l = evaluate(e->left.get(), env);
-    Value r = evaluate(e->right.get(), env);
+// The whole binary-operator semantics, on two already-evaluated operands. The
+// tree-walker and the bytecode VM both go through here, so there is exactly one
+// definition of what `+` means.
+Value Interpreter::applyBinary(TokenType op, const Value& l, const Value& r, int line) {
 
     auto needNums = [&]() {
         if (!(l.isNumber() && r.isNumber()))
-            error("operands must be numbers", e->line);
+            error("operands must be numbers", line);
     };
 
-    switch (e->op) {
+    switch (op) {
         case TokenType::PLUS:
             if (l.isNumber() && r.isNumber()) return Value(l.asNumber() + r.asNumber());
             if (l.isList() && r.isList()) {
@@ -1448,7 +1583,7 @@ Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) 
             }
             if (l.isString() || r.isString())
                 return Value(stringify(l) + stringify(r));
-            error("operands of '+' must be numbers, strings, or lists", e->line);
+            error("operands of '+' must be numbers, strings, or lists", line);
 
         case TokenType::MINUS:
             needNums();
@@ -1470,16 +1605,16 @@ Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) 
                     out->insert(out->end(), src->begin(), src->end());
                 return Value(out);
             }
-            error("operands of '*' must be numbers (or string/list * number)", e->line);
+            error("operands of '*' must be numbers (or string/list * number)", line);
 
         case TokenType::SLASH:
             needNums();
-            if (r.asNumber() == 0) error("division by zero", e->line);
+            if (r.asNumber() == 0) error("division by zero", line);
             return Value(l.asNumber() / r.asNumber());
 
         case TokenType::PERCENT:
             needNums();
-            if (r.asNumber() == 0) error("modulo by zero", e->line);
+            if (r.asNumber() == 0) error("modulo by zero", line);
             return Value(std::fmod(l.asNumber(), r.asNumber()));
 
         case TokenType::LT: case TokenType::GT:
@@ -1492,9 +1627,9 @@ Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) 
                 int c = l.asString().compare(r.asString());
                 cmp = (c < 0) ? -1 : (c > 0) ? 1 : 0;
             } else {
-                error("comparison operands must both be numbers or both strings", e->line);
+                error("comparison operands must both be numbers or both strings", line);
             }
-            switch (e->op) {
+            switch (op) {
                 case TokenType::LT: return Value(cmp < 0);
                 case TokenType::GT: return Value(cmp > 0);
                 case TokenType::LE: return Value(cmp <= 0);
@@ -1510,7 +1645,7 @@ Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) 
             needNums();
             long long a = (long long)l.asNumber();
             long long b = (long long)r.asNumber();
-            switch (e->op) {
+            switch (op) {
                 case TokenType::BIT_AND: return Value((double)(a & b));
                 case TokenType::BIT_OR:  return Value((double)(a | b));
                 case TokenType::BIT_XOR: return Value((double)(a ^ b));
@@ -1520,21 +1655,38 @@ Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) 
         }
 
         default:
-            error("unknown binary operator", e->line);
+            error("unknown binary operator", line);
     }
+}
+
+Value Interpreter::evalBinary(BinaryExpr* e, std::shared_ptr<Environment>& env) {
+    Value l = evaluate(e->left.get(), env);
+    Value r = evaluate(e->right.get(), env);
+    return applyBinary(e->op, l, r, e->line);
 }
 
 Value Interpreter::evalCall(CallExpr* e, std::shared_ptr<Environment>& env) {
     Value callee = evaluate(e->callee.get(), env);
+
+    // The argument vector is recycled rather than allocated per call. The pool
+    // is a stack, so a nested call inside an argument expression gets its own.
     std::vector<Value> args;
+    if (!tlsArgPool.empty()) { args = std::move(tlsArgPool.back()); tlsArgPool.pop_back(); }
+    struct ArgRecycler {
+        std::vector<Value>* p;
+        ~ArgRecycler() {
+            if (tlsArgPool.size() < kPoolLimit) { p->clear(); tlsArgPool.push_back(std::move(*p)); }
+        }
+    } argRecycler{ &args };
+
     args.reserve(e->args.size());
     for (size_t i = 0; i < e->args.size(); ++i) {
         Value v = evaluate(e->args[i].get(), env);
         if (i < e->spread.size() && e->spread[i]) {
             if (!v.isList()) error("spread argument (...) must be a list", e->line);
-            for (auto& x : *v.asList()) args.push_back(x);
+            for (auto& x : v.listRef()) args.push_back(x);
         } else {
-            args.push_back(v);
+            args.push_back(std::move(v));
         }
     }
     return callValue(callee, args, e->line);
@@ -1543,6 +1695,38 @@ Value Interpreter::evalCall(CallExpr* e, std::shared_ptr<Environment>& env) {
 Value Interpreter::evalGet(GetExpr* e, std::shared_ptr<Environment>& env) {
     Value obj = evaluate(e->object.get(), env);
     return getProperty(obj, e->name, e->line);
+}
+
+// obj[start:end], with either bound possibly nil meaning "open". Shared by the
+// tree-walker and the VM.
+Value Interpreter::sliceValue(const Value& obj, const Value& start, const Value& end, int line) {
+    const bool isList = obj.isList();
+    if (!isList && !obj.isString())
+        error("only lists and strings can be sliced", line);
+
+    const long long n = isList ? (long long)obj.listRef().size()
+                               : (long long)obj.asString().size();
+
+    auto bound = [&](const Value& v, long long fallback) {
+        if (v.isNil()) return fallback;
+        if (!v.isNumber()) error("slice bounds must be numbers", line);
+        long long i = (long long)v.asNumber();
+        if (i < 0) i += n;
+        if (i < 0) i = 0;
+        if (i > n) i = n;
+        return i;
+    };
+
+    long long from = bound(start, 0);
+    long long to = bound(end, n);
+    if (to < from) to = from;   // an inverted range is empty, not an error
+
+    if (isList) {
+        const ValueList& src = obj.listRef();
+        auto out = std::make_shared<ValueList>(src.begin() + (long)from, src.begin() + (long)to);
+        return Value(out);
+    }
+    return Value(obj.asString().substr((size_t)from, (size_t)(to - from)));
 }
 
 Value Interpreter::evalSlice(SliceExpr* e, std::shared_ptr<Environment>& env) {
@@ -1580,46 +1764,92 @@ Value Interpreter::evalSlice(SliceExpr* e, std::shared_ptr<Environment>& env) {
     return Value(obj.asString().substr((size_t)from, (size_t)(to - from)));
 }
 
-Value Interpreter::evalIndex(IndexExpr* e, std::shared_ptr<Environment>& env) {
-    Value obj = evaluate(e->object.get(), env);
-    Value idx = evaluate(e->index.get(), env);
+// `super.name`, bound to the receiver. Shared by the tree-walker and the VM.
+Value Interpreter::superMethod(const Value& superV, const Value& self,
+                               const std::string& name, int line) {
+    auto superClass = superV.asClass();
+    auto m = superClass->findMethod(name);
+    if (!m) error("undefined method '" + name + "' on superclass", line);
+    return Value(bindMethod(m, self.asInstance(), superClass));
+}
+
+// Reading obj[idx]. Shared by the tree-walker and the VM.
+Value Interpreter::indexGet(const Value& obj, const Value& idx, int line) {
 
     if (obj.isList()) {
-        auto lst = obj.asList();
-        if (!idx.isNumber()) error("list index must be a number", e->line);
+        const ValueList& lst = obj.listRef();   // borrowed: no refcount traffic
+        if (!idx.isNumber()) error("list index must be a number", line);
         long long i = (long long)idx.asNumber();
-        if (i < 0) i += (long long)lst->size();
-        if (i < 0 || i >= (long long)lst->size())
-            error("list index out of range", e->line);
-        return (*lst)[(size_t)i];
+        if (i < 0) i += (long long)lst.size();
+        if (i < 0 || i >= (long long)lst.size())
+            error("list index out of range", line);
+        return lst[(size_t)i];
     }
     if (obj.isString()) {
         const std::string& s = obj.asString();
-        if (!idx.isNumber()) error("string index must be a number", e->line);
+        if (!idx.isNumber()) error("string index must be a number", line);
         long long i = (long long)idx.asNumber();
         if (i < 0) i += (long long)s.size();
         if (i < 0 || i >= (long long)s.size())
-            error("string index out of range", e->line);
+            error("string index out of range", line);
         return Value(std::string(1, s[(size_t)i]));
     }
     if (obj.isBuffer()) {
         // Flat indexing, so b[0] works whatever the shape. Use at(b, i, j) for
         // multi-dimensional access.
         auto buf = obj.asBuffer();
-        if (!idx.isNumber()) error("buffer index must be a number", e->line);
+        if (!idx.isNumber()) error("buffer index must be a number", line);
         long long i = (long long)idx.asNumber();
         if (i < 0) i += (long long)buf->count();
         if (i < 0 || (size_t)i >= buf->count())
             error("buffer index out of range (" + std::to_string(buf->count()) + " element(s))",
-                  e->line);
+                  line);
         return Value(buf->get((size_t)i));
     }
     if (obj.isDict()) {
-        auto d = obj.asDict();
-        auto it = d->find(keyString(idx));
-        return it != d->end() ? it->second : Value();
+        const ValueDict& d = obj.dictRef();
+        auto it = d.find(keyString(idx));
+        return it != d.end() ? it->second : Value();
     }
-    error("cannot index this type", e->line);
+    error("cannot index this type", line);
+}
+
+// Writing obj[idx] = v. Shared by the tree-walker and the VM; compound forms
+// (`+=`) are a read, an arithmetic op, and then this.
+void Interpreter::indexSet(const Value& obj, const Value& idx, const Value& v, int line) {
+    if (obj.isList()) {
+        ValueList& lst = obj.listRef();   // borrowed: no refcount traffic
+        if (!idx.isNumber()) error("list index must be a number", line);
+        long long i = (long long)idx.asNumber();
+        if (i < 0) i += (long long)lst.size();
+        if (i < 0 || i >= (long long)lst.size())
+            error("list index out of range", line);
+        lst[(size_t)i] = v;
+        return;
+    }
+    if (obj.isDict()) {
+        obj.dictRef()[keyString(idx)] = v;
+        return;
+    }
+    if (obj.isBuffer()) {
+        auto buf = obj.asBuffer();
+        if (!idx.isNumber()) error("buffer index must be a number", line);
+        long long i = (long long)idx.asNumber();
+        if (i < 0) i += (long long)buf->count();
+        if (i < 0 || (size_t)i >= buf->count())
+            error("buffer index out of range (" + std::to_string(buf->count()) +
+                  " element(s))", line);
+        if (!v.isNumber()) error("a buffer holds numbers only", line);
+        buf->set((size_t)i, v.asNumber());
+        return;
+    }
+    error("cannot assign by index to this type", line);
+}
+
+Value Interpreter::evalIndex(IndexExpr* e, std::shared_ptr<Environment>& env) {
+    Value obj = evaluate(e->object.get(), env);
+    Value idx = evaluate(e->index.get(), env);
+    return indexGet(obj, idx, e->line);
 }
 
 // ------------------------------------------------------------------
@@ -1640,15 +1870,11 @@ Value Interpreter::callValue(const Value& callee, std::vector<Value>& args, int 
             return b->fn(*this, args);
         } catch (TracedError&) {
             throw;
-        // Control flow and Bee-level throws travel through built-ins that call
-        // back into Bee code (map, sort, spawn); they must pass untouched.
+        // A Bee-level throw travels through built-ins that call back into Bee
+        // code (map, sort, spawn); it must pass untouched. Control flow no
+        // longer appears here at all -- callFunction absorbs it before the
+        // built-in sees anything.
         } catch (BeeThrow&) {
-            throw;
-        } catch (ReturnSignal&) {
-            throw;
-        } catch (BreakSignal&) {
-            throw;
-        } catch (ContinueSignal&) {
             throw;
         } catch (RuntimeError& e) {
             error(e.what(), line);
@@ -1679,18 +1905,16 @@ Value Interpreter::callValue(const Value& callee, std::vector<Value>& args, int 
     error("value is not callable", line);
 }
 
-Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>& args, int line) {
+Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector<Value>& args,
+                                int line) {
     const FunctionStmt* decl = fn->decl;
-    std::string name = !fn->name.empty() ? fn->name : (decl->name.empty() ? "<anonymous>" : decl->name);
-    // Qualify methods with their class: two classes can both have `draw`, and a
-    // trace saying which one is running is the whole point.
-    if (fn->definingClass && !fn->definingClass->name.empty())
-        name = fn->definingClass->name + "." + name;
     size_t np = decl->params.size();
     size_t provided = args.size();
     int rest = decl->restParam;
+    // The name is only needed to report an error, so it is formatted on the
+    // error paths rather than on every call.
     if (rest < 0 && provided > np)
-        error("function '" + name + "' expects at most " + std::to_string(np) +
+        error("function '" + functionName(*fn) + "' expects at most " + std::to_string(np) +
               " argument(s) but got " + std::to_string(provided), line);
 
     // Fast path: if this is a plain (non-method) function called with exactly
@@ -1698,17 +1922,41 @@ Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>
     // native code hit something it can't handle (e.g. division by zero); we
     // then fall through to the interpreter, which is safe because the JIT
     // subset has no side effects.
-    if (!fn->boundThis && !fn->definingClass && rest < 0 && provided == np) {
-        if (JitFn nf = jit.getCompiled(decl, *this)) {
-            bool allNum = true;
-            for (auto& a : args) if (!a.isNumber()) { allNum = false; break; }
-            if (allNum) {
+    if (!fn->boundThis && !fn->definingClass && rest < 0 && provided == np && np <= kMaxJitArgs) {
+        // The argument types *are* the guard. Each call classifies what it is
+        // actually passing; native code exists per signature, so a call with
+        // different types simply finds none and runs interpreted. Numbers pass
+        // unboxed; an f64 buffer passes as a raw pointer and a count, which is
+        // what lets a numeric kernel over one compile at all.
+        JitSig sig = 0;
+        bool compilable = true;
+        for (size_t i = 0; i < np && compilable; ++i) {
+            if (args[i].isNumber()) sig = jitSigWith(sig, i, ArgKind::Num);
+            else if (args[i].isBuffer() && args[i].bufRef().dtype == DType::F64)
+                sig = jitSigWith(sig, i, ArgKind::BufF64);
+            else compilable = false;
+        }
+        if (compilable) {
+            if (JitFn nf = jit.getCompiled(decl, sig, *this)) {
                 std::vector<double> ds(np ? np : 1);
-                for (size_t i = 0; i < np; ++i) ds[i] = args[i].asNumber();
+                std::vector<double*> bufs(np ? np : 1, nullptr);
+                std::vector<long long> lens(np ? np : 1, 0);
+                for (size_t i = 0; i < np; ++i) {
+                    if (jitSigAt(sig, i) == ArgKind::BufF64) {
+                        Buffer& b = args[i].bufRef();
+                        bufs[i] = (double*)b.bytes.data();
+                        lens[i] = (long long)b.count();
+                    } else {
+                        ds[i] = args[i].asNumber();
+                    }
+                }
                 int bail = 0;
-                double r = nf(ds.data(), (int)np, this, &bail);
-                if (bail == 0) return Value(r);       // numeric result
-                if (bail == 2) return Value();        // completed, nil result
+                double r = nf(ds.data(), bufs.data(), lens.data(), this, &bail);
+                // Native code does not know about declared types, so the result
+                // is checked here -- notably a `-> num` function that fell off
+                // its end, which completes natively with a nil result.
+                if (bail == 0) { checkReturnType(*decl, Value(r), line); return Value(r); }
+                if (bail == 2) { checkReturnType(*decl, Value(), line); return Value(); }
                 // bail == 1: native code gave up; fall through to the interpreter
             }
         }
@@ -1718,19 +1966,34 @@ Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>
     // needs the call site, and the depth check needs the count. Arity errors
     // above deliberately stay attributed to the caller.
     if (tlsCallStack.size() >= maxCallDepth)
-        error("call stack overflow in '" + name + "' (deeper than " +
+        error("call stack overflow in '" + functionName(*fn) + "' (deeper than " +
               std::to_string(maxCallDepth) + " nested calls) -- unbounded recursion?\n"
               "       if the depth is intentional, raise it with BEE_MAX_DEPTH "
               "(and the stack with 'ulimit -s')", line);
 
-    tlsCallStack.push_back({name, tlsCurrentFile, line});
+    tlsCallStack.push_back({fn.get(), tlsCurrentFile, line});
     struct FrameGuard {
         ~FrameGuard() { tlsCallStack.pop_back(); }
     } frameGuard;
     FileScope fileScope(fn->file);   // errors inside report the callee's file
 
+    // Second fast path: a body the register VM could compile runs as bytecode,
+    // with its frame in registers rather than an Environment. Exact arity only --
+    // defaults and rest parameters stay on the tree-walker.
+    if (rest < 0 && provided == np) {
+        if (Chunk* ch = vm.chunkFor(decl)) {
+            Value r = vm.run(*this, *ch, fn, args, line);
+            if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);
+            return r;
+        }
+    }
+
     // Frame layout (fixed by the resolver): [this?][super?][params...][locals...]
-    auto frame = std::make_shared<Environment>(fn->closure, decl->frameSlots);
+    auto frame = acquireEnv(fn->closure, decl->frameSlots);
+    struct EnvRecycler {                       // runs before `frame` is destroyed
+        std::shared_ptr<Environment>* p;
+        ~EnvRecycler() { recycleEnv(*p); }
+    } envRecycler{ &frame };
     if (fn->boundThis)
         frame->slots[0] = Value(fn->boundThis);
     if (fn->definingClass && fn->definingClass->superclass)
@@ -1742,21 +2005,35 @@ Value Interpreter::callFunction(std::shared_ptr<Function> fn, std::vector<Value>
             for (size_t j = i; j < provided; ++j) restList->push_back(args[j]);
             frame->slots[(size_t)base + i] = Value(restList);
         } else if (i < provided) {
+            checkParamType(*decl, i, args[i], line);
             frame->slots[(size_t)base + i] = args[i];
         } else if (i < decl->defaults.size() && decl->defaults[i]) {
-            frame->slots[(size_t)base + i] = evaluate(decl->defaults[i].get(), frame);
+            Value d = evaluate(decl->defaults[i].get(), frame);
+            checkParamType(*decl, i, d, line);   // a default has to satisfy it too
+            frame->slots[(size_t)base + i] = std::move(d);
         } else {
-            error("function '" + name + "' missing required argument '" + decl->params[i] + "'", line);
+            error("function '" + functionName(*fn) + "' missing required argument '" +
+                  decl->params[i] + "'", line);
         }
     }
 
-    try {
-        for (auto& s : decl->body) execute(s.get(), frame);
-    } catch (ReturnSignal& r) {
-        if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);
-        return r.value;
+    for (auto& s : decl->body) {
+        Flow f = execute(s.get(), frame);
+        if (f == Flow::Normal) continue;
+        if (f == Flow::Return) {
+            // Take the value now: anything that runs next could set it again.
+            Value rv = std::move(returnValue_);
+            returnValue_ = Value();
+            if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);
+            checkReturnType(*decl, rv, s->line);
+            return rv;
+        }
+        // A break/continue that no loop in this function absorbed.
+        error(std::string(f == Flow::Break ? "'break'" : "'continue'") +
+              " used outside of a loop", s->line);
     }
     if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);
+    checkReturnType(*decl, Value(), line);   // fell off the end: the value is nil
     return Value();
 }
 
@@ -1779,8 +2056,7 @@ std::shared_ptr<Function> Interpreter::bindMethod(std::shared_ptr<Function> meth
 Value Interpreter::getProperty(const Value& object, const std::string& name, int line) {
     if (object.isInstance()) {
         auto inst = object.asInstance();
-        auto it = inst->fields.find(name);
-        if (it != inst->fields.end()) return it->second;
+        if (const Value* f = inst->field(name)) return *f;
         auto m = inst->klass->findMethod(name);
         if (m) return Value(bindMethod(m, inst, inst->klass));
         error("undefined property '" + name + "'", line);
