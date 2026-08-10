@@ -1,0 +1,112 @@
+site_name: Bee
+site_description: >-
+  Bee - a friendly, dynamically-typed scripting language with a built-in
+  native (LLVM) JIT, a package manager (Hive), C++ bindings, and first-class
+  editor support.
+site_author: Atanu Debnath
+site_url: https://beelang-project.github.io/bee/
+copyright: Copyright &copy; 2026 Atanu Debnath - released under the MIT License
+
+repo_name: beelang-project/bee
+repo_url: https://github.com/beelang-project/bee
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/bee.png
+  favicon: assets/bee.png
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    # Light mode - honey
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    # Dark mode - honeycomb on slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: false
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/beelang-project/bee
+      name: Bee on GitHub
+  generator: false
+
+nav:
+  - Home: index.md
+  - Get started: getting-started.md
+  - Download: download.md
+  - Language guide: language.md
+  - Packages:
+      - Using packages: hive.md
+      - C++ bindings: bindings.md
+  - Editor: editor.md
+  - More:
+      - Performance: performance.md
+      - Changelog: changelog.md

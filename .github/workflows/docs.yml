@@ -1,0 +1,40 @@
+name: Docs
+
+# Build the MkDocs (Material) site in website/ and publish it to GitHub Pages,
+# using the same mechanism as website/deploy.sh: a force-push to the gh-pages
+# branch. Runs on any push to main that touches the docs, and can be run by
+# hand from the Actions tab.
+#
+# One-time setup: Settings -> Pages -> Source: "Deploy from a branch",
+# Branch: gh-pages, Folder: / (root).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # gh-deploy pushes the built site to the gh-pages branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r website/docs-requirements.txt
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Build and deploy to gh-pages
+        working-directory: website
+        run: mkdocs gh-deploy --force --strict --remote-branch gh-pages
