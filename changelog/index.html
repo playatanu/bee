@@ -1,0 +1,2634 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Bee - a friendly, dynamically-typed scripting language with a built-in native (LLVM) JIT, a package manager (Hive), C++ bindings, and first-class editor support.">
+      
+      
+        <meta name="author" content="Atanu Debnath">
+      
+      
+        <link rel="canonical" href="https://beelang-project.github.io/bee/changelog/">
+      
+      
+        <link rel="prev" href="../performance/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/bee.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Changelog - Bee</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Bee" class="md-header__button md-logo" aria-label="Bee" data-md-component="logo">
+      
+  <img src="../assets/bee.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bee
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/beelang-project/bee" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    beelang-project/bee
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Get started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../download/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Download
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../language/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Language guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../hive/" class="md-tabs__link">
+          
+  
+  
+  Packages
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../editor/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Editor
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../performance/" class="md-tabs__link">
+          
+  
+  
+  More
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Bee" class="md-nav__button md-logo" aria-label="Bee" data-md-component="logo">
+      
+  <img src="../assets/bee.png" alt="logo">
+
+    </a>
+    Bee
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/beelang-project/bee" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    beelang-project/bee
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../download/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Download
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packages
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Packages
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using packages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bindings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C++ bindings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    More
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    More
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [Unreleased]
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#033-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.3 - 2026-08-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.3 - 2026-08-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#032-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.2 - 2026-08-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.2 - 2026-08-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#031-2026-08-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.1 - 2026-08-07
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.1 - 2026-08-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030-2026-08-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.0 - 2026-08-07
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.0 - 2026-08-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#020-2026-08-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0 - 2026-08-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0 - 2026-08-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#packages-hive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packages - Hive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tooling-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling &amp; tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#011-2026-08-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.1.1 - 2026-08-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.1.1 - 2026-08-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#performance_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#010-2026-08-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.1.0 - 2026-08-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.1.0 - 2026-08-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#runtime-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime &amp; performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standard-library-no-imports-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard library (no imports required)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tooling-packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling &amp; packaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#editor-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Editor support
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation &amp; examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [Unreleased]
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#033-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.3 - 2026-08-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.3 - 2026-08-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#032-2026-08-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.2 - 2026-08-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.2 - 2026-08-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#031-2026-08-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.1 - 2026-08-07
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.1 - 2026-08-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030-2026-08-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.3.0 - 2026-08-07
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.3.0 - 2026-08-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#020-2026-08-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0 - 2026-08-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0 - 2026-08-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#language_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#packages-hive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packages - Hive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tooling-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling &amp; tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#011-2026-08-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.1.1 - 2026-08-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.1.1 - 2026-08-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#performance_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#010-2026-08-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.1.0 - 2026-08-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.1.0 - 2026-08-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#runtime-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime &amp; performance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#standard-library-no-imports-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard library (no imports required)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tooling-packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling &amp; packaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#editor-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Editor support
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation &amp; examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-limitations_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Anchor link to this section">&para;</a></h1>
+<p>All notable changes to <strong>Bee</strong> are documented here. The format is based on
+<a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and this project
+adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Anchor link to this section">&para;</a></h2>
+<h2 id="033-2026-08-10"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.3">0.3.3</a> - 2026-08-10<a class="headerlink" href="#033-2026-08-10" title="Anchor link to this section">&para;</a></h2>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Windows release build.</strong> The JIT backend DLL failed to link on MSYS2 with
+  <code>export ordinal too large</code>: MinGW auto-exports every global symbol, and with
+  LLVM folded in statically that far exceeds the 65535-entry PE export table.
+  The DLL now links with <code>--exclude-all-symbols</code> and exports only its one entry
+  point (<code>bee_jit_create</code>, via <code>__declspec(dllexport)</code>), which is all <code>bee.exe</code>
+  resolves. This is what kept the 0.3.2 release job red.</li>
+</ul>
+<h2 id="032-2026-08-10"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.2">0.3.2</a> - 2026-08-10<a class="headerlink" href="#032-2026-08-10" title="Anchor link to this section">&para;</a></h2>
+<h3 id="language">Language<a class="headerlink" href="#language" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Optional type annotations.</strong> Parameters, variables and return types can be
+  declared, and are checked where the value enters:</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fn dot(a: buffer, b: buffer, n: num) -&gt; num { ... }
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>let total: num = 0
+</span></code></pre></div>
+<p>The type names are <code>num</code>, <code>str</code>, <code>bool</code>, <code>list</code>, <code>dict</code>, <code>buffer</code>, <code>nil</code>,
+  <code>fn</code>, <code>any</code>, and any class name; a class annotation accepts instances of that
+  class and of anything deriving from it. A violated annotation is a runtime
+  error naming the parameter, the declared type and what arrived, reported at
+  the call site with the usual stack trace. Return types are checked on every
+  path out, including falling off the end - a <code>-&gt; num</code> function that returns
+  nothing yields <code>nil</code>, which is an error.</p>
+<p>Types are entirely optional and mix freely with untyped code: an unannotated
+  parameter is <code>any</code>, a typed function can call an untyped one, and a program
+  with no annotations behaves exactly as before and runs at exactly the same
+  speed (the per-call check is skipped by a single flag test on the
+  declaration). All four ways into a function - the tree-walker, the bytecode
+  VM, a direct VM-to-VM call and a fused method call - enforce them identically,
+  which the differential suite checks.</p>
+<p>An annotation binds the name for its whole life, not just its initialiser:
+  assigning a string to something declared <code>num</code> is an error wherever it
+  happens, and a parameter's default value has to satisfy the annotation too.
+  That is what makes the declaration something later code can rely on.</p>
+<ul>
+<li><strong>Declared types generate better code.</strong> The compiler tracks what each
+  register is known to hold and, where both operands are declared numbers, emits
+  arithmetic with no type test and no fallback branch. A declared <code>buffer</code>
+  indexed by a declared <code>num</code> compiles to a bounds check and a direct load
+  against contiguous unboxed memory, with no call into the interpreter.</li>
+</ul>
+<p>A <code>dot()</code> kernel over two buffers went from 0.115 s to <strong>0.089 s</strong> by adding
+  annotations. A plain arithmetic loop gained almost nothing (0.715 s → 0.691 s),
+  which is the more informative result: the type test was never the cost, and
+  the remaining work is to stop building a <code>Value</code> for numbers at all - see
+  <a href="../performance/">docs/PERFORMANCE.md</a>.</p>
+<ul>
+<li>
+<p><code>BEE_DUMP_BYTECODE=1</code> prints each function's bytecode as it is compiled.</p>
+</li>
+<li>
+<p><strong>The JIT compiles per argument signature, and buffers reach native code.</strong>
+  It previously accepted unboxed numbers and nothing else, so any function
+  touching a container was never compiled. Each call now classifies what it is
+  actually passing - number, f64 buffer, or something else - and that signature
+  keys the compilation. A call whose arguments do not match a compiled signature
+  finds none and runs interpreted, so the argument types are themselves the
+  guard: there is nothing to invalidate and no state to reconstruct.</p>
+</li>
+</ul>
+<p>An f64 buffer is passed as a raw base pointer and an element count, so <code>b[i]</code>
+  compiles to a bounds check and a load against contiguous unboxed memory. A
+  <code>dot()</code> kernel over two buffers went from 0.089 s to <strong>0.026 s</strong> - 3.3× faster
+  than CPython, and the gap to Go closed from 22.3× to <strong>6.5×</strong>.</p>
+<p>This needs no annotations: the signature comes from what the call passes, not
+  what the source declares, so an untyped <code>fn dot(a, b, n)</code> compiles just as
+  well. Buffer <em>reads</em> are compiled and <em>writes</em> are not, which preserves the
+  contract that makes bailing out safe - native code that gives up is re-run by
+  the interpreter, and re-running can only be correct if nothing was written.</p>
+<p>Measured in isolation, a compiled <code>dot()</code> runs at <strong>1.01 ns per element</strong>
+  against 44.79 ns on the bytecode VM. With process startup excluded, that is
+  3.67× off Go and 6.7× faster than CPython.</p>
+<ul>
+<li>
+<p><strong>The LLVM engine is built on first use, not at startup.</strong> Standing up an ORC
+  session cost every run of <code>bee</code> a couple of milliseconds for a JIT most
+  scripts never trigger.</p>
+</li>
+<li>
+<p><code>BEE_NO_JIT=1</code> runs everything on the bytecode VM, the counterpart of
+  <code>BEE_NO_VM=1</code>. Both exist so a measurement can be attributed to a tier rather
+  than guessed at.</p>
+</li>
+<li>
+<p><strong><code>bench/run.sh</code> reports a <code>work</code> column</strong> with each runtime's startup floor
+  subtracted. Bee starts in ~15 ms against CPython's ~12 ms and a Go binary's
+  ~1 ms, so on a benchmark doing 10 ms of work, comparing totals said more about
+  process startup than about either language.</p>
+</li>
+</ul>
+<h3 id="performance">Performance<a class="headerlink" href="#performance" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>The LLVM JIT is a dlopen'd shared object, not a link-time dependency.</strong> The
+  backend used to be linked straight into <code>bee</code>, so the dynamic loader mapped
+  ~120MB of <code>libLLVM.so</code> on <em>every</em> invocation - measured here at ~6ms of pure
+  startup (an interpreter-only build starts in &lt;1ms), paid whether or not a
+  script ever compiled anything. Most scripts never trigger the JIT, so this was
+  the single broadest cost a person felt running one.</li>
+</ul>
+<p>The backend now lives in <code>libbee_jit.so</code>, which <code>bee</code> <code>dlopen</code>s the first time
+  a function or loop is hot enough to compile; the executable itself links no
+  LLVM at all. A plain run maps the library never, and starts at the
+  interpreter-only floor. When compilation <em>is</em> triggered the library loads
+  once, transparently - <code>fib(34)</code> still runs ~10× faster than the VM. The shared
+  object calls back into the interpreter through the same <code>-rdynamic</code> symbol
+  resolution native modules use, and this is the same technique <code>beegen</code> already
+  uses for <code>libclang</code>. If the library is missing or fails to load, execution
+  simply falls back to the interpreter/VM. Set <code>BEE_JIT_LIB</code> to point at a
+  specific backend.</p>
+<p>The Windows installer now ships the JIT too - as <code>bee_jit.dll</code>, built under
+  MSYS2 UCRT64 against an ABI-matched LLVM and <code>dlopen</code>'d by <code>bee.exe</code> the same
+  way. Previously the Windows build was interpreter-only. The DLL is
+  self-contained and shares <code>bee.exe</code>'s heap through the Universal CRT.</p>
+<ul>
+<li>
+<p><strong><code>BEE_NO_JIT=1</code> now also suppresses the loop JIT</strong>, not just the function
+  JIT, so it disables the native tier completely - the counterpart of
+  <code>BEE_NO_VM=1</code>, and what makes a measurement attributable to one tier.</p>
+</li>
+<li>
+<p><strong>A register bytecode VM.</strong> Function bodies are compiled once to a flat
+  instruction stream and executed there instead of being walked as a tree. The
+  design is register-based rather than stack-based, so <code>s = s + xs[i]</code> is two
+  instructions where a stack VM needs six, and dispatch is by computed goto, so
+  each opcode gets its own indirect branch and its own prediction history.</p>
+</li>
+</ul>
+<p>Registers <em>are</em> the resolver's frame slots. That works because a function
+  whose body creates no closure has all of its scopes merged into one frame (see
+  scope merging below), so every local sits at depth 0 with nothing to walk. A
+  frame is a window into one flat, thread-local register array - entering a
+  function is an index, not an allocation.</p>
+<p>Anything the compiler does not cover yet - a nested function or class, <code>try</code>,
+  <code>import</code>, destructuring - makes it decline that <em>one</em> function, which then
+  runs on the tree-walker exactly as before. Nothing about the language changes,
+  and <code>BEE_NO_VM=1</code> runs everything on the tree-walker.</p>
+<p>A new suite, <code>tests/vm_diff_test.sh</code>, runs 29 programs on both engines and
+  requires identical stdout, stderr and exit code - including error messages,
+  stack traces and uncaught-error exit codes.</p>
+<ul>
+<li>
+<p><strong>Scopes that nothing can capture are merged into the enclosing frame.</strong> A
+  block or loop that declares names used to allocate an <code>Environment</code> on every
+  entry - meaning once per <em>iteration</em> for a loop body. When no function or
+  class is created inside it, nothing can outlive the scope, so its variables
+  now live in slots of the enclosing frame and no environment is allocated at
+  all. Where a closure <em>is</em> created, the scope is untouched, so each iteration
+  still captures its own bindings.</p>
+</li>
+<li>
+<p><strong>Call frames are recycled.</strong> A call allocated an environment (a control block
+  and a slots vector) and dropped it on return. Frames now come from a small
+  free list, and only the ones a closure captured are left to live on.</p>
+</li>
+<li>
+<p><strong>Compiled functions call each other directly.</strong> A <code>CALL</code> whose target is
+  another compiled Bee function taking exactly those arguments now enters it
+  from the dispatch loop: no argument vector, no trip through <code>callFunction</code>,
+  and the callee's registers are filled straight from the caller's. Built-ins,
+  classes, defaults, rest parameters, uncompiled bodies and the numeric
+  functions the LLVM JIT claimed still go through the interpreter, so behaviour</p>
+</li>
+<li>
+<p>traces, arity errors, the depth limit - is unchanged. A call-heavy loop
+  dropped from 0.73 s to 0.48 s.</p>
+</li>
+<li>
+<p><strong>Instance fields are shapes, not a map.</strong> An instance's fields lived in a
+  <code>std::map&lt;std::string, Value&gt;</code>, so <code>p.x</code> was a tree walk with string
+  comparisons - measured at ~41 ns, which was most of the cost of
+  object-oriented code. A <code>Shape</code> now records which field names an instance has
+  and which slot each one occupies; instances that gained their fields in the
+  same order (for a class with a normal <code>init</code>, all of them) share a single
+  shape, so the fields themselves are a flat vector. Each property site caches
+  "this shape means slot N" and validates it with a pointer compare.</p>
+</li>
+</ul>
+<p>Field access is <strong>4.0× faster</strong> and now beats CPython. One class reaching two
+  different shapes, fields added after construction, and a field shadowing a
+  method of the same name all still behave as before.</p>
+<ul>
+<li>
+<p><strong><code>obj.m(args)</code> is one instruction.</strong> It used to be a property read followed by
+  a call, and reading <code>obj.m</code> on its own has to produce a callable - which for a
+  method meant allocating a copy of it bound to the receiver, on every call.
+  The receiver is now passed directly, with the method resolved once per class
+  at each call site. Instance method dispatch is <strong>28.7× faster</strong> than 0.3.1.</p>
+</li>
+<li>
+<p><strong>A benchmark suite</strong>, in <a href="bench/"><code>bench/</code></a>: 17 programs covering loops,
+  calls, methods, classes, dicts, strings, closures, sorting and error handling,
+  with equivalents in Python and Go. <code>make bench</code> times the current build;
+  <code>bench/run.sh --vs &lt;other-bee&gt; --all</code> compares against another build, CPython
+  and Go at once. Contenders run interleaved and keep their best time, because
+  on a laptop the CPU's boost state drifts enough during a suite to swing
+  back-to-back results by 2×.</p>
+</li>
+<li>
+<p>Cheaper calls and indexing: a call frame stores the function pointer and
+  formats its name only when a stack trace is printed; <code>callFunction</code> takes its
+  function by reference rather than by <code>shared_ptr</code> copy; list and dict indexing
+  borrow the container instead of copying a <code>shared_ptr</code>; and the VM indexes a
+  list by number without leaving the dispatch loop.</p>
+</li>
+</ul>
+<p>Measured against 0.3.1, best of five interleaved runs, 9 M inner iterations:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>0.3.1</th>
+<th>now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nested loop over a list, <code>s = s + xs[i]</code></td>
+<td>1.13 s</td>
+<td><strong>0.21 s</strong> (5.4×)</td>
+</tr>
+<tr>
+<td>the same with <code>if (xs[i] % 2 == 0)</code></td>
+<td>1.47 s</td>
+<td><strong>0.38 s</strong> (3.9×)</td>
+</tr>
+<tr>
+<td>the same written with <code>continue</code></td>
+<td>20.57 s</td>
+<td><strong>0.38 s</strong> (54×)</td>
+</tr>
+<tr>
+<td><code>xs[i] = xs[i] + 1</code></td>
+<td>0.45 s</td>
+<td><strong>0.09 s</strong> (5.0×)</td>
+</tr>
+<tr>
+<td>a <code>let</code> in the loop body</td>
+<td>1.08 s</td>
+<td><strong>0.17 s</strong> (6.4×)</td>
+</tr>
+<tr>
+<td>loop calling an interpreted function</td>
+<td>4.98 s</td>
+<td><strong>0.44 s</strong> (11.3×)</td>
+</tr>
+</tbody>
+</table>
+<p>Against CPython 3.12 on the same three list benchmarks, Bee went from
+  3.9×, 3.7× and <strong>52× slower</strong> to <strong>0.80×, 1.07× and 1.05×</strong> - at or slightly
+  ahead of CPython, where the whole interpreted path used to sit well behind it.
+  Geometric mean across the whole suite: <strong>3.94× faster than 0.3.1</strong>, with
+  object-oriented code 17-29× faster.</p>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>The language is now called "Bee", not "BeeLang".</strong> Prose across the README,
+  docs and examples uses the shorter name; the binary (<code>bee</code>), the package
+  manager (<code>hive</code>), file extensions (<code>.be</code>/<code>.bee</code>), the GitHub organisation and
+  every URL and install path are unchanged, so nothing about an existing setup
+  breaks.</li>
+</ul>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>
+<p><strong>String building was quadratic inside a compiled function.</strong> <code>s = s + x</code> has
+  grown its buffer in place since 0.1.1, but the bytecode VM did not carry that
+  over, so building a 3 MB string took <strong>363 s</strong> instead of 0.06 s. Every
+  correctness test passed throughout - the answer was right, only the
+  complexity was wrong - so <code>tests/perf_guard_test.sh</code> now checks that this and
+  four other idioms stay linear.</p>
+</li>
+<li>
+<p><strong><code>sort(xs, cmp)[0]</code> could read freed memory.</strong> Indexing straight off a call
+  result compiles to an instruction whose destination register is also its
+  object register; writing the element back into that register dropped the last
+  reference to the list and freed it mid-read. It produced a denormal double for
+  small inputs and a crash for large ones. Both this and the aliasing shape
+  behind it are covered by the differential suite now.</p>
+</li>
+<li>
+<p><strong><code>break</code>, <code>continue</code> and <code>return</code> no longer throw C++ exceptions.</strong> They were
+  <code>throw BreakSignal{}</code> / <code>ContinueSignal</code> / <code>ReturnSignal</code>, caught by every loop
+  and by every call - which cost <strong>2.4-3.8 µs each</strong>, 50-100× an entire
+  interpreted loop iteration, on paths that are not exceptional at all: every
+  function call returns, and a <code>continue</code> runs on most iterations of the loop
+  that uses it. A statement now reports how it finished (<code>Flow::Normal</code>,
+  <code>Break</code>, <code>Continue</code>, <code>Return</code>) and the enclosing loop or call frame absorbs it.</p>
+</li>
+</ul>
+<p>Measured against the previous release, best of three runs:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>before</th>
+<th>after</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nested loop with <code>continue</code> in the body (9 M iterations)</td>
+<td>20.33 s</td>
+<td><strong>1.39 s</strong></td>
+</tr>
+<tr>
+<td>loop calling an interpreted function (1 M calls)</td>
+<td>2.45 s</td>
+<td><strong>0.23 s</strong></td>
+</tr>
+<tr>
+<td><code>continue</code> microbenchmark (1 M)</td>
+<td>3.85 s</td>
+<td><strong>0.05 s</strong></td>
+</tr>
+<tr>
+<td>nested loop summing <code>xs[i]</code> (9 M)</td>
+<td>2.18 s</td>
+<td><strong>1.04 s</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The last row is a side effect worth having: dropping the <code>try</code> region from
+  around each loop-body execution let the C++ compiler optimise a loop it
+  previously could not touch.</p>
+<p>Nothing about the language changes. <code>finally</code> still runs on every exit path,
+  and a <code>return</code> out of a <code>finally</code> still wins over one out of the body. A Bee
+  <code>throw</code>, and runtime errors, remain C++ exceptions - those really are rare.</p>
+<ul>
+<li>
+<p><strong>Cheaper calls and indexing.</strong> A call frame stores the function pointer and
+  formats its name only when a stack trace is printed, instead of building and
+  copying a <code>std::string</code> on every call; <code>callFunction</code> takes its function by
+  reference rather than by <code>shared_ptr</code> copy; and list/dict indexing borrows the
+  container instead of copying a <code>shared_ptr</code>, removing two atomic refcount
+  operations per <code>xs[i]</code>.</p>
+</li>
+<li>
+<p><strong><a href="../performance/"><code>docs/PERFORMANCE.md</code></a></strong> - a measured account of where
+  the interpreter spends its time, with per-operation costs, comparisons against
+  CPython, and the remaining plan (stack frames instead of heap environments, a
+  bytecode VM, a cheaper value representation, and a type-guarded JIT that
+  deoptimises instead of refusing to compile).</p>
+</li>
+</ul>
+<h2 id="031-2026-08-07"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.1">0.3.1</a> - 2026-08-07<a class="headerlink" href="#031-2026-08-07" title="Anchor link to this section">&para;</a></h2>
+<p>Packaging. Installing a package that contains a native module no longer means
+compiling one by hand, packages are a binary format rather than a text file, and
+a bug that made 0.3.0's <code>.deb</code> unable to build <em>any</em> native module is fixed.</p>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>0.3.0's <code>.deb</code> shipped an unusable header set.</strong> <code>packaging/build-deb.sh</code>
+  installed <code>src/*.hpp</code>, but <code>bee_buffer.h</code> is a plain C header - and
+  <code>bee_native.hpp</code> includes it. So every native module compiled against an
+  installed Bee failed with <code>fatal error: bee_buffer.h: No such file or
+  directory</code>. Both extensions are installed now, and the packaging script fails
+  rather than shipping a header set that can't compile a module.</li>
+</ul>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Prebuilt native modules.</strong> A package lists binaries per platform, and
+  <code>hive install</code> uses the matching one instead of compiling:</li>
+</ul>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&quot;binaries&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;linux-x86_64&quot;</span><span class="p">:</span><span class="w">   </span><span class="s2">&quot;prebuilt/linux-x86_64/net_native.so&quot;</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;windows-x86_64&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prebuilt/windows-x86_64/net_native.dll&quot;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$ hive install net
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  using prebuilt net for linux-x86_64
+</span></code></pre></div>
+<p>Installing should be a download, not a build. Compiling is now only what
+  happens on a platform a package doesn't ship for.</p>
+<ul>
+<li><strong>A package can declare how to build itself.</strong> <code>hive.json</code> gains a <code>"build"</code>
+  command, run once in the package directory after install - the fallback when
+  no prebuilt matches:</li>
+</ul>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;net&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;main&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;init.bee&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;build&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bash build.sh&quot;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>The command is printed before it runs, since it came from a downloaded
+  package; <code>hive install --no-build</code> skips it. A failed build shows its output
+  and exits non-zero but leaves the files in place, because the cause is usually
+  a missing compiler and re-running it by hand is then the whole fix.</p>
+<p>Note that a <code>.pkg</code> does not carry the executable bit, so a build command needs
+  to name its interpreter: <code>bash build.sh</code>, not <code>./build.sh</code>.</p>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Packages are now <code>.pkg</code>, and no longer plain text.</strong> <code>hive pack</code> writes
+  <code>&lt;name&gt;-&lt;version&gt;.pkg</code> instead of <code>.hive</code>, in a new <code>BEEPKG1</code> container: the
+  payload is compressed with a small built-in LZSS and then XORed with a
+  keystream. That roughly halves a package and makes it a binary blob rather
+  than a text file with the sources sitting in it.</li>
+</ul>
+<p>The obfuscation is worth naming for what it is: <strong>it is not encryption.</strong> The
+  key is a constant in <code>src/hive/archive.cpp</code>, and anything that can install a
+  package can extract one. It stops a package being browsed or hand-edited in a
+  text editor; it keeps nothing secret. Integrity is unchanged and is the part
+  that carries weight - per-file SHA-256, rejected paths, and a loud failure on
+  truncated, padded or tampered bytes. An old <code>HIVE1</code> archive is reported as
+  such, with the suggestion to repack it.</p>
+<p>This is a breaking format change. No registry is running yet, so nothing
+  published needs migrating; repack any local archives with <code>hive pack</code>.</p>
+<h2 id="030-2026-08-07"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.0">0.3.0</a> - 2026-08-07<a class="headerlink" href="#030-2026-08-07" title="Anchor link to this section">&para;</a></h2>
+<p>The interoperability release. Bee can now call C and C++ libraries without
+rebuilding the interpreter: <strong>native modules</strong> import like any other module,
+<strong><code>beegen</code></strong> generates the binding for you from a header, and <strong>buffers</strong> give
+bulk data somewhere to live that isn't a million boxed <code>Value</code>s - and cross the
+native boundary without a copy. OpenCV 4.6 was bound and driven end to end to
+prove the set is sufficient for a real library, not just a toy one. 180 checks,
+up from 100.</p>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Native modules.</strong> A shared library can now be imported like any other
+  module, so calling a C or C++ library no longer means rebuilding the
+  interpreter:</li>
+</ul>
+<div class="language-cpp highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">bee_native_abi</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">BEE_NATIVE_ABI</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">extern</span><span class="w"> </span><span class="s">&quot;C&quot;</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">bee_module_init</span><span class="p">(</span><span class="n">bee</span><span class="o">::</span><span class="n">NativeModule</span><span class="o">*</span><span class="w"> </span><span class="n">m</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="n">m</span><span class="o">-&gt;</span><span class="n">def</span><span class="p">(</span><span class="s">&quot;add&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">[](</span><span class="n">bee</span><span class="o">::</span><span class="n">Interpreter</span><span class="o">&amp;</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">bee</span><span class="o">::</span><span class="n">Value</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">bee</span><span class="o">::</span><span class="n">Value</span><span class="p">(</span><span class="n">bee</span><span class="o">::</span><span class="n">native</span><span class="o">::</span><span class="n">num</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="s">&quot;add&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">                          </span><span class="n">bee</span><span class="o">::</span><span class="n">native</span><span class="o">::</span><span class="n">num</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="s">&quot;add&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">));</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="p">});</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>import demo</code> finds <code>demo.so</code> (<code>.dll</code>, <code>.dylib</code>) through the same lookup as a
+  <code>.bee</code> file, including inside an installed package - so a hive package can ship
+  a compiled module. <a href="https://github.com/beelang-project/bee/blob/main/src/bee_native.hpp"><code>src/bee_native.hpp</code></a> is the API, with
+  conversion helpers that report a bad argument as a normal Bee error, with a
+  stack trace.</p>
+<ul>
+<li><strong><code>beegen</code>, a binding generator.</strong> It reads C++ headers with libclang and
+  writes a native module plus an idiomatic Bee wrapper:</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>beegen<span class="w"> </span>shapes.hpp<span class="w"> </span>--module<span class="w"> </span>shapes<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
+</span></code></pre></div>
+<p>Free functions, classes (constructors, methods, public fields, statics) and
+  enums are mapped; C++ classes become Bee classes holding an opaque handle,
+  enums become dicts. Every declaration it can't map is <strong>reported with a
+  reason</strong> - templates, variadics, out-parameters, unbound types - because a
+  binding that silently omits half a library is worse than one that says so.
+  It also writes <code>hive.json</code>, so a binding installs like any other package. Full
+  documentation in <a href="../bindings/">docs/BINDINGS.md</a>.</p>
+<p>libclang is loaded at run time through a hand-declared slice of its stable C
+  ABI, so building Bee needs no clang headers or libraries at all.</p>
+<ul>
+<li><strong>Buffers: a contiguous typed array.</strong> Bee's answer to an ndarray, and the
+  type bulk data travels in:</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>let img = zeros([480, 640, 3], &quot;u8&quot;)   # 900 KB contiguous, not 15 MB of Values
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>print(img)                             # buffer&lt;u8&gt;[480,640,3] [0, 0, ...]
+</span></code></pre></div>
+<p><code>f32</code>/<code>f64</code>/<code>i8</code>/<code>u8</code>/<code>i16</code>/<code>u16</code>/<code>i32</code>/<code>i64</code>, flat <code>[]</code> indexing plus <code>at</code> /
+  <code>set_at</code> per dimension, <code>zeros</code>/<code>ones</code>/<code>full</code>/<code>buffer_from</code>/<code>to_list</code>,
+  <code>shape</code>/<code>dtype</code>/<code>byte_len</code>, <code>reshape</code>/<code>astype</code>/<code>copy</code>/<code>fill</code>, and
+  <code>buf_add</code>/<code>sub</code>/<code>mul</code>/<code>div</code>/<code>sum</code>/<code>min</code>/<code>max</code>. Buffers compare by contents and
+  print with a preview rather than a million elements.</p>
+<ul>
+<li>
+<p><strong>Zero-copy buffers across the native boundary.</strong> A shim declares a parameter
+  as <code>BeeBuffer</code> - a plain C struct in the new <a href="https://github.com/beelang-project/bee/blob/main/src/bee_buffer.h"><code>bee_buffer.h</code></a>
+  that needs no Bee header - and <code>beegen</code> hands the buffer's own memory over
+  by pointer. This is what makes binding an image or tensor library practical
+  rather than merely possible.</p>
+</li>
+<li>
+<p><strong>Native code can call back into Bee.</strong> <code>bee::native::callback()</code> wraps a
+  Bee function so a library's log or progress hook can invoke it, with
+  <code>GilLock</code> for callbacks arriving on the library's own threads and <code>GilOff</code> for
+  handing the lock back during a long call. The interpreter is now linked with
+  <code>-rdynamic</code> so a module can resolve <code>Interpreter::callValue</code>.</p>
+</li>
+<li>
+<p><strong>Class hierarchies and factory-made interfaces.</strong> A derived handle is accepted
+  where a base is expected, through a registered <code>static_cast</code> (so the pointer is
+  adjusted correctly even under multiple inheritance). Abstract classes get no
+  constructor and no <code>free()</code> - their instances come from a factory function and
+  are released by the API's own <code>destroy()</code>. This is the shape TensorRT and ONNX
+  Runtime expose, and it is now bindable directly.</p>
+</li>
+<li>
+<p><strong><code>std::vector&lt;T&gt;</code> maps to a list</strong> in both directions, for numeric, bool and
+  string elements.</p>
+</li>
+<li>
+<p><strong>Wrappers adopt factory handles.</strong> <code>new Image(vision.imread("cat.png"))</code> works
+  as well as <code>new Image()</code>: a generated wrapper either constructs a new object or
+  takes over a handle a factory function returned. Library APIs of any size are
+  full of factories, so a wrapper that could only construct could not be used
+  with them at all.</p>
+</li>
+<li>
+<p><strong>Verified against a real library.</strong> OpenCV 4.6 was bound through a 40-line
+  shim and driven from Bee end to end -- pixels built in a buffer, handed to
+  OpenCV with no copy, resized, converted, blurred, Canny-detected, written as a
+  PNG, read back and pulled into a buffer again.</p>
+</li>
+<li>
+<p><strong>C++ default arguments</strong> become optional Bee arguments: <code>beegen</code> emits one
+  native entry point per callable arity and the wrapper dispatches on how many
+  arguments it was given, so the C++ compiler supplies the defaults and beegen
+  never has to parse them.</p>
+</li>
+<li>
+<p><code>tests/beegen_test.sh</code> - 53 checks covering generation, the skip report, the
+  wrapper's shape, compiling the generated module, calling it from Bee, the
+  boundary errors (wrong type, wrong arity, wrong handle, use-after-free), and
+  the capability set above against a header shaped like a real inference API.</p>
+</li>
+</ul>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>
+<p>The <code>.deb</code> and Windows installer also install <code>beegen</code>, and the <code>.deb</code> now
+  ships Bee's headers under <code>/usr/include/bee</code> so native modules can be
+  compiled against an installed interpreter.</p>
+</li>
+<li>
+<p><strong>The VS Code extension moved to its own repository</strong>,
+  <a href="https://github.com/beelang-project/vscode-bee">beelang-project/vscode-bee</a>,
+  with its history intact. It was <code>editors/vscode-bee/</code>, which tied its releases
+  to the interpreter's - the <code>vscode-beelang-v0.1.0</code> tag matched this repo's
+  <code>v*</code> release trigger and tried to build a <code>.deb</code> out of it. Editor tooling and
+  the language now version and ship independently. The release trigger here is
+  narrowed to <code>v[0-9]*</code> so only interpreter versions fire it.</p>
+</li>
+</ul>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>A C++ parameter named like a Bee keyword</strong> (<code>in</code>, <code>class</code>, <code>from</code> are all
+  ordinary C++ names) generated code that would not parse. Such names now get a
+  trailing underscore.</li>
+<li><strong>A C++ library's own exception no longer aborts the process.</strong> <code>cv::Exception</code>,
+  <code>Ort::Exception</code>, <code>std::bad_alloc</code> and friends thrown inside a native call are
+  converted to a Bee runtime error with a stack trace. Bee-level <code>throw</code> and
+  control flow still pass through built-ins that call back into Bee code.</li>
+<li><code>hive install</code> now refuses to install a package into its own source tree
+  (which produced <code>greet/hive_modules/greet</code>, helping nothing) and never records
+  a package as depending on itself. <code>--force</code> overrides the first if you really
+  mean it.</li>
+</ul>
+<h3 id="known-limitations">Known limitations<a class="headerlink" href="#known-limitations" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong><code>beegen</code> needs libclang at run time</strong> - not to build Bee, but to read a
+  header. Without it (<code>apt install libclang-18-dev</code>, or <code>--libclang &lt;path&gt;</code>) it
+  says so and stops. Everything else, including running generated bindings,
+  works without it.</li>
+<li><strong>Not every declaration can be bound.</strong> Templates, variadics, out-parameters
+  and types beegen can't map are skipped - reported individually, with a reason,
+  rather than silently dropped. Hand-write a shim for those; the OpenCV binding
+  needed 40 lines of one.</li>
+<li>Buffers are dense and contiguous only: no strides, no views, no broadcasting.
+  <code>reshape</code> and slicing a buffer copy.</li>
+<li>The Windows installer still ships an interpreter-only build (no JIT), and now
+  no libclang either, so <code>beegen</code> on Windows needs one installed separately.</li>
+<li>Carried from 0.2.0: no public registry is running, so <code>hive install &lt;name&gt;</code>
+  needs a <code>--registry</code>; <code>hive publish</code> doesn't exist; the REPL has no line
+  editing or history.</li>
+</ul>
+<h2 id="020-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.2.0">0.2.0</a> - 2026-08-06<a class="headerlink" href="#020-2026-08-06" title="Anchor link to this section">&para;</a></h2>
+<p>The sharing-and-diagnostics release. Bee gains <strong>Hive</strong>, a package manager,
+so code can be published and installed; <strong>stack traces</strong>, so an error says where
+it came from instead of just naming a line; and three conveniences the language
+was missing - <strong>string interpolation</strong>, <strong>slicing</strong>, and an <strong>interactive REPL</strong>.
+A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
+<h3 id="language_1">Language<a class="headerlink" href="#language_1" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>
+<p><strong>String interpolation.</strong> An <code>f</code> prefix substitutes <code>{expressions}</code> into a
+  string - <code>f"{name} has {n * 2} items"</code> - with any expression allowed inside the
+  braces, including strings of its own (<code>f"{d["key"]}"</code>). Write <code>{{</code> and <code>}}</code> for
+  literal braces; a string without the prefix is untouched, so nothing that used
+  to work changes meaning.</p>
+</li>
+<li>
+<p><strong>Slicing.</strong> <code>xs[1:3]</code>, <code>xs[:2]</code>, <code>xs[2:]</code>, <code>xs[-2:]</code> and <code>xs[:]</code>, on lists and
+  strings. Bounds may be negative (counting from the end) and are clamped rather
+  than checked, so <code>xs[0:100]</code> is the whole list and an inverted range is empty.
+  Slicing a list returns a copy.</p>
+</li>
+<li>
+<p><strong>An interactive REPL.</strong> <code>bee</code> with no arguments starts a session: a bare
+  expression prints its value, definitions persist across lines, an open block
+  keeps prompting with <code>...</code> until it closes, and an error doesn't end the
+  session. Two more entry points come with it - <code>bee -e '&lt;code&gt;'</code> for a one-liner
+  and <code>bee &lt; script.bee</code> (or a pipe) to read a program from stdin.</p>
+</li>
+</ul>
+<h3 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Stack traces on every error.</strong> An uncaught error now prints the file, line
+  and function for each call on the way in, innermost first:</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Runtime error: division by zero
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  at safe_div()  lib/math.bee:8
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  at total()     report.bee:14
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  at &lt;main&gt;      report.bee:31
+</span></code></pre></div>
+<p>Methods appear as <code>Class.method()</code>. Built-in failures are reported at their
+  call site, an error raised inside a callback (<code>map</code>, <code>sort</code>, <code>spawn</code>) keeps its
+  own deeper trace, and an uncaught <code>throw</code> carries the trace from where it was
+  thrown. Lex and parse errors name their file too - including the file of a
+  module that failed to parse, and the import that pulled it in. Very deep traces
+  are truncated in the middle.</p>
+<ul>
+<li><strong>Runaway recursion is an error, not a crash.</strong> Recursion deeper than the call
+  limit stops with <code>call stack overflow</code> plus a trace, where it previously
+  overflowed the C++ stack and died on a signal with no message at all. The limit
+  scales with the process's stack limit, so <code>ulimit -s 65536</code> genuinely buys
+  deeper recursion, and <code>BEE_MAX_DEPTH</code> overrides it outright. A numeric function
+  compiled by the JIT recurses natively and so escapes that check; a <code>SIGSEGV</code>
+  handler catches the overflow and explains it instead of leaving a bare
+  "Segmentation fault" (set <code>BEE_NO_CRASH_HANDLER=1</code> to get the core dump back).</li>
+</ul>
+<h3 id="packages-hive">Packages - Hive<a class="headerlink" href="#packages-hive" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong><code>hive</code>, a package manager</strong>, shipped alongside <code>bee</code>:</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>hive<span class="w"> </span>install<span class="w"> </span>greet<span class="w">              </span><span class="c1"># from a registry</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>hive<span class="w"> </span>install<span class="w"> </span>./greet-1.2.0.hive<span class="w"> </span><span class="c1"># from a local archive</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>hive<span class="w"> </span>install<span class="w">                    </span><span class="c1"># everything in hive.json</span>
+</span></code></pre></div>
+<p>It resolves dependencies transitively, verifies every download against its
+  SHA-256, and writes a <code>hive.lock</code> that makes a repeat install reproducible -
+  and, because the lock carries URLs and hashes, servable entirely from the cache
+  with <code>--offline</code>. Other commands: <code>uninstall</code>, <code>list</code>, <code>info</code>, <code>search</code>,
+  <code>init</code>, <code>pack</code>, <code>cache</code>.</p>
+<p>A registry is just static files (<code>packages/&lt;name&gt;.json</code>, <code>index.json</code>, and the
+  archives), so it can live on GitHub Pages, S3, a plain web server, or a
+  directory on disk. Full documentation in <a href="../hive/">docs/HIVE.md</a>.</p>
+<ul>
+<li>
+<p><strong>The <code>.hive</code> package format.</strong> A dependency-free container: a <code>HIVE1</code> magic
+  line, a JSON header holding the manifest and a per-file SHA-256, then the file
+  bytes. No zip or tar library on either side, and a corrupt, truncated or
+  tampered archive fails loudly instead of installing.</p>
+</li>
+<li>
+<p><strong><code>hive.json</code> manifests.</strong> <code>name</code>, <code>version</code>, <code>main</code>, <code>dependencies</code> (with <code>^</code>,
+  <code>~</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>=</code> and comma-separated constraints), <code>files</code>/<code>exclude</code> for
+  packing, plus the usual descriptive fields. Unknown keys are preserved when
+  Hive rewrites the file.</p>
+</li>
+<li>
+<p><strong>A worked example</strong> in <a href="https://github.com/beelang-project/bee/tree/main/examples/hive-demo"><code>examples/hive-demo/</code></a>: pack a
+  package, install it, import it - no registry and no network needed.</p>
+</li>
+</ul>
+<h3 id="tooling-tests">Tooling &amp; tests<a class="headerlink" href="#tooling-tests" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>
+<p><strong><code>make test</code></strong> runs two suites: <code>tests/lang_test.sh</code> (56 checks - traces,
+  locations, interpolation, slicing, the REPL, recursion limits, exit codes) and
+  <code>tests/hive_test.sh</code> (44 checks - the package manager end to end, against a
+  registry served straight off the filesystem, so the tests never touch the
+  network).</p>
+</li>
+<li>
+<p>The <code>.deb</code> and the Windows installer now install <code>hive</code> next to <code>bee</code>, and
+  <code>make</code> builds both binaries.</p>
+</li>
+</ul>
+<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>
+<p><strong>Module resolution finds installed packages.</strong> <code>import name</code> searches the
+  importing file's directory, its sibling <code>lib/</code>, <code>hive_modules/</code> in that
+  directory and every directory above it, <code>$BEE_PATH</code>, and finally the global
+  library at <code>$HIVE_HOME/lib</code> (default <code>~/.hive/lib</code>). Local code still wins over
+  an installed package of the same name, and a directory found this way is
+  imported as a package via its manifest's <code>"main"</code> (default <code>init.bee</code>).</p>
+</li>
+<li>
+<p><strong>Caught errors read better.</strong> A runtime error caught by <code>try</code> / <code>catch</code> binds
+  as a single line that now includes its location - <code>Runtime error: division by
+  zero (lib/math.bee:8)</code> rather than <code>Runtime error (line 8): division by zero</code> -
+  and never the stack trace, so printing it inside a message of your own stays
+  readable.</p>
+</li>
+<li>
+<p><strong><code>bee</code> with no arguments</strong> starts the REPL (on a terminal) or reads a program
+  from stdin, rather than printing usage and exiting.</p>
+</li>
+<li>
+<p>A failed <code>import</code> of a bare name now suggests <code>hive install &lt;name&gt;</code>.</p>
+</li>
+</ul>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>Reading a module no longer treats a <em>directory</em> whose name matches the module
+  as an empty source file - the old resolver accepted anything <code>ifstream</code> could
+  open.</li>
+<li>Variable references carried no line number, so <code>undefined variable 'x'</code> was
+  reported without a location. They do now.</li>
+</ul>
+<h3 id="known-limitations_1">Known limitations<a class="headerlink" href="#known-limitations_1" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>No public registry is running yet, so <code>hive install &lt;name&gt;</code> needs a <code>--registry</code>
+  (or <code>HIVE_REGISTRY</code>, or <code>~/.hive/config.json</code>) pointing at one. Installing from
+  a local <code>.hive</code> file works with no registry at all.</li>
+<li><code>hive publish</code> doesn't exist: <code>hive pack</code> prints the SHA-256 to paste into your
+  registry metadata.</li>
+<li>The REPL has no line editing or history - arrow keys and Ctrl-C aren't handled.</li>
+<li>The VS Code extension doesn't highlight <code>f"..."</code> strings or slices yet.</li>
+</ul>
+<h2 id="011-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.1.1">0.1.1</a> - 2026-08-06<a class="headerlink" href="#011-2026-08-06" title="Anchor link to this section">&para;</a></h2>
+<p>Performance work focused on loops, condition checking, and string building. No
+language or API changes - existing programs run identically, only faster. All
+14 examples and the correctness suites pass unchanged.</p>
+<h3 id="performance_1">Performance<a class="headerlink" href="#performance_1" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>Inline cache for global variables.</strong> Reads/writes of top-level (named)
+  variables now go through a cached pointer instead of a <code>std::map</code> lookup on
+  every access. Top-level loops that were ~3.7× slower than Python are now
+  ~2.7× faster than before this change.</li>
+<li><strong>Cross-function JIT.</strong> The native JIT previously handled only direct
+  self-recursion; it now compiles a whole numeric call graph - <strong>helpers and
+  mutual recursion</strong> - into one module, so those calls are direct and
+  inlinable. A helper-calling loop (e.g. a prime sieve) that used to fall back
+  to the interpreter now runs ~6× faster than Python.</li>
+<li><strong>Top-level loops are JIT-compiled automatically.</strong> A numeric top-level
+  <code>while</code>/<code>for</code> no longer needs to be wrapped in a function to hit native
+  speed. The numeric globals a loop touches are passed as an in/out array,
+  loaded on entry and written back only on clean completion; anything
+  non-numeric (a <code>print</code>, a string, division by zero) transparently falls back
+  to the interpreter from unmodified state. A 10 M-iteration top-level loop
+  dropped from ~1.84 s to ~0.03 s (~16× faster than Python).</li>
+<li><strong>In-place string append.</strong> The <code>x = x + rhs</code> / <code>x += rhs</code> idiom was O(n²) -
+  a fresh, growing string each iteration (~246× slower than Python). It now
+  grows the buffer in place when the string is not aliased, falling back to a
+  copy to preserve value semantics otherwise. Building a 200 k-character string
+  went from ~2.46 s to ~0.03 s (~82× faster).</li>
+<li><strong>JIT warmup guard.</strong> A small, flat <code>for</code> loop with a compile-time-known trip
+  count below ~40 k now runs interpreted instead of paying the ~3 ms one-time
+  native compilation, which for such loops costs more than it saves. Nested,
+  large, or unanalyzable loops still compile as before. A 10 k-iteration loop
+  dropped from ~4.3 ms to ~0.5 ms, matching Python.</li>
+<li><strong>Void numeric functions no longer run twice.</strong> A function that falls off the
+  end (no value-returning <code>return</code>) used to be compiled, executed natively, then
+  discarded and re-run in the interpreter - doubling the work. Native completion
+  now reports a nil result directly, so such functions keep their native run. A
+  100 M-iteration side-effect-free function dropped from ~6 s to milliseconds;
+  a 10 M-iteration accumulating loop runs ~20× faster than Python.</li>
+</ul>
+<h2 id="010-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.1.0">0.1.0</a> - 2026-08-06<a class="headerlink" href="#010-2026-08-06" title="Anchor link to this section">&para;</a></h2>
+<p>The first public release of Bee - a small, friendly scripting language with
+a built-in native (LLVM) JIT. ### Language</p>
+<ul>
+<li>Dynamically-typed values: <code>nil</code>, booleans, numbers (64-bit float), strings,
+  lists, and dicts.</li>
+<li>Variables with <code>let</code>, lexical scoping, and block/function/loop scopes.</li>
+<li>Full operator set: arithmetic, comparison, logical (<code>and</code>/<code>or</code>/<code>not</code> with
+  <code>&amp;&amp;</code>/<code>||</code>/<code>!</code> aliases), and compound assignment (<code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>).</li>
+<li>Control flow: <code>if</code> / <code>else if</code> / <code>else</code>, <code>while</code>, C-style <code>for</code>, and
+  <code>for … in</code> over lists, strings, and dicts, plus <code>break</code> / <code>continue</code>.</li>
+<li>First-class functions and closures.</li>
+<li>Classes with single inheritance (<code>extends</code>), <code>this</code>, <code>super</code>, an <code>init</code>
+  constructor, and a customizable <code>str()</code> for printing.</li>
+<li>A module system: <code>import</code>, <code>import … as</code>, <code>from … import</code>, and
+  <code>from … import *</code>, resolved relative to the file and a sibling <code>lib/</code> folder.</li>
+<li>Error handling with <code>try</code> / <code>catch</code> / <code>finally</code> and <code>throw</code> of any value.</li>
+<li>Two comment styles (<code>#</code> and <code>//</code>) and an optional statement terminator (<code>;</code>).</li>
+</ul>
+<h3 id="runtime-performance">Runtime &amp; performance<a class="headerlink" href="#runtime-performance" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>Compact C++17 runtime with no required third-party dependencies.</li>
+<li><strong>Built-in LLVM ORCv2 JIT</strong> (enabled by default when LLVM 17/18 is present):
+  functions within a numeric subset are compiled to native code operating on
+  unboxed doubles, transparently falling back to the runtime for everything
+  else. <code>fib(32)</code> drops from ~11 s to ~0.014 s.</li>
+<li><code>bee --version</code> / <code>-v</code> and <code>bee --help</code> / <code>-h</code>.</li>
+</ul>
+<h3 id="standard-library-no-imports-required">Standard library (no imports required)<a class="headerlink" href="#standard-library-no-imports-required" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>I/O:</strong> <code>print</code>, <code>write</code>, <code>input</code>.</li>
+<li><strong>Conversion &amp; inspection:</strong> <code>len</code>, <code>type</code>, <code>str</code>, <code>repr</code>, <code>num</code>, <code>int</code>,
+  <code>bool</code>.</li>
+<li><strong>Math:</strong> <code>abs</code>, <code>floor</code>, <code>ceil</code>, <code>round</code>, <code>sqrt</code>, <code>pow</code>, <code>min</code>, <code>max</code>,
+  <code>range</code>.</li>
+<li><strong>Files:</strong> <code>read_file</code>, <code>read_lines</code>, <code>write_file</code>, <code>append_file</code>,
+  <code>file_exists</code>, <code>remove_file</code>, <code>make_dir</code>, <code>list_dir</code>.</li>
+<li><strong>Time &amp; randomness:</strong> <code>clock</code>, <code>time</code>, <code>now</code>, <code>format_time</code>, <code>sleep</code>,
+  <code>random</code>, <code>random_int</code>, <code>random_range</code>, <code>random_choice</code>, <code>random_seed</code>.</li>
+<li><strong>Environment &amp; processes:</strong> <code>env</code>, <code>set_env</code>, <code>args</code>, <code>exec</code>.</li>
+<li><strong>Threads:</strong> <code>spawn</code> / <code>join</code> with a global interpreter lock (GIL) - safe
+  shared state and real overlap for I/O-bound work.</li>
+<li>Type methods for strings, lists, and dicts (<code>upper</code>, <code>split</code>, <code>push</code>, <code>pop</code>,
+  <code>keys</code>, <code>has</code>, <code>get</code>, …).</li>
+</ul>
+<h3 id="tooling-packaging">Tooling &amp; packaging<a class="headerlink" href="#tooling-packaging" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><code>Makefile</code> build with automatic LLVM JIT detection and an overridable
+  <code>VERSION</code>.</li>
+<li><strong>Debian/Ubuntu <code>.deb</code></strong> package (<a href="https://github.com/beelang-project/bee/blob/main/packaging/build-deb.sh"><code>packaging/build-deb.sh</code></a>)
+  built with the JIT; dependencies are auto-detected.</li>
+<li><strong>Windows installer</strong> (<a href="https://github.com/beelang-project/bee/tree/main/packaging/windows"><code>packaging/windows/</code></a>) via Inno
+  Setup - adds <code>bee</code> to <code>PATH</code>, associates <code>.be</code> / <code>.bee</code> files, and registers
+  an uninstaller.</li>
+<li><strong>GitHub Actions release workflow</strong> that builds both packages and publishes
+  them on a version tag.</li>
+</ul>
+<h3 id="editor-support">Editor support<a class="headerlink" href="#editor-support" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li><strong>VS Code extension</strong> (<a href="https://github.com/beelang-project/vscode-bee">beelang-project/vscode-bee</a>,
+  then <code>editors/vscode-bee/</code> in this repo) with
+  syntax highlighting, completions (keywords, built-ins, type methods, and file
+  symbols), hovers, snippets, and a bee icon for <code>.be</code> / <code>.bee</code> files.</li>
+</ul>
+<h3 id="documentation-examples">Documentation &amp; examples<a class="headerlink" href="#documentation-examples" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>Full <a href="../language/">language reference</a>.</li>
+<li>A topic-by-topic set of 14 runnable <a href="https://github.com/beelang-project/bee/tree/main/examples">examples</a>.</li>
+</ul>
+<h3 id="known-limitations_2">Known limitations<a class="headerlink" href="#known-limitations_2" title="Anchor link to this section">&para;</a></h3>
+<ul>
+<li>The Windows installer ships an interpreter-only build (no JIT yet).</li>
+<li>The <code>.deb</code> requires <code>libllvm18</code>, available on Ubuntu 24.04 and newer.</li>
+<li>No anonymous/lambda functions - pass named functions (e.g. to <code>spawn</code>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../performance/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Performance">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Performance
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Atanu Debnath - released under the MIT License
+    </div>
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/beelang-project/bee" target="_blank" rel="noopener" title="Bee on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

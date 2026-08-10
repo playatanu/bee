@@ -1,0 +1,272 @@
+/* ============================================================
+   Bee documentation theme - honey / amber (Bee brand)
+   Clean header, warm accents, professional finish.
+   ============================================================ */
+
+:root {
+  --bee-honey:        #f0a500;   /* Bee brand amber (a touch deeper than logo) */
+  --bee-honey-light:  #ffc233;
+  --bee-honey-dark:   #c98600;
+  --bee-amber-deep:   #a86e00;
+  --bee-amber-darker: #8a5a00;
+}
+
+/* Accent (interactive hovers/focus) = deep amber */
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color:              var(--bee-amber-deep);
+  --md-accent-fg-color--transparent: rgba(240, 165, 0, 0.1);
+}
+
+/* Primary (links, active states) = honey */
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color:        var(--bee-honey);
+  --md-primary-fg-color--light: var(--bee-honey-light);
+  --md-primary-fg-color--dark:  var(--bee-honey-dark);
+}
+
+/* ------------------------------------------------------------
+   Header + tabs - light: clean white with a hairline border
+   ------------------------------------------------------------ */
+[data-md-color-scheme="default"] .md-header {
+  background-color: #ffffff;
+  color: #26221a;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.07), 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+[data-md-color-scheme="default"] .md-tabs {
+  background-color: #ffffff;
+  color: #26221a;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+[data-md-color-scheme="default"] .md-search__form {
+  background-color: #fbeecb;                    /* clean pale honey, on-brand */
+  box-shadow: none;
+}
+[data-md-color-scheme="default"] .md-search__form:hover {
+  background-color: #f7e3a8;
+}
+[data-md-color-scheme="default"] .md-search__input { color: #26221a; }
+[data-md-color-scheme="default"] .md-search__input::placeholder {
+  color: rgba(80, 60, 0, 0.55);
+}
+[data-md-color-scheme="default"] .md-search__icon { color: var(--bee-amber-deep); }
+
+/* Header + tabs - dark: warm charcoal, not the default blue-slate */
+[data-md-color-scheme="slate"] {
+  --md-hue: 38;
+}
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #211c15;
+  color: #f3e9d6;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #211c15;
+  color: #f3e9d6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+[data-md-color-scheme="slate"] .md-search__form {
+  background-color: rgba(255, 255, 255, 0.09);
+  box-shadow: none;
+}
+[data-md-color-scheme="slate"] .md-search__form:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+[data-md-color-scheme="slate"] .md-search__input { color: #f3e9d6; }
+[data-md-color-scheme="slate"] .md-search__input::placeholder {
+  color: rgba(243, 233, 214, 0.55);
+}
+[data-md-color-scheme="slate"] .md-search__icon { color: var(--bee-honey-light); }
+
+/* Active / hovered nav tab gets a honey underline */
+.md-tabs__link {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+.md-tabs__link:hover,
+.md-tabs__link--active {
+  opacity: 1;
+}
+.md-tabs__item {
+  position: relative;
+}
+.md-tabs__link--active::after {
+  content: "";
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: 0.2rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--bee-honey);
+}
+
+/* Body links: warm amber, deeper on hover.
+   Exclude .md-button so button text keeps its own colour (otherwise the dark
+   link colour bled onto the honey Download button, hiding its label). */
+[data-md-color-scheme="default"] .md-typeset a:not(.md-button) { color: var(--bee-amber-deep); }
+[data-md-color-scheme="slate"]   .md-typeset a:not(.md-button) { color: var(--bee-honey-light); }
+.md-typeset a:not(.md-button):hover { color: var(--bee-amber-darker); }
+[data-md-color-scheme="slate"] .md-typeset a:not(.md-button):hover { color: var(--bee-honey); }
+
+/* Section headings get a subtle underline */
+.md-typeset h2 {
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+  padding-bottom: 0.2rem;
+}
+
+/* ============================================================
+   Landing page hero
+   ============================================================ */
+.bee-hero {
+  text-align: center;
+  padding: 2.2rem 1rem 1.2rem;
+  margin: -1rem -0.8rem 0;
+  border-radius: 0 0 1rem 1rem;
+  background:
+    radial-gradient(1000px 320px at 50% -110px, rgba(240, 165, 0, 0.16), transparent 70%);
+}
+.bee-hero img {
+  width: 92px;
+  filter: drop-shadow(0 6px 14px rgba(201, 134, 0, 0.3));
+}
+.bee-hero h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0.4rem 0 0.15rem;
+  letter-spacing: -0.02em;
+  color: var(--md-default-fg-color);
+}
+.bee-hero .tagline {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--md-default-fg-color--light);
+  max-width: 34rem;
+  margin: 0 auto 1.3rem;
+}
+.bee-hero .md-button {
+  margin: 0.3rem 0.3rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+/* Primary CTA (Download) = honey; hover = deeper honey */
+.md-typeset .md-button--primary {
+  background-color: var(--bee-honey);
+  border-color: var(--bee-honey);
+  color: #241900;
+  box-shadow: 0 4px 14px rgba(240, 165, 0, 0.35);
+}
+.md-typeset .md-button--primary:hover {
+  background-color: var(--bee-amber-deep);
+  border-color: var(--bee-amber-deep);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(168, 110, 0, 0.4);
+}
+/* Secondary outline buttons pick up honey on hover */
+.md-typeset .md-button:not(.md-button--primary):hover {
+  border-color: var(--bee-honey);
+  color: var(--bee-amber-deep);
+  background-color: rgba(240, 165, 0, 0.08);
+}
+
+/* ============================================================
+   Feature grid (cards)
+   ============================================================ */
+.bee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+  gap: 1rem;
+  margin: 1.6rem 0;
+}
+.bee-card {
+  position: relative;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.8rem;
+  padding: 1.2rem 1.3rem;
+  background: var(--md-default-bg-color);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.bee-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--bee-honey-light), var(--bee-amber-deep));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.bee-card:hover {
+  border-color: rgba(240, 165, 0, 0.5);
+  box-shadow: 0 10px 26px rgba(201, 134, 0, 0.14);
+  transform: translateY(-3px);
+}
+.bee-card:hover::before { opacity: 1; }
+.bee-card h3 { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.bee-card p  { margin: 0; font-size: 0.82rem; color: var(--md-default-fg-color--light); }
+
+/* ============================================================
+   Three-step start (landing)
+   ============================================================ */
+.bee-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+  margin: 1.4rem 0;
+}
+.bee-step {
+  border-left: 3px solid var(--bee-honey);
+  padding: 0.2rem 0 0.2rem 1rem;
+}
+.md-typeset .bee-step h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.95rem;
+  color: var(--bee-amber-deep);
+}
+[data-md-color-scheme="slate"] .md-typeset .bee-step h3 { color: var(--bee-honey-light); }
+.bee-step p { margin: 0; font-size: 0.85rem; color: var(--md-default-fg-color--light); }
+
+/* ============================================================
+   Download panel
+   ============================================================ */
+.bee-downloads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin: 1.4rem 0;
+}
+.bee-dl {
+  display: block;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.8rem;
+  padding: 1.3rem 1.4rem;
+  text-decoration: none !important;
+  background: var(--md-default-bg-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.bee-dl:hover {
+  border-color: var(--bee-honey);
+  box-shadow: 0 8px 22px rgba(201, 134, 0, 0.16);
+  transform: translateY(-2px);
+  color: inherit !important;
+}
+.bee-dl .bee-dl__os {
+  display: block;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+  margin-bottom: 0.15rem;
+}
+.bee-dl .bee-dl__file {
+  display: block;
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.78rem;
+  color: var(--bee-amber-deep);
+}
+.bee-dl .bee-dl__hint {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--md-default-fg-color--light);
+}
+[data-md-color-scheme="slate"] .bee-dl .bee-dl__file { color: var(--bee-honey-light); }
