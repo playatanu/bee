@@ -6,19 +6,19 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Download Bee for Windows or Linux, or build it from source. Free and open source.">
+        <meta name="description" content="Compile a Bee program to a standalone native executable with beec, the ahead-of-time compiler. No interpreter needed to run the result.">
       
       
         <meta name="author" content="Atanu Debnath">
       
       
-        <link rel="canonical" href="https://beelang-project.github.io/bee/download/">
+        <link rel="canonical" href="https://beelang-project.github.io/bee/compile/">
       
       
-        <link rel="prev" href="../getting-started/">
+        <link rel="prev" href="../language/">
       
       
-        <link rel="next" href="../language/">
+        <link rel="next" href="../hive/">
       
       
         
@@ -27,7 +27,7 @@
       <link rel="icon" href="../assets/bee.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
-    <title>Download - Bee</title>
+    <title>Compile - Bee</title>
     
       <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
@@ -61,13 +61,13 @@
     <meta name="keywords" content="Bee, beelang, bee language, scripting language, programming language, LLVM JIT, hive package manager, VS Code">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bee">
-  <meta property="og:title" content="Download - Bee">
-  <meta property="og:description" content="Download Bee for Windows or Linux, or build it from source. Free and open source.">
+  <meta property="og:title" content="Compile - Bee">
+  <meta property="og:description" content="Compile a Bee program to a standalone native executable with beec, the ahead-of-time compiler. No interpreter needed to run the result.">
   <meta property="og:image" content="https://beelang-project.github.io/bee/assets/bee.png">
-  <meta property="og:url" content="https://beelang-project.github.io/bee/download/">
+  <meta property="og:url" content="https://beelang-project.github.io/bee/compile/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Download - Bee">
-  <meta name="twitter:description" content="Download Bee for Windows or Linux, or build it from source. Free and open source.">
+  <meta name="twitter:title" content="Compile - Bee">
+  <meta name="twitter:description" content="Compile a Bee program to a standalone native executable with beec, the ahead-of-time compiler. No interpreter needed to run the result.">
   <meta name="twitter:image" content="https://beelang-project.github.io/bee/assets/bee.png">
 
   </head>
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#download" class="md-skip">
+        <a href="#compile-to-a-native-binary" class="md-skip">
           Skip to content
         </a>
       
@@ -124,7 +124,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Download
+              Compile
             
           </span>
         </div>
@@ -272,11 +272,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../download/" class="md-tabs__link">
         
   
   
@@ -312,9 +310,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../compile/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -494,37 +494,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Download
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../download/" class="md-nav__link">
         
   
   
@@ -540,37 +513,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#build-it-yourself" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Build it yourself
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -606,10 +548,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../compile/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compile
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -625,6 +594,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-can-compile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you can compile
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-yet-supported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not yet supported
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -913,10 +957,54 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#build-it-yourself" class="md-nav__link">
+  <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Build it yourself
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it works
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-can-compile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you can compile
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-yet-supported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not yet supported
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements
       
     </span>
   </a>
@@ -943,34 +1031,105 @@
   
 
 
-<h1 id="download">Download</h1>
-<p>Bee is free and open source. Pick your platform below - each installer sets up
-both <code>bee</code> (the language) and <code>hive</code> (its package manager).</p>
-<div class="bee-downloads">
-  <a class="bee-dl" href="https://github.com/beelang-project/bee/releases/latest">
-    <span class="bee-dl__os">Windows</span>
-    <span class="bee-dl__file">bee-&lt;version&gt;-amd64.exe</span>
-    <span class="bee-dl__hint">Run the installer. You can then double-click any .be / .bee file to run it.</span>
-  </a>
-  <a class="bee-dl" href="https://github.com/beelang-project/bee/releases/latest">
-    <span class="bee-dl__os">Debian / Ubuntu</span>
-    <span class="bee-dl__file">bee-&lt;version&gt;-amd64.deb</span>
-    <span class="bee-dl__hint">Double-click to open your software centre, or install it from a terminal.</span>
-  </a>
+<h1 id="compile-to-a-native-binary">Compile to a native binary</h1>
+<p>Bee ships with <code>beec</code>, an ahead-of-time (AOT) compiler. It turns a <code>.bee</code>
+program into a standalone native executable - a real binary you can ship and
+run on its own, with no <code>bee</code> interpreter installed.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>beec<span class="w"> </span>hello.bee<span class="w"> </span>-o<span class="w"> </span>hello<span class="w">   </span><span class="c1"># compile</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./hello<span class="w">                   </span><span class="c1"># run the native binary</span>
+</span></code></pre></div>
+<p>The produced file is an ordinary executable (an ELF binary on Linux). The whole
+program - its control flow, functions, and calls - is compiled to machine code,
+and the Bee runtime is linked in, so nothing is interpreted at run time.</p>
+<h2 id="usage">Usage</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>beec<span class="w"> </span>&lt;input.bee&gt;<span class="w"> </span><span class="o">[</span>options<span class="o">]</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-o &lt;file&gt;</code></td>
+<td>Name of the output executable (default: the input name without its extension).</td>
+</tr>
+<tr>
+<td><code>-O &lt;level&gt;</code></td>
+<td>Optimisation level passed to the C++ compiler (default: <code>2</code>).</td>
+</tr>
+<tr>
+<td><code>--emit-cpp</code></td>
+<td>Also keep the generated C++ next to the output, for inspection.</td>
+</tr>
+<tr>
+<td><code>-v</code>, <code>--version</code></td>
+<td>Print the version.</td>
+</tr>
+<tr>
+<td><code>-h</code>, <code>--help</code></td>
+<td>Print help.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-it-works">How it works</h2>
+<p><code>beec</code> reuses Bee's own lexer, parser, and resolver, then generates C++ from the
+program: each Bee function becomes a native function, variables become
+reference-counted cells (so closures work), and every operation is handed to the
+same runtime the interpreter uses. It then invokes your system C++ compiler to
+link everything into one binary.</p>
+<p>Because of that last step, <strong>the machine that runs <code>beec</code> needs a C++17
+compiler</strong> (the same one you built Bee with). The machine that runs the <em>output</em>
+needs nothing.</p>
+<h2 id="what-you-can-compile">What you can compile</h2>
+<p>The AOT compiler supports the whole language:</p>
+<ul>
+<li>variables, all arithmetic / comparison / logical / bitwise operators</li>
+<li>strings (indexing, slicing, interpolation, methods), lists, and dicts</li>
+<li><code>if</code> / <code>while</code> / both <code>for</code> forms / <code>break</code> / <code>continue</code> / <code>match</code></li>
+<li>functions, closures, recursion, first-class functions, default and <code>...rest</code>
+  parameters</li>
+<li>classes, inheritance, <code>this</code>, <code>super</code>, <code>new</code>, and custom <code>str()</code></li>
+<li>list comprehensions and destructuring <code>let</code></li>
+<li><code>try</code> / <code>catch</code> / <code>finally</code> and <code>throw</code></li>
+<li>threads (<code>spawn</code> / <code>join</code>)</li>
+<li><code>import</code> / <code>from ... import</code> - resolved just as the interpreter does (sibling
+  <code>.bee</code>/<code>.be</code> files, a <code>lib/</code> folder, <code>hive_modules/</code> packages found up the
+  tree honouring each package's <code>hive.json</code> <code>main</code>, <code>$BEE_PATH</code>, and
+  <code>~/.hive/lib</code>) and compiled into the same binary, dependencies and all</li>
+<li>the entire built-in standard library (<code>print</code>, <code>len</code>, <code>map</code>, <code>range</code>, file and
+  time functions, and so on)</li>
+</ul>
+<h2 id="not-yet-supported">Not yet supported</h2>
+<p>A couple of things still need the <a href="../getting-started/">interpreter</a> - <code>beec</code>
+reports them (with a file and line) instead of miscompiling:</p>
+<ul>
+<li><strong>native modules</strong> - a compiled C/C++ extension (<code>.so</code>) imported by name. The
+  pure-Bee module system, including installed packages, is fully supported.</li>
+<li><code>import</code> statements that aren't at the top level of a file</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">About speed</p>
+<p>A compiled binary is standalone, but it is not automatically <em>faster</em> than
+the interpreter. Arithmetic still flows through Bee's dynamic runtime, and
+the interpreter already compiles hot numeric loops to native code with its
+<a href="../performance/">JIT</a>. Making AOT output match or beat the JIT on numeric
+code (by specialising on types) is planned work, not a promise today.</p>
 </div>
-
-<p>After installing, open a terminal and check it works:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>bee<span class="w"> </span>--version
-</span></code></pre></div>
-<p>New here? Head to <a href="../getting-started/">Get started</a> to write and run your first
-program.</p>
-<h2 id="build-it-yourself">Build it yourself</h2>
-<p>Prefer to build from source? You'll need a C++17 compiler, <code>make</code>, and
-(optionally) LLVM for the speed boost:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>llvm-18-dev<span class="w">   </span><span class="c1"># optional, enables the JIT</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>make<span class="w">                           </span><span class="c1"># builds bee, hive and beegen</span>
-</span></code></pre></div>
-<p>Without LLVM, <code>make</code> still produces a working <code>bee</code> - just a little slower.</p>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>A C++17 compiler on the machine that runs <code>beec</code> (<code>c++</code> by default; override
+  with the <code>BEE_CXX</code> environment variable). The machine that runs the compiled
+  binary needs nothing.</li>
+<li><strong>Windows:</strong> run <code>beec</code> from an MSYS2 / MinGW shell, whose <code>g++</code> is the same
+  GCC/Clang-style compiler Bee is built with. The compiled <code>.exe</code> is standalone.
+  (AOT is currently tested on Linux; Windows and macOS are best-effort.)</li>
+<li>On a relocated install, point <code>beec</code> at the runtime with <code>BEE_AOT_INCDIR</code> (the
+  directory with <code>bee_aot.hpp</code>) and <code>BEE_AOT_RUNTIME_LIB</code> (the path to
+  <code>libbee_runtime.a</code>).</li>
+</ul>
 
 
 
@@ -1011,7 +1170,7 @@ program.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../getting-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Get started">
+          <a href="../language/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Language guide">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1021,20 +1180,20 @@ program.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Get started
+                Language guide
               </div>
             </div>
           </a>
         
         
           
-          <a href="../language/" class="md-footer__link md-footer__link--next" aria-label="Next: Language guide">
+          <a href="../hive/" class="md-footer__link md-footer__link--next" aria-label="Next: Using packages">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Language guide
+                Using packages
               </div>
             </div>
             <div class="md-footer__button md-icon">

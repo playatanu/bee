@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Bee is a small, friendly scripting language that's easy to read and quick to learn, with a built-in native (LLVM) JIT that keeps tight loops fast.">
+        <meta name="description" content="Bee is a small, friendly programming language that's easy to read and quick to learn, with a built-in native (LLVM) JIT that keeps tight loops fast.">
       
       
         <meta name="author" content="Atanu Debnath">
@@ -60,12 +60,12 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bee">
   <meta property="og:title" content="The Bee Scripting Language">
-  <meta property="og:description" content="Bee is a small, friendly scripting language that's easy to read and quick to learn, with a built-in native (LLVM) JIT that keeps tight loops fast.">
+  <meta property="og:description" content="Bee is a small, friendly programming language that's easy to read and quick to learn, with a built-in native (LLVM) JIT that keeps tight loops fast.">
   <meta property="og:image" content="https://beelang-project.github.io/bee/assets/bee.png">
   <meta property="og:url" content="https://beelang-project.github.io/bee/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="The Bee Scripting Language">
-  <meta name="twitter:description" content="Bee is a small, friendly scripting language that's easy to read and quick to learn, with a built-in native (LLVM) JIT that keeps tight loops fast.">
+  <meta name="twitter:description" content="Bee is a small, friendly programming language that's easy to read and quick to learn, with a built-in native (LLVM) JIT that keeps tight loops fast.">
   <meta name="twitter:image" content="https://beelang-project.github.io/bee/assets/bee.png">
 
   </head>
@@ -300,6 +300,25 @@
     
   
   Language guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="compile/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Compile
 
       </a>
     </li>
@@ -589,6 +608,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#compiles-to-a-binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiles to a binary
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -700,6 +730,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="compile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -714,10 +771,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -735,8 +792,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -856,10 +913,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -877,8 +934,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1085,6 +1142,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#compiles-to-a-binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiles to a binary
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1126,7 +1194,7 @@
 <div class="bee-hero">
 <p><img alt="Bee logo" src="assets/bee.png" /></p>
 <h1 id="bee">Bee</h1>
-<p class="tagline">A friendly scripting language with a built-in native (LLVM) JIT.</p>
+<p class="tagline">A friendly programming language with a built-in native (LLVM) JIT.</p>
 <p><a class="md-button md-button--primary" href="download/">Download</a>
 <a class="md-button" href="getting-started/">Get started</a>
 <a class="md-button" href="https://marketplace.visualstudio.com/items?itemName=playatanu.vscode-bee">VS Code extension</a></p>
@@ -1171,6 +1239,11 @@ package manager installs it in one command.</p>
 <h3 id="fast-when-it-matters">Fast when it matters</h3>
 <p>Bee quietly speeds up heavy number work in the background, so your programs
 stay quick with no effort from you.</p>
+</div>
+<div class="bee-card">
+<h3 id="compiles-to-a-binary">Compiles to a binary</h3>
+<p>Turn a program into a standalone native executable with <code>beec</code> - ship one file,
+no interpreter required. <a href="compile/">Compile a program</a></p>
 </div>
 </div>
 <h2 id="where-to-next">Where to next</h2>
