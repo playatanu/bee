@@ -1627,7 +1627,7 @@
   
 
 
-<h1 id="bee-performance-findings-and-improvement-plan">Bee Performance - findings and improvement plan<a class="headerlink" href="#bee-performance-findings-and-improvement-plan" title="Anchor link to this section">&para;</a></h1>
+<h1 id="bee-performance-findings-and-improvement-plan">Bee Performance - findings and improvement plan</h1>
 <p>A measured account of where Bee 0.3.1 spends its time, why it is slower than
 Go (and, off the JIT path, slower than CPython), and what to change, in order of
 value for effort.</p>
@@ -1635,7 +1635,7 @@ value for effort.</p>
 LLVM 18 JIT enabled. Compared against CPython 3.12.3. Every number below is
 reproducible from the benchmarks in the appendix.</p>
 <hr />
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Anchor link to this section">&para;</a></h2>
+<h2 id="summary">Summary</h2>
 <p>The JIT is not the problem. <strong>The tree-walking interpreter is</strong>, and it has one
 catastrophic flaw plus three structural ones:</p>
 <table>
@@ -1683,7 +1683,7 @@ catastrophic flaw plus three structural ones:</p>
 <p>Priority order changed once the Go column existed: the two benchmarks the JIT
 compiles are within 2-4× of Go, and every one it declines is 20-87× behind. The
 remaining gap is JIT <em>coverage</em>, not interpreter speed.</p>
-<h3 id="results">Results<a class="headerlink" href="#results" title="Anchor link to this section">&para;</a></h3>
+<h3 id="results">Results</h3>
 <p>Measured against 0.3.1 (a binary built from the commit before this work), best
 of five interleaved runs - old and new alternating, so both see the same CPU
 boost state, which on this laptop is worth up to 2× on its own. 9 M inner
@@ -1748,7 +1748,7 @@ iterations each.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="the-four-way-picture">The four-way picture<a class="headerlink" href="#the-four-way-picture" title="Anchor link to this section">&para;</a></h3>
+<h3 id="the-four-way-picture">The four-way picture</h3>
 <p><code>bench/run.sh --all</code> runs the same 19 programs against 0.3.1, CPython 3.12 and
 Go 1.22 (compiled ahead of the timing loop). Best of three, interleaved:</p>
 <table>
@@ -1967,7 +1967,7 @@ what is left in this area: it is <code>xs.len()</code>, a <em>built-in</em> meth
 every one of those calls. Instance methods no longer do (see below); built-in
 methods still need the same treatment, which means restructuring the type-method
 section of <code>getProperty</code> so a receiver can be passed in rather than captured.</p>
-<h3 id="what-the-go-column-actually-says">What the Go column actually says<a class="headerlink" href="#what-the-go-column-actually-says" title="Anchor link to this section">&para;</a></h3>
+<h3 id="what-the-go-column-actually-says">What the Go column actually says</h3>
 <p>The two rows where Bee is within a small factor of Go - <code>fib_recursive</code> at
 2.2× and <code>loop_numeric</code> at 3.5× - are exactly the two the LLVM JIT compiles.
 Every row where it is 20-87× behind is a row the JIT declined.</p>
@@ -1980,7 +1980,7 @@ together.</p>
 statically-typed <code>[]int</code>, which no dynamic language reaches. <code>oo_class</code> at 87×
 and <code>call_function</code> at 68× are not that: they are boxing, dispatch and per-call
 overhead, and they are addressable.)</p>
-<h3 id="verification">Verification<a class="headerlink" href="#verification" title="Anchor link to this section">&para;</a></h3>
+<h3 id="verification">Verification</h3>
 <p><code>make test</code> runs 215 checks: 77 language, 30 differential, 5 complexity guards,
 50 hive and 53 beegen.</p>
 <ul>
@@ -2007,8 +2007,8 @@ overhead, and they are addressable.)</p>
 <p>Both were found by the benchmark suite on its first complete run, which is the
 argument for having one.</p>
 <hr />
-<h2 id="what-the-measurements-show">What the measurements show<a class="headerlink" href="#what-the-measurements-show" title="Anchor link to this section">&para;</a></h2>
-<h3 id="the-jit-is-fine-when-it-applies">The JIT is fine - when it applies<a class="headerlink" href="#the-jit-is-fine-when-it-applies" title="Anchor link to this section">&para;</a></h3>
+<h2 id="what-the-measurements-show">What the measurements show</h2>
+<h3 id="the-jit-is-fine-when-it-applies">The JIT is fine - when it applies</h3>
 <p>A purely numeric nested loop, top-level or inside a function, with or without an
 <code>if</code>, is compiled to native code and runs at Go-like speed:</p>
 <table>
@@ -2039,7 +2039,7 @@ argument for having one.</p>
 </table>
 <p>Note that even <code>continue</code> is free here - the JIT lowers it to a branch
 (<a href="https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L297"><code>jit_llvm.cpp:297</code></a>).</p>
-<h3 id="but-any-real-code-leaves-the-subset">…but any real code leaves the subset<a class="headerlink" href="#but-any-real-code-leaves-the-subset" title="Anchor link to this section">&para;</a></h3>
+<h3 id="but-any-real-code-leaves-the-subset">…but any real code leaves the subset</h3>
 <p>Codegen throws <code>JitBail</code> on the first construct outside the numeric subset
 (<a href="https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L301"><code>jit_llvm.cpp:301</code></a> for statements,
 <a href="https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L412"><code>jit_llvm.cpp:412</code></a> for expressions). That means a
@@ -2078,7 +2078,7 @@ JIT-compiled.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="per-operation-costs-in-the-interpreted-path">Per-operation costs in the interpreted path<a class="headerlink" href="#per-operation-costs-in-the-interpreted-path" title="Anchor link to this section">&para;</a></h3>
+<h3 id="per-operation-costs-in-the-interpreted-path">Per-operation costs in the interpreted path</h3>
 <p>Each row is the marginal cost of adding that one operation to the body of an
 otherwise identical 10 M-iteration loop:</p>
 <table>
@@ -2135,8 +2135,8 @@ otherwise identical 10 M-iteration loop:</p>
 function call in roughly 60 ns. Go, being AOT-compiled to machine code with
 static types, does the loop iteration in 1-2 ns.</p>
 <hr />
-<h2 id="root-causes">Root causes<a class="headerlink" href="#root-causes" title="Anchor link to this section">&para;</a></h2>
-<h3 id="1-control-flow-is-implemented-with-c-exceptions">1. Control flow is implemented with C++ exceptions<a class="headerlink" href="#1-control-flow-is-implemented-with-c-exceptions" title="Anchor link to this section">&para;</a></h3>
+<h2 id="root-causes">Root causes</h2>
+<h3 id="1-control-flow-is-implemented-with-c-exceptions">1. Control flow is implemented with C++ exceptions</h3>
 <p><a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L844"><code>interpreter.cpp:844</code></a>,
 <a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L878"><code>:878</code></a>,
 <a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L880"><code>:880</code></a>:</p>
@@ -2156,7 +2156,7 @@ of the loop that uses it.</p>
 <p>This is precisely why <em>"a condition inside a nested loop makes it much slower"</em>.
 A condition in a loop is usually there to <code>continue</code> or <code>break</code>, and every helper
 function called from that loop <code>return</code>s.</p>
-<h3 id="2-a-heap-environment-per-scope-entry">2. A heap <code>Environment</code> per scope entry<a class="headerlink" href="#2-a-heap-environment-per-scope-entry" title="Anchor link to this section">&para;</a></h3>
+<h3 id="2-a-heap-environment-per-scope-entry">2. A heap <code>Environment</code> per scope entry</h3>
 <p><a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L753"><code>:753</code></a> (block),
 <a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L783"><code>:783</code></a> (for),
 <a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L800"><code>:800</code></a> (for-in),
@@ -2167,7 +2167,7 @@ function called from that loop <code>return</code>s.</p>
 every block entry and every call, plus a <code>std::map&lt;std::string, Value&gt; values</code>
 member (<a href="https://github.com/beelang-project/bee/blob/main/src/environment.hpp#L28"><code>environment.hpp:28</code></a>) that a function frame
 never uses. Hence the 62 ns cost of a single <code>let</code> in a loop body.</p>
-<h3 id="3-value-representation">3. Value representation<a class="headerlink" href="#3-value-representation" title="Anchor link to this section">&para;</a></h3>
+<h3 id="3-value-representation">3. Value representation</h3>
 <p><code>Value</code> (<a href="https://github.com/beelang-project/bee/blob/main/src/value.hpp#L116"><code>value.hpp:116</code></a>) is a 24-byte <code>std::variant</code>
 over eight <code>shared_ptr</code> alternatives. Consequences on every operation:</p>
 <ul>
@@ -2180,7 +2180,7 @@ over eight <code>shared_ptr</code> alternatives. Consequences on every operation
   (<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.hpp#L115"><code>interpreter.hpp:115</code></a>) - the synchronisation is
   paid for and never used.</li>
 </ul>
-<h3 id="4-per-call-and-per-property-overhead">4. Per-call and per-property overhead<a class="headerlink" href="#4-per-call-and-per-property-overhead" title="Anchor link to this section">&para;</a></h3>
+<h3 id="4-per-call-and-per-property-overhead">4. Per-call and per-property overhead</h3>
 <ul>
 <li><a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1684"><code>callFunction:1684</code></a> builds a <code>std::string name</code>
   and copies it into a <code>CallFrame</code> on <strong>every</strong> call, for a stack trace that is
@@ -2193,8 +2193,8 @@ over eight <code>shared_ptr</code> alternatives. Consequences on every operation
   through a chain of 26 <code>name == "…"</code> string comparisons.</li>
 </ul>
 <hr />
-<h2 id="improvement-plan">Improvement plan<a class="headerlink" href="#improvement-plan" title="Anchor link to this section">&para;</a></h2>
-<h3 id="priority-1-replace-exception-based-control-flow-with-status-returns-done">Priority 1 - Replace exception-based control flow with status returns (done)<a class="headerlink" href="#priority-1-replace-exception-based-control-flow-with-status-returns-done" title="Anchor link to this section">&para;</a></h3>
+<h2 id="improvement-plan">Improvement plan</h2>
+<h3 id="priority-1-replace-exception-based-control-flow-with-status-returns-done">Priority 1 - Replace exception-based control flow with status returns (done)</h3>
 <p><strong>Measured: 14.6× on <code>continue</code>-heavy loops, 10.7× on call-heavy code, 2.1× on a
 plain loop. Contained to <a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp"><code>interpreter.cpp</code></a>. No
 language-visible change.</strong></p>
@@ -2263,7 +2263,7 @@ language-visible change.</strong></p>
 edge cases most at risk - <code>return</code> out of a loop inside <code>try</code>/<code>finally</code>,
 <code>finally</code>'s own <code>return</code>, <code>break</code>/<code>continue</code> crossing a <code>try</code>, <code>return</code> through a
 callback - are covered by the new cases described in "Results so far".</p>
-<h3 id="priority-2-stop-allocating-a-scope-per-block-and-per-call-done">Priority 2 - Stop allocating a scope per block and per call (done)<a class="headerlink" href="#priority-2-stop-allocating-a-scope-per-block-and-per-call-done" title="Anchor link to this section">&para;</a></h3>
+<h3 id="priority-2-stop-allocating-a-scope-per-block-and-per-call-done">Priority 2 - Stop allocating a scope per block and per call (done)</h3>
 <p><strong>Measured: 6.4× on a loop whose body declares a local, 11.3× on a loop calling
 a function with locals.</strong></p>
 <p>Two changes, both in <a href="https://github.com/beelang-project/bee/blob/main/src/resolver.cpp"><code>resolver.cpp</code></a> and
@@ -2289,7 +2289,7 @@ a function with locals.</strong></p>
 </ul>
 <p>Scope merging is also what makes Priority 3 possible: in a closure-free function
 every local ends up at depth 0 in one frame, which is precisely a register file.</p>
-<h3 id="priority-3-compile-to-bytecode-done">Priority 3 - Compile to bytecode (done)<a class="headerlink" href="#priority-3-compile-to-bytecode-done" title="Anchor link to this section">&para;</a></h3>
+<h3 id="priority-3-compile-to-bytecode-done">Priority 3 - Compile to bytecode (done)</h3>
 <p><strong>Measured: 3.9×-54× over 0.3.1, and from ~4× behind CPython to slightly ahead
 of it.</strong></p>
 <p>A <strong>register</strong> VM, not a stack one: <code>s = s + xs[i]</code> is two instructions
@@ -2327,7 +2327,7 @@ compiler only allocates temporaries above the locals, on a stack discipline.</p>
   is an index rather than an allocation. Nested Bee calls recurse into <code>run()</code>,
   using the C++ stack as the frame stack.</li>
 </ul>
-<h3 id="shapes-fused-method-calls-and-direct-calls-done">Shapes, fused method calls and direct calls (done)<a class="headerlink" href="#shapes-fused-method-calls-and-direct-calls-done" title="Anchor link to this section">&para;</a></h3>
+<h3 id="shapes-fused-method-calls-and-direct-calls-done">Shapes, fused method calls and direct calls (done)</h3>
 <p>Three changes aimed at the two rows that were worst against CPython. Measured
 first, because guessing which half of <code>oo_class</code> was expensive would have been a
 coin flip: field access was ~41 ns each and method dispatch ~125 ns each, so
@@ -2362,7 +2362,7 @@ roughly 62/38.</p>
   the site. Instance method dispatch: <strong>28.7× faster than 0.3.1</strong>, 1.7× on top
   of the VM alone.</li>
 </ul>
-<h3 id="priority-4-a-cheaper-value-next">Priority 4 - A cheaper Value - next<a class="headerlink" href="#priority-4-a-cheaper-value-next" title="Anchor link to this section">&para;</a></h3>
+<h3 id="priority-4-a-cheaper-value-next">Priority 4 - A cheaper Value - next</h3>
 <p>Now the largest remaining item. With dispatch down to a few instructions per
 opcode, the <code>Value</code> copy is a visible share of what is left: <code>std::variant</code>'s
 copy constructor is a jump table, and every list, dict or string copy is a pair
@@ -2386,7 +2386,7 @@ operation.</strong></p>
 <li>Intern strings, and key dicts and instance fields on interned pointers instead
   of <code>std::string</code>.</li>
 </ul>
-<h3 id="types-and-the-typed-backend-steps-1-and-2-done">Types, and the typed backend - steps 1 and 2 done<a class="headerlink" href="#types-and-the-typed-backend-steps-1-and-2-done" title="Anchor link to this section">&para;</a></h3>
+<h3 id="types-and-the-typed-backend-steps-1-and-2-done">Types, and the typed backend - steps 1 and 2 done</h3>
 <p>Optional type annotations landed (see <a href="../language/">LANGUAGE.md</a>), and the
 compiler now uses them.</p>
 <p><strong>Register typing.</strong> Two sources are trusted: a <em>declared</em> parameter or local,
@@ -2402,7 +2402,7 @@ uses earlier in the same loop. Annotate the variable and the typed path opens.</
 accessor. A declared <code>buffer</code> indexed by a declared <code>num</code> becomes <code>INDEX_BUF</code>: a
 bounds check and a load against contiguous unboxed memory, with no call into the
 interpreter and no <code>shared_ptr</code> traffic.</p>
-<h4 id="what-that-was-actually-worth">What that was actually worth<a class="headerlink" href="#what-that-was-actually-worth" title="Anchor link to this section">&para;</a></h4>
+<h4 id="what-that-was-actually-worth">What that was actually worth</h4>
 <table>
 <thead>
 <tr>
@@ -2436,7 +2436,7 @@ its atomic refcount, and two type dispatches - and that is worth 29%.</p>
 nothing on its own. The conclusion stands from the other direction: what makes
 typed arithmetic fast is not skipping the check, it is <strong>not building a <code>Value</code>
 at all</strong>.</p>
-<h4 id="step-3-unboxed-numeric-registers-the-actual-win">Step 3 - unboxed numeric registers, the actual win<a class="headerlink" href="#step-3-unboxed-numeric-registers-the-actual-win" title="Anchor link to this section">&para;</a></h4>
+<h4 id="step-3-unboxed-numeric-registers-the-actual-win">Step 3 - unboxed numeric registers, the actual win</h4>
 <p>A register provably holding a number for its whole lifetime does not need to be
 a <code>Value</code>. Give each frame a parallel <code>double[]</code>, keep those registers there, and
 <code>ADD_NUM</code> becomes a raw double add into a raw double slot: no tagged union
@@ -2445,7 +2445,7 @@ call arguments, returns, and stores into lists, fields or globals.</p>
 <p>This is a dual-mode code generator (every expression has to know whether it is
 producing a boxed or an unboxed result), which is why it is its own step rather
 than an extension of this one.</p>
-<h4 id="step-4-declared-types-as-jit-entry-conditions">Step 4 - declared types as JIT entry conditions<a class="headerlink" href="#step-4-declared-types-as-jit-entry-conditions" title="Anchor link to this section">&para;</a></h4>
+<h4 id="step-4-declared-types-as-jit-entry-conditions">Step 4 - declared types as JIT entry conditions</h4>
 <p>A function whose parameters and return are all declared numeric is <em>guaranteed</em>
 numeric at the boundary, so the LLVM JIT needs no entry guard. More importantly
 <code>buffer</code> parameters give it something it currently refuses outright: contiguous
@@ -2456,7 +2456,7 @@ numeric recursion the JIT already takes.</p>
 happened to see and must guard against being wrong; a type <em>annotation</em> is
 promised and checked once at the boundary. They feed the same code generator, and
 the annotation path is simpler because it needs no deoptimisation machinery.</p>
-<h3 id="priority-5-guards-instead-of-bail-on-everything-first-stage-done">Priority 5 - guards instead of bail-on-everything - first stage done<a class="headerlink" href="#priority-5-guards-instead-of-bail-on-everything-first-stage-done" title="Anchor link to this section">&para;</a></h3>
+<h3 id="priority-5-guards-instead-of-bail-on-everything-first-stage-done">Priority 5 - guards instead of bail-on-everything - first stage done</h3>
 <p>The JIT used to accept exactly one kind of argument: an unboxed number. Anything
 else meant the function was never compiled at all, which is why every benchmark
 touching a container sat 20-60× behind Go while the two purely numeric ones sat
@@ -2497,7 +2497,7 @@ feedback makes the <em>native code</em> possible. They are independent wins.</p>
 </tbody>
 </table>
 <p>Also 3.3× faster than CPython on the same kernel, and 12.3× faster than 0.3.1.</p>
-<h4 id="why-this-is-safe-to-bail-out-of">Why this is safe to bail out of<a class="headerlink" href="#why-this-is-safe-to-bail-out-of" title="Anchor link to this section">&para;</a></h4>
+<h4 id="why-this-is-safe-to-bail-out-of">Why this is safe to bail out of</h4>
 <p>The existing contract - "native code gave up, re-run it interpreted" - is only
 sound because the compiled subset has no side effects. That invariant is
 preserved deliberately: buffer <strong>reads</strong> are compiled, buffer <strong>writes</strong> are
@@ -2506,7 +2506,7 @@ the right message and line, and re-running cannot double-apply anything because
 nothing was applied.</p>
 <p>Compiling writes needs real deoptimisation - reconstructing interpreter state at
 the guard rather than restarting - which is the next stage, not this one.</p>
-<h4 id="what-is-left-in-the-gap-and-a-measurement-correction">What is left in the gap - and a measurement correction<a class="headerlink" href="#what-is-left-in-the-gap-and-a-measurement-correction" title="Anchor link to this section">&para;</a></h4>
+<h4 id="what-is-left-in-the-gap-and-a-measurement-correction">What is left in the gap - and a measurement correction</h4>
 <p>The first attempt at answering this was wrong, and it is worth recording why.</p>
 <p>"6.5× off Go" looked like it pointed at the bounds checks: they branch to a bail
 block, and a loop with a side exit does not vectorise, while Go's version does.
@@ -2594,7 +2594,7 @@ startup floor, worst on the shortest benchmarks.</p>
   an interpreter-only build - with the JIT still delivering its full speedup when
   it does engage. <code>BEE_JIT_LIB</code> overrides the library path; if it is missing or
   fails to load, execution falls back to the interpreter/VM.</p>
-<h3 id="priority-5-remaining-deoptimisation-for-the-general-case">Priority 5, remaining - deoptimisation for the general case<a class="headerlink" href="#priority-5-remaining-deoptimisation-for-the-general-case" title="Anchor link to this section">&para;</a></h3>
+<h3 id="priority-5-remaining-deoptimisation-for-the-general-case">Priority 5, remaining - deoptimisation for the general case</h3>
 <p>Today the JIT is still a static all-or-nothing filter over a numeric subset. The
 bytecode tier it needed now exists, so this is the next structural step after
 Priority 4:</p>
@@ -2606,7 +2606,7 @@ Priority 4:</p>
   the entire function" into "one compare".</li>
 <li>Keep the existing numeric fast path as the trivial case of the same machinery.</li>
 </ul>
-<h3 id="priority-6-cheap-local-wins">Priority 6 - Cheap, local wins<a class="headerlink" href="#priority-6-cheap-local-wins" title="Anchor link to this section">&para;</a></h3>
+<h3 id="priority-6-cheap-local-wins">Priority 6 - Cheap, local wins</h3>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <strong><code>callFunction</code> takes <code>const std::shared_ptr&lt;Function&gt;&amp;</code></strong> instead of a
       copy - one atomic refcount pair saved per call.</li>
@@ -2633,7 +2633,7 @@ Priority 4:</p>
   An open-addressing hash map with interned keys is both faster and smaller.</li>
 </ul>
 <hr />
-<h2 id="on-slower-than-go">On "slower than Go"<a class="headerlink" href="#on-slower-than-go" title="Anchor link to this section">&para;</a></h2>
+<h2 id="on-slower-than-go">On "slower than Go"</h2>
 <p>Go is compiled ahead of time to machine code, with static types resolved at
 compile time and no per-operation dispatch. A dynamically-typed language will not
 match it in general, and no amount of tuning the tree-walker will close that gap.
@@ -2670,7 +2670,7 @@ The realistic targets are:</p>
 </tbody>
 </table>
 <hr />
-<h2 id="appendix-reproducing-the-numbers">Appendix - reproducing the numbers<a class="headerlink" href="#appendix-reproducing-the-numbers" title="Anchor link to this section">&para;</a></h2>
+<h2 id="appendix-reproducing-the-numbers">Appendix - reproducing the numbers</h2>
 <p>Each program below is run as <code>time bee &lt;file&gt;</code> and against the equivalent Python.
 Loop counts are chosen so every variant executes 9-10 M inner iterations.</p>
 <p><strong>A. The JIT path (fast).</strong> Pure numeric, nothing outside the subset:</p>

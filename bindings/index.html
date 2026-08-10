@@ -1215,7 +1215,7 @@
   
 
 
-<h1 id="native-modules-and-automatic-bindings">Native modules and automatic bindings<a class="headerlink" href="#native-modules-and-automatic-bindings" title="Anchor link to this section">&para;</a></h1>
+<h1 id="native-modules-and-automatic-bindings">Native modules and automatic bindings</h1>
 <p>Bee can call C and C++ directly. There are two pieces:</p>
 <ul>
 <li><strong>Native modules</strong> - a shared library that <code>import</code> loads, so calling a C++
@@ -1228,7 +1228,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>bee<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;import sqlite; print(sqlite.libversion())&#39;</span>
 </span></code></pre></div>
 <hr />
-<h2 id="generating-bindings">Generating bindings<a class="headerlink" href="#generating-bindings" title="Anchor link to this section">&para;</a></h2>
+<h2 id="generating-bindings">Generating bindings</h2>
 <p>A worked example. Given <code>shapes.hpp</code>:</p>
 <div class="language-cpp highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
@@ -1278,7 +1278,7 @@ its own sources or needs linker flags, add them there - it's a normal script:</p
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>shapes_native.cpp<span class="w"> </span>shapes.o<span class="w"> </span>-lsqlite3<span class="w"> </span>-o<span class="w"> </span>shapes_native.so
 </span></code></pre></div>
 <hr />
-<h2 id="what-the-output-looks-like">What the output looks like<a class="headerlink" href="#what-the-output-looks-like" title="Anchor link to this section">&para;</a></h2>
+<h2 id="what-the-output-looks-like">What the output looks like</h2>
 <p>Four files, with a deliberate split:</p>
 <table>
 <thead>
@@ -1326,7 +1326,7 @@ that looks hand-written:</p>
 the flags and re-run. <code>hive.json</code> is the exception: it's yours to edit, and
 <code>beegen</code> won't overwrite one that already exists.</p>
 <hr />
-<h2 id="how-types-map">How types map<a class="headerlink" href="#how-types-map" title="Anchor link to this section">&para;</a></h2>
+<h2 id="how-types-map">How types map</h2>
 <table>
 <thead>
 <tr>
@@ -1425,7 +1425,7 @@ the flags and re-run. <code>hive.json</code> is the exception: it's yours to edi
 <p>Overloads get a numeric suffix - <code>open</code>, <code>open_2</code>, <code>open_3</code> - in declaration
 order, because Bee dispatches on name alone.</p>
 <hr />
-<h2 id="buffers-bulk-data-without-a-copy">Buffers: bulk data without a copy<a class="headerlink" href="#buffers-bulk-data-without-a-copy" title="Anchor link to this section">&para;</a></h2>
+<h2 id="buffers-bulk-data-without-a-copy">Buffers: bulk data without a copy</h2>
 <p>This is the part that decides whether a binding to an image or tensor library is
 usable at all. A 640×480 RGB image is 921,600 numbers; as a Bee list that is
 a <code>std::vector&lt;Value&gt;</code> at 16 bytes each - about 15 MB, rebuilt element by element
@@ -1460,7 +1460,7 @@ exactly the kind of bug that has no Bee-level symptom.</p>
 <code>copy</code>, <code>buf_add</code>/<code>sub</code>/<code>mul</code>/<code>div</code>, <code>buf_sum</code>/<code>min</code>/<code>max</code> - is in the
 <a href="../language/#buffers">language reference</a>.</p>
 <hr />
-<h2 id="calling-back-into-bee">Calling back into Bee<a class="headerlink" href="#calling-back-into-bee" title="Anchor link to this section">&para;</a></h2>
+<h2 id="calling-back-into-bee">Calling back into Bee</h2>
 <p>Libraries that log, report progress, or ask a question mid-call need to run your
 code. Hold the callable and invoke it:</p>
 <div class="language-cpp highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">m</span><span class="o">-&gt;</span><span class="n">def</span><span class="p">(</span><span class="s">&quot;each&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">[](</span><span class="n">Interpreter</span><span class="o">&amp;</span><span class="w"> </span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="p">{</span>
@@ -1482,7 +1482,7 @@ with a note pointing here.</p>
 <p>While a long native call runs, hand the lock back so other Bee threads can
 work: <code>bee::native::GilOff off(interp);</code>.</p>
 <hr />
-<h2 id="class-hierarchies-and-factories">Class hierarchies and factories<a class="headerlink" href="#class-hierarchies-and-factories" title="Anchor link to this section">&para;</a></h2>
+<h2 id="class-hierarchies-and-factories">Class hierarchies and factories</h2>
 <p>Interface-based APIs - TensorRT, ONNX Runtime, most COM-like C++ - never hand you
 a constructible object. They give you an abstract interface from a factory
 function and expect <code>destroy()</code> instead of <code>delete</code>. That shape is bound
@@ -1510,7 +1510,7 @@ registers a real <code>static_cast</code> for each base:</p>
 <p>so the pointer is adjusted correctly even under multiple inheritance, rather than
 being reinterpreted and silently corrupting.</p>
 <hr />
-<h2 id="errors-from-a-c-library">Errors from a C++ library<a class="headerlink" href="#errors-from-a-c-library" title="Anchor link to this section">&para;</a></h2>
+<h2 id="errors-from-a-c-library">Errors from a C++ library</h2>
 <p>A bound library throwing its own exception type - <code>cv::Exception</code>,
 <code>Ort::Exception</code>, <code>std::bad_alloc</code> - becomes an ordinary Bee error with a
 stack trace instead of unwinding past the interpreter and aborting:</p>
@@ -1522,7 +1522,7 @@ stack trace instead of unwinding past the interpreter and aborting:</p>
 process down. A <strong>segfault</strong> inside the library still can - that isn't an
 exception, and no error handling can catch it.</p>
 <hr />
-<h2 id="what-gets-skipped-and-why">What gets skipped, and why<a class="headerlink" href="#what-gets-skipped-and-why" title="Anchor link to this section">&para;</a></h2>
+<h2 id="what-gets-skipped-and-why">What gets skipped, and why</h2>
 <p>Every declaration <code>beegen</code> can't map is <strong>reported</strong>, because a binding that
 silently omits half a library is worse than one that tells you:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>skipped 5 declaration(s):
@@ -1552,7 +1552,7 @@ header invisible and the bindings quietly smaller.</p>
 </span></code></pre></div>
 <p>Everything after <code>--</code> goes to clang verbatim.</p>
 <hr />
-<h2 id="options">Options<a class="headerlink" href="#options" title="Anchor link to this section">&para;</a></h2>
+<h2 id="options">Options</h2>
 <table>
 <thead>
 <tr>
@@ -1614,7 +1614,7 @@ header invisible and the bindings quietly smaller.</p>
 <p><code>--namespace</code> and <code>--prefix</code> are how you bind one library out of a header that
 pulls in many.</p>
 <hr />
-<h2 id="shipping-a-binding-as-a-package">Shipping a binding as a package<a class="headerlink" href="#shipping-a-binding-as-a-package" title="Anchor link to this section">&para;</a></h2>
+<h2 id="shipping-a-binding-as-a-package">Shipping a binding as a package</h2>
 <p>The generated <code>hive.json</code> makes a binding installable like anything else:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>beegen<span class="w"> </span>sqlite3.h<span class="w"> </span>-m<span class="w"> </span>sqlite<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./build.sh
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>hive<span class="w"> </span>pack<span class="w"> </span>.<span class="w">                       </span><span class="c1"># -&gt; sqlite-0.1.0.hive</span>
@@ -1627,7 +1627,7 @@ package's <code>"main"</code> may even point straight at a <code>.so</code>.</p>
 on the platform and toolchain it was built for. Ship the generated sources and a
 <code>build.sh</code>, or publish per-platform archives.</p>
 <hr />
-<h2 id="writing-a-native-module-by-hand">Writing a native module by hand<a class="headerlink" href="#writing-a-native-module-by-hand" title="Anchor link to this section">&para;</a></h2>
+<h2 id="writing-a-native-module-by-hand">Writing a native module by hand</h2>
 <p><code>beegen</code> is a convenience, not a requirement. A native module is just a shared
 library exporting two symbols:</p>
 <div class="language-cpp highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;bee_native.hpp&quot;</span>
@@ -1651,7 +1651,7 @@ library exporting two symbols:</p>
 <code>makeHandle</code> / <code>handle&lt;T&gt;</code> for opaque pointers. They throw <code>RuntimeError</code> on a
 mismatch, which the interpreter reports at the call site with a full stack trace.</p>
 <hr />
-<h2 id="memory-threads-and-safety">Memory, threads and safety<a class="headerlink" href="#memory-threads-and-safety" title="Anchor link to this section">&para;</a></h2>
+<h2 id="memory-threads-and-safety">Memory, threads and safety</h2>
 <p><strong>Handles are not garbage collected.</strong> Bee collects its own values, but a
 handle points at memory only C++ knows about. Call <code>free()</code> when you're done:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>let r = new Rect(3, 4)
@@ -1675,7 +1675,7 @@ a wrong cast segfaults, and no Bee error handling can catch that. Argument
 types are checked at the boundary; what the library does afterwards is on the
 library.</p>
 <hr />
-<h2 id="binding-a-real-library-the-recipe">Binding a real library: the recipe<a class="headerlink" href="#binding-a-real-library-the-recipe" title="Anchor link to this section">&para;</a></h2>
+<h2 id="binding-a-real-library-the-recipe">Binding a real library: the recipe</h2>
 <p>Large C++ libraries are rarely bound header-first. The pattern that works - and
 the one every other language uses - is a <strong>thin shim</strong>: a small C++ file that
 exposes the slice of the library you actually want, in the flat, buffer-passing
@@ -1693,7 +1693,7 @@ shape <code>beegen</code> maps cleanly. Then generate bindings for the shim, not
 <li>objects you keep are returned as pointers with an explicit destroy function;</li>
 <li>overloads you don't need simply aren't declared.</li>
 </ul>
-<h3 id="what-each-of-the-four-needs">What each of the four needs<a class="headerlink" href="#what-each-of-the-four-needs" title="Anchor link to this section">&para;</a></h3>
+<h3 id="what-each-of-the-four-needs">What each of the four needs</h3>
 <table>
 <thead>
 <tr>
@@ -1728,7 +1728,7 @@ shape <code>beegen</code> maps cleanly. Then generate bindings for the shim, not
 <p>The abstract-interface, factory, callback, buffer and default-argument support
 above exists precisely so those shims stay small.</p>
 <hr />
-<h2 id="requirements-and-limits">Requirements and limits<a class="headerlink" href="#requirements-and-limits" title="Anchor link to this section">&para;</a></h2>
+<h2 id="requirements-and-limits">Requirements and limits</h2>
 <ul>
 <li><strong><code>beegen</code> needs a libclang shared library at run time</strong>, not at build time -
   it's loaded with <code>dlopen</code> through a hand-declared slice of the stable C ABI, so

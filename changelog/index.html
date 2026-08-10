@@ -1703,13 +1703,13 @@
   
 
 
-<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Anchor link to this section">&para;</a></h1>
+<h1 id="changelog">Changelog</h1>
 <p>All notable changes to <strong>Bee</strong> are documented here. The format is based on
 <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and this project
 adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
-<h2 id="unreleased">[Unreleased]<a class="headerlink" href="#unreleased" title="Anchor link to this section">&para;</a></h2>
-<h2 id="033-2026-08-10"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.3">0.3.3</a> - 2026-08-10<a class="headerlink" href="#033-2026-08-10" title="Anchor link to this section">&para;</a></h2>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Anchor link to this section">&para;</a></h3>
+<h2 id="unreleased">[Unreleased]</h2>
+<h2 id="033-2026-08-10"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.3">0.3.3</a> - 2026-08-10</h2>
+<h3 id="fixed">Fixed</h3>
 <ul>
 <li><strong>Windows release build.</strong> The JIT backend DLL failed to link on MSYS2 with
   <code>export ordinal too large</code>: MinGW auto-exports every global symbol, and with
@@ -1718,8 +1718,8 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
   point (<code>bee_jit_create</code>, via <code>__declspec(dllexport)</code>), which is all <code>bee.exe</code>
   resolves. This is what kept the 0.3.2 release job red.</li>
 </ul>
-<h2 id="032-2026-08-10"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.2">0.3.2</a> - 2026-08-10<a class="headerlink" href="#032-2026-08-10" title="Anchor link to this section">&para;</a></h2>
-<h3 id="language">Language<a class="headerlink" href="#language" title="Anchor link to this section">&para;</a></h3>
+<h2 id="032-2026-08-10"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.2">0.3.2</a> - 2026-08-10</h2>
+<h3 id="language">Language</h3>
 <ul>
 <li><strong>Optional type annotations.</strong> Parameters, variables and return types can be
   declared, and are checked where the value enters:</li>
@@ -1801,7 +1801,7 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
   process startup than about either language.</p>
 </li>
 </ul>
-<h3 id="performance">Performance<a class="headerlink" href="#performance" title="Anchor link to this section">&para;</a></h3>
+<h3 id="performance">Performance</h3>
 <ul>
 <li><strong>The LLVM JIT is a dlopen'd shared object, not a link-time dependency.</strong> The
   backend used to be linked straight into <code>bee</code>, so the dynamic loader mapped
@@ -1963,7 +1963,7 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
   ahead of CPython, where the whole interpreted path used to sit well behind it.
   Geometric mean across the whole suite: <strong>3.94× faster than 0.3.1</strong>, with
   object-oriented code 17-29× faster.</p>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Anchor link to this section">&para;</a></h3>
+<h3 id="changed">Changed</h3>
 <ul>
 <li><strong>The language is now called "Bee", not "BeeLang".</strong> Prose across the README,
   docs and examples uses the shorter name; the binary (<code>bee</code>), the package
@@ -1971,7 +1971,7 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
   every URL and install path are unchanged, so nothing about an existing setup
   breaks.</li>
 </ul>
-<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Anchor link to this section">&para;</a></h3>
+<h3 id="fixed_1">Fixed</h3>
 <ul>
 <li>
 <p><strong>String building was quadratic inside a compiled function.</strong> <code>s = s + x</code> has
@@ -2054,11 +2054,11 @@ adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>
   deoptimises instead of refusing to compile).</p>
 </li>
 </ul>
-<h2 id="031-2026-08-07"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.1">0.3.1</a> - 2026-08-07<a class="headerlink" href="#031-2026-08-07" title="Anchor link to this section">&para;</a></h2>
+<h2 id="031-2026-08-07"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.1">0.3.1</a> - 2026-08-07</h2>
 <p>Packaging. Installing a package that contains a native module no longer means
 compiling one by hand, packages are a binary format rather than a text file, and
 a bug that made 0.3.0's <code>.deb</code> unable to build <em>any</em> native module is fixed.</p>
-<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Anchor link to this section">&para;</a></h3>
+<h3 id="fixed_2">Fixed</h3>
 <ul>
 <li><strong>0.3.0's <code>.deb</code> shipped an unusable header set.</strong> <code>packaging/build-deb.sh</code>
   installed <code>src/*.hpp</code>, but <code>bee_buffer.h</code> is a plain C header - and
@@ -2067,7 +2067,7 @@ a bug that made 0.3.0's <code>.deb</code> unable to build <em>any</em> native mo
   directory</code>. Both extensions are installed now, and the packaging script fails
   rather than shipping a header set that can't compile a module.</li>
 </ul>
-<h3 id="added">Added<a class="headerlink" href="#added" title="Anchor link to this section">&para;</a></h3>
+<h3 id="added">Added</h3>
 <ul>
 <li><strong>Prebuilt native modules.</strong> A package lists binaries per platform, and
   <code>hive install</code> uses the matching one instead of compiling:</li>
@@ -2095,7 +2095,7 @@ a bug that made 0.3.0's <code>.deb</code> unable to build <em>any</em> native mo
   a missing compiler and re-running it by hand is then the whole fix.</p>
 <p>Note that a <code>.pkg</code> does not carry the executable bit, so a build command needs
   to name its interpreter: <code>bash build.sh</code>, not <code>./build.sh</code>.</p>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Anchor link to this section">&para;</a></h3>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li><strong>Packages are now <code>.pkg</code>, and no longer plain text.</strong> <code>hive pack</code> writes
   <code>&lt;name&gt;-&lt;version&gt;.pkg</code> instead of <code>.hive</code>, in a new <code>BEEPKG1</code> container: the
@@ -2112,7 +2112,7 @@ a bug that made 0.3.0's <code>.deb</code> unable to build <em>any</em> native mo
   such, with the suggestion to repack it.</p>
 <p>This is a breaking format change. No registry is running yet, so nothing
   published needs migrating; repack any local archives with <code>hive pack</code>.</p>
-<h2 id="030-2026-08-07"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.0">0.3.0</a> - 2026-08-07<a class="headerlink" href="#030-2026-08-07" title="Anchor link to this section">&para;</a></h2>
+<h2 id="030-2026-08-07"><a href="https://github.com/beelang-project/bee/releases/tag/v0.3.0">0.3.0</a> - 2026-08-07</h2>
 <p>The interoperability release. Bee can now call C and C++ libraries without
 rebuilding the interpreter: <strong>native modules</strong> import like any other module,
 <strong><code>beegen</code></strong> generates the binding for you from a header, and <strong>buffers</strong> give
@@ -2120,7 +2120,7 @@ bulk data somewhere to live that isn't a million boxed <code>Value</code>s - and
 native boundary without a copy. OpenCV 4.6 was bound and driven end to end to
 prove the set is sufficient for a real library, not just a toy one. 180 checks,
 up from 100.</p>
-<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Anchor link to this section">&para;</a></h3>
+<h3 id="added_1">Added</h3>
 <ul>
 <li><strong>Native modules.</strong> A shared library can now be imported like any other
   module, so calling a C or C++ library no longer means rebuilding the
@@ -2220,7 +2220,7 @@ up from 100.</p>
   the capability set above against a header shaped like a real inference API.</p>
 </li>
 </ul>
-<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Anchor link to this section">&para;</a></h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li>
 <p>The <code>.deb</code> and Windows installer also install <code>beegen</code>, and the <code>.deb</code> now
@@ -2237,7 +2237,7 @@ up from 100.</p>
   narrowed to <code>v[0-9]*</code> so only interpreter versions fire it.</p>
 </li>
 </ul>
-<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Anchor link to this section">&para;</a></h3>
+<h3 id="fixed_3">Fixed</h3>
 <ul>
 <li><strong>A C++ parameter named like a Bee keyword</strong> (<code>in</code>, <code>class</code>, <code>from</code> are all
   ordinary C++ names) generated code that would not parse. Such names now get a
@@ -2251,7 +2251,7 @@ up from 100.</p>
   a package as depending on itself. <code>--force</code> overrides the first if you really
   mean it.</li>
 </ul>
-<h3 id="known-limitations">Known limitations<a class="headerlink" href="#known-limitations" title="Anchor link to this section">&para;</a></h3>
+<h3 id="known-limitations">Known limitations</h3>
 <ul>
 <li><strong><code>beegen</code> needs libclang at run time</strong> - not to build Bee, but to read a
   header. Without it (<code>apt install libclang-18-dev</code>, or <code>--libclang &lt;path&gt;</code>) it
@@ -2269,13 +2269,13 @@ up from 100.</p>
   needs a <code>--registry</code>; <code>hive publish</code> doesn't exist; the REPL has no line
   editing or history.</li>
 </ul>
-<h2 id="020-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.2.0">0.2.0</a> - 2026-08-06<a class="headerlink" href="#020-2026-08-06" title="Anchor link to this section">&para;</a></h2>
+<h2 id="020-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.2.0">0.2.0</a> - 2026-08-06</h2>
 <p>The sharing-and-diagnostics release. Bee gains <strong>Hive</strong>, a package manager,
 so code can be published and installed; <strong>stack traces</strong>, so an error says where
 it came from instead of just naming a line; and three conveniences the language
 was missing - <strong>string interpolation</strong>, <strong>slicing</strong>, and an <strong>interactive REPL</strong>.
 A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
-<h3 id="language_1">Language<a class="headerlink" href="#language_1" title="Anchor link to this section">&para;</a></h3>
+<h3 id="language_1">Language</h3>
 <ul>
 <li>
 <p><strong>String interpolation.</strong> An <code>f</code> prefix substitutes <code>{expressions}</code> into a
@@ -2298,7 +2298,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
   and <code>bee &lt; script.bee</code> (or a pipe) to read a program from stdin.</p>
 </li>
 </ul>
-<h3 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Anchor link to this section">&para;</a></h3>
+<h3 id="diagnostics">Diagnostics</h3>
 <ul>
 <li><strong>Stack traces on every error.</strong> An uncaught error now prints the file, line
   and function for each call on the way in, innermost first:</li>
@@ -2324,7 +2324,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
   handler catches the overflow and explains it instead of leaving a bare
   "Segmentation fault" (set <code>BEE_NO_CRASH_HANDLER=1</code> to get the core dump back).</li>
 </ul>
-<h3 id="packages-hive">Packages - Hive<a class="headerlink" href="#packages-hive" title="Anchor link to this section">&para;</a></h3>
+<h3 id="packages-hive">Packages - Hive</h3>
 <ul>
 <li><strong><code>hive</code>, a package manager</strong>, shipped alongside <code>bee</code>:</li>
 </ul>
@@ -2358,7 +2358,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
   package, install it, import it - no registry and no network needed.</p>
 </li>
 </ul>
-<h3 id="tooling-tests">Tooling &amp; tests<a class="headerlink" href="#tooling-tests" title="Anchor link to this section">&para;</a></h3>
+<h3 id="tooling-tests">Tooling &amp; tests</h3>
 <ul>
 <li>
 <p><strong><code>make test</code></strong> runs two suites: <code>tests/lang_test.sh</code> (56 checks - traces,
@@ -2372,7 +2372,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
   <code>make</code> builds both binaries.</p>
 </li>
 </ul>
-<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Anchor link to this section">&para;</a></h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li>
 <p><strong>Module resolution finds installed packages.</strong> <code>import name</code> searches the
@@ -2397,7 +2397,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
 <p>A failed <code>import</code> of a bare name now suggests <code>hive install &lt;name&gt;</code>.</p>
 </li>
 </ul>
-<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Anchor link to this section">&para;</a></h3>
+<h3 id="fixed_4">Fixed</h3>
 <ul>
 <li>Reading a module no longer treats a <em>directory</em> whose name matches the module
   as an empty source file - the old resolver accepted anything <code>ifstream</code> could
@@ -2405,7 +2405,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
 <li>Variable references carried no line number, so <code>undefined variable 'x'</code> was
   reported without a location. They do now.</li>
 </ul>
-<h3 id="known-limitations_1">Known limitations<a class="headerlink" href="#known-limitations_1" title="Anchor link to this section">&para;</a></h3>
+<h3 id="known-limitations_1">Known limitations</h3>
 <ul>
 <li>No public registry is running yet, so <code>hive install &lt;name&gt;</code> needs a <code>--registry</code>
   (or <code>HIVE_REGISTRY</code>, or <code>~/.hive/config.json</code>) pointing at one. Installing from
@@ -2415,11 +2415,11 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.</p>
 <li>The REPL has no line editing or history - arrow keys and Ctrl-C aren't handled.</li>
 <li>The VS Code extension doesn't highlight <code>f"..."</code> strings or slices yet.</li>
 </ul>
-<h2 id="011-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.1.1">0.1.1</a> - 2026-08-06<a class="headerlink" href="#011-2026-08-06" title="Anchor link to this section">&para;</a></h2>
+<h2 id="011-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.1.1">0.1.1</a> - 2026-08-06</h2>
 <p>Performance work focused on loops, condition checking, and string building. No
 language or API changes - existing programs run identically, only faster. All
 14 examples and the correctness suites pass unchanged.</p>
-<h3 id="performance_1">Performance<a class="headerlink" href="#performance_1" title="Anchor link to this section">&para;</a></h3>
+<h3 id="performance_1">Performance</h3>
 <ul>
 <li><strong>Inline cache for global variables.</strong> Reads/writes of top-level (named)
   variables now go through a cached pointer instead of a <code>std::map</code> lookup on
@@ -2454,7 +2454,7 @@ language or API changes - existing programs run identically, only faster. All
   100 M-iteration side-effect-free function dropped from ~6 s to milliseconds;
   a 10 M-iteration accumulating loop runs ~20× faster than Python.</li>
 </ul>
-<h2 id="010-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.1.0">0.1.0</a> - 2026-08-06<a class="headerlink" href="#010-2026-08-06" title="Anchor link to this section">&para;</a></h2>
+<h2 id="010-2026-08-06"><a href="https://github.com/beelang-project/bee/releases/tag/v0.1.0">0.1.0</a> - 2026-08-06</h2>
 <p>The first public release of Bee - a small, friendly scripting language with
 a built-in native (LLVM) JIT. ### Language</p>
 <ul>
@@ -2473,7 +2473,7 @@ a built-in native (LLVM) JIT. ### Language</p>
 <li>Error handling with <code>try</code> / <code>catch</code> / <code>finally</code> and <code>throw</code> of any value.</li>
 <li>Two comment styles (<code>#</code> and <code>//</code>) and an optional statement terminator (<code>;</code>).</li>
 </ul>
-<h3 id="runtime-performance">Runtime &amp; performance<a class="headerlink" href="#runtime-performance" title="Anchor link to this section">&para;</a></h3>
+<h3 id="runtime-performance">Runtime &amp; performance</h3>
 <ul>
 <li>Compact C++17 runtime with no required third-party dependencies.</li>
 <li><strong>Built-in LLVM ORCv2 JIT</strong> (enabled by default when LLVM 17/18 is present):
@@ -2482,7 +2482,7 @@ a built-in native (LLVM) JIT. ### Language</p>
   else. <code>fib(32)</code> drops from ~11 s to ~0.014 s.</li>
 <li><code>bee --version</code> / <code>-v</code> and <code>bee --help</code> / <code>-h</code>.</li>
 </ul>
-<h3 id="standard-library-no-imports-required">Standard library (no imports required)<a class="headerlink" href="#standard-library-no-imports-required" title="Anchor link to this section">&para;</a></h3>
+<h3 id="standard-library-no-imports-required">Standard library (no imports required)</h3>
 <ul>
 <li><strong>I/O:</strong> <code>print</code>, <code>write</code>, <code>input</code>.</li>
 <li><strong>Conversion &amp; inspection:</strong> <code>len</code>, <code>type</code>, <code>str</code>, <code>repr</code>, <code>num</code>, <code>int</code>,
@@ -2499,7 +2499,7 @@ a built-in native (LLVM) JIT. ### Language</p>
 <li>Type methods for strings, lists, and dicts (<code>upper</code>, <code>split</code>, <code>push</code>, <code>pop</code>,
   <code>keys</code>, <code>has</code>, <code>get</code>, …).</li>
 </ul>
-<h3 id="tooling-packaging">Tooling &amp; packaging<a class="headerlink" href="#tooling-packaging" title="Anchor link to this section">&para;</a></h3>
+<h3 id="tooling-packaging">Tooling &amp; packaging</h3>
 <ul>
 <li><code>Makefile</code> build with automatic LLVM JIT detection and an overridable
   <code>VERSION</code>.</li>
@@ -2511,19 +2511,19 @@ a built-in native (LLVM) JIT. ### Language</p>
 <li><strong>GitHub Actions release workflow</strong> that builds both packages and publishes
   them on a version tag.</li>
 </ul>
-<h3 id="editor-support">Editor support<a class="headerlink" href="#editor-support" title="Anchor link to this section">&para;</a></h3>
+<h3 id="editor-support">Editor support</h3>
 <ul>
 <li><strong>VS Code extension</strong> (<a href="https://github.com/beelang-project/vscode-bee">beelang-project/vscode-bee</a>,
   then <code>editors/vscode-bee/</code> in this repo) with
   syntax highlighting, completions (keywords, built-ins, type methods, and file
   symbols), hovers, snippets, and a bee icon for <code>.be</code> / <code>.bee</code> files.</li>
 </ul>
-<h3 id="documentation-examples">Documentation &amp; examples<a class="headerlink" href="#documentation-examples" title="Anchor link to this section">&para;</a></h3>
+<h3 id="documentation-examples">Documentation &amp; examples</h3>
 <ul>
 <li>Full <a href="../language/">language reference</a>.</li>
 <li>A topic-by-topic set of 14 runnable <a href="https://github.com/beelang-project/bee/tree/main/examples">examples</a>.</li>
 </ul>
-<h3 id="known-limitations_2">Known limitations<a class="headerlink" href="#known-limitations_2" title="Anchor link to this section">&para;</a></h3>
+<h3 id="known-limitations_2">Known limitations</h3>
 <ul>
 <li>The Windows installer ships an interpreter-only build (no JIT yet).</li>
 <li>The <code>.deb</code> requires <code>libllvm18</code>, available on Ubuntu 24.04 and newer.</li>

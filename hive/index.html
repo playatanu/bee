@@ -1149,7 +1149,7 @@
   
 
 
-<h1 id="hive-the-bee-package-manager">Hive - the Bee package manager<a class="headerlink" href="#hive-the-bee-package-manager" title="Anchor link to this section">&para;</a></h1>
+<h1 id="hive-the-bee-package-manager">Hive - the Bee package manager</h1>
 <p>Hive is to Bee what pip is to Python: one command that fetches a package,
 puts it somewhere the interpreter looks, and remembers what you installed.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>hive<span class="w"> </span>install<span class="w"> </span>strutil<span class="w">            </span><span class="c1"># from the registry</span>
@@ -1168,7 +1168,7 @@ puts it somewhere the interpreter looks, and remembers what you installed.</p>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>make<span class="w"> </span><span class="nb">test</span><span class="w">       </span><span class="c1"># end-to-end tests for hive and module resolution</span>
 </span></code></pre></div>
 <hr />
-<h2 id="where-packages-go">Where packages go<a class="headerlink" href="#where-packages-go" title="Anchor link to this section">&para;</a></h2>
+<h2 id="where-packages-go">Where packages go</h2>
 <p>A project keeps its packages next to its code, in <code>hive_modules/</code>:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>my-app/
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>├── hive.json               what this project depends on
@@ -1207,7 +1207,7 @@ one flat directory, with no nesting and no duplicate copies.</p>
 <p><code>import pkg.submodule</code> maps to <code>pkg/submodule.bee</code>, so a package can expose more
 than one module.</p>
 <hr />
-<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Anchor link to this section">&para;</a></h2>
+<h2 id="commands">Commands</h2>
 <table>
 <thead>
 <tr>
@@ -1263,7 +1263,7 @@ than one module.</p>
 </tbody>
 </table>
 <p><code>add</code>/<code>i</code>, <code>remove</code>/<code>rm</code>, <code>ls</code>, <code>show</code> and <code>build</code> work as aliases.</p>
-<h3 id="options">Options<a class="headerlink" href="#options" title="Anchor link to this section">&para;</a></h3>
+<h3 id="options">Options</h3>
 <table>
 <thead>
 <tr>
@@ -1313,7 +1313,7 @@ than one module.</p>
 <p>Commands work from anywhere inside a project: Hive walks up to the nearest
 directory with a <code>hive.json</code>, the way <code>git</code> finds its repository.</p>
 <hr />
-<h2 id="hivejson">hive.json<a class="headerlink" href="#hivejson" title="Anchor link to this section">&para;</a></h2>
+<h2 id="hivejson">hive.json</h2>
 <p>The manifest describes a package - or, in an application, just what it needs.</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;strutil&quot;</span><span class="p">,</span>
@@ -1375,7 +1375,7 @@ directory with a <code>hive.json</code>, the way <code>git</code> finds its repo
 <p>Unknown fields are preserved when Hive rewrites the file, so you can keep your
 own metadata in there.</p>
 <hr />
-<h2 id="hivelock">hive.lock<a class="headerlink" href="#hivelock" title="Anchor link to this section">&para;</a></h2>
+<h2 id="hivelock">hive.lock</h2>
 <p><code>hive install</code> writes <code>hive.lock</code> with the exact version, URL and SHA-256 of
 everything it resolved:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
@@ -1396,7 +1396,7 @@ Because the lockfile carries the URL and hash, <code>hive install --offline</cod
 registry at all: it installs straight from the cache. <code>hive install -u</code> ignores
 the pins and moves to the newest matching versions.</p>
 <hr />
-<h2 id="version-constraints">Version constraints<a class="headerlink" href="#version-constraints" title="Anchor link to this section">&para;</a></h2>
+<h2 id="version-constraints">Version constraints</h2>
 <table>
 <thead>
 <tr>
@@ -1442,7 +1442,7 @@ where instead of guessing:</p>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>       &gt;=2.0.0 (requested)
 </span></code></pre></div>
 <hr />
-<h2 id="writing-and-publishing-a-package">Writing and publishing a package<a class="headerlink" href="#writing-and-publishing-a-package" title="Anchor link to this section">&para;</a></h2>
+<h2 id="writing-and-publishing-a-package">Writing and publishing a package</h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mkdir<span class="w"> </span>strutil<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>strutil
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>hive<span class="w"> </span>init<span class="w">                 </span><span class="c1"># writes hive.json and a starter init.bee</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nv">$EDITOR</span><span class="w"> </span>init.bee
@@ -1465,7 +1465,7 @@ where instead of guessing:</p>
 a version entry with its <code>sha256</code> (which <code>hive pack</code> prints) to the registry
 metadata - see below.</p>
 <hr />
-<h2 id="the-pkg-package-format">The .pkg package format<a class="headerlink" href="#the-pkg-package-format" title="Anchor link to this section">&para;</a></h2>
+<h2 id="the-pkg-package-format">The .pkg package format</h2>
 <p>A <code>.pkg</code> file is a self-contained container: no zip, no tar, no third-party
 library on either side.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>BEEPKG1\n
@@ -1493,7 +1493,7 @@ are missing, if there are extra bytes at the end, or if any path would escape
 the package directory - a corrupt or tampered download fails loudly instead of
 installing half a package.</p>
 <hr />
-<h2 id="packages-that-have-to-be-built">Packages that have to be built<a class="headerlink" href="#packages-that-have-to-be-built" title="Anchor link to this section">&para;</a></h2>
+<h2 id="packages-that-have-to-be-built">Packages that have to be built</h2>
 <p>A package containing a native module can only ship one platform's binary. Rather
 than leaving every user to notice that and compile it by hand, a package
 declares how to build itself:</p>
@@ -1527,7 +1527,7 @@ directory is then the whole fix.</p>
   shell on whatever platform the user is on.</li>
 </ul>
 <hr />
-<h2 id="running-a-registry">Running a registry<a class="headerlink" href="#running-a-registry" title="Anchor link to this section">&para;</a></h2>
+<h2 id="running-a-registry">Running a registry</h2>
 <p>A registry is <strong>static files</strong>. GitHub Pages, S3, any web server, or a directory
 on disk all work; there's nothing to run.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>&lt;registry&gt;/
@@ -1575,7 +1575,7 @@ runs without a network:</p>
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>hive<span class="w"> </span>install<span class="w"> </span>strutil<span class="w"> </span>--registry<span class="w"> </span>file:///srv/hive
 </span></code></pre></div>
 <hr />
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Anchor link to this section">&para;</a></h2>
+<h2 id="configuration">Configuration</h2>
 <table>
 <thead>
 <tr>
@@ -1604,7 +1604,7 @@ runs without a network:</p>
 <p>Downloads are cached in <code>$HIVE_HOME/cache</code>, keyed by content hash - so a cache
 hit verifies itself, and two packages shipping identical bytes share one entry.</p>
 <hr />
-<h2 id="security">Security<a class="headerlink" href="#security" title="Anchor link to this section">&para;</a></h2>
+<h2 id="security">Security</h2>
 <p>Hive is careful about the parts that install untrusted bytes:</p>
 <ul>
 <li><strong>Hashes are checked, not trusted.</strong> A download whose SHA-256 doesn't match

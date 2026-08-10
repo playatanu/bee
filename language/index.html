@@ -2008,18 +2008,18 @@
   
 
 
-<h1 id="bee-language-reference">Bee Language Reference<a class="headerlink" href="#bee-language-reference" title="Anchor link to this section">&para;</a></h1>
+<h1 id="bee-language-reference">Bee Language Reference</h1>
 <p>The complete language reference for <strong>Bee</strong>. New to the language? Start with
 the <a href="../getting-started/">README</a> - installation and a quick tour live there.</p>
 <hr />
-<h2 id="comments">Comments<a class="headerlink" href="#comments" title="Anchor link to this section">&para;</a></h2>
+<h2 id="comments">Comments</h2>
 <p>Two line-comment styles; there are no block comments.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># this is a comment
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>// so is this
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>let x = 1   # trailing comment
 </span></code></pre></div>
 <hr />
-<h2 id="values-types">Values &amp; types<a class="headerlink" href="#values-types" title="Anchor link to this section">&para;</a></h2>
+<h2 id="values-types">Values &amp; types</h2>
 <table>
 <thead>
 <tr>
@@ -2083,7 +2083,7 @@ the <a href="../getting-started/">README</a> - installation and a quick tour liv
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>print(type(nil))       # nil
 </span></code></pre></div>
 <hr />
-<h2 id="variables">Variables<a class="headerlink" href="#variables" title="Anchor link to this section">&para;</a></h2>
+<h2 id="variables">Variables</h2>
 <p>Declare with <code>let</code>. Assignment (<code>=</code>) targets an existing binding.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>let x = 10
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>let name = &quot;Ada&quot;
@@ -2100,7 +2100,7 @@ scopes; inner scopes can shadow outer names.</p>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>print(x)           # 1
 </span></code></pre></div>
 <hr />
-<h2 id="operators">Operators<a class="headerlink" href="#operators" title="Anchor link to this section">&para;</a></h2>
+<h2 id="operators">Operators</h2>
 <p><strong>Arithmetic:</strong> <code>+  -  *  /  %</code></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>print(7 + 2)       # 9
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>print(7 / 2)       # 3.5
@@ -2147,7 +2147,7 @@ It is <strong>not</strong> supported on properties or index targets - write thos
 full: <code>obj.count = obj.count + 1</code>, <code>a[i] = a[i] + 1</code>.</p>
 </blockquote>
 <hr />
-<h2 id="truthiness">Truthiness<a class="headerlink" href="#truthiness" title="Anchor link to this section">&para;</a></h2>
+<h2 id="truthiness">Truthiness</h2>
 <p>Only <code>nil</code> and <code>false</code> are falsey. <strong>Everything else is truthy</strong>, including
 <code>0</code>, <code>""</code>, and <code>[]</code>.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>if 0 { print(&quot;zero is truthy&quot;) }        # prints
@@ -2156,7 +2156,7 @@ full: <code>obj.count = obj.count + 1</code>, <code>a[i] = a[i] + 1</code>.</p>
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>if nil { } else { print(&quot;nil is falsey&quot;) }  # prints
 </span></code></pre></div>
 <hr />
-<h2 id="strings">Strings<a class="headerlink" href="#strings" title="Anchor link to this section">&para;</a></h2>
+<h2 id="strings">Strings</h2>
 <p>Single or double quoted. Supported escapes: <code>\n  \t  \r  \\  \"  \'  \0</code>.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>let s = &quot;line1\nline2&quot;
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>let q = &#39;she said &quot;hi&quot;&#39;
@@ -2168,7 +2168,7 @@ the end.</p>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>print(s[-1])       # o
 </span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>print(len(s))      # 5
 </span></code></pre></div>
-<h3 id="interpolation">Interpolation<a class="headerlink" href="#interpolation" title="Anchor link to this section">&para;</a></h3>
+<h3 id="interpolation">Interpolation</h3>
 <p>Prefix a string with <code>f</code> to substitute <code>{expressions}</code> into it:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>let name = &quot;Ada&quot;
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>let n = 5
@@ -2185,7 +2185,7 @@ literal braces, and note that a string without the <code>f</code> prefix is left
 <div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>print(f&quot;{{not an expression}}&quot;)         # {not an expression}
 </span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>print(&quot;{name} stays as typed&quot;)          # {name} stays as typed
 </span></code></pre></div>
-<h3 id="slicing">Slicing<a class="headerlink" href="#slicing" title="Anchor link to this section">&para;</a></h3>
+<h3 id="slicing">Slicing</h3>
 <p><code>[start:end]</code> takes a range - <code>start</code> is included, <code>end</code> is not. Both bounds are
 optional and may be negative (counting from the end):</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>let xs = [1, 2, 3, 4, 5]
@@ -2209,7 +2209,7 @@ doesn't touch the original.</p>
 </span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>print(&quot;foobar&quot;.replace(&quot;o&quot;, &quot;0&quot;)) # f00bar
 </span></code></pre></div>
 <hr />
-<h2 id="lists">Lists<a class="headerlink" href="#lists" title="Anchor link to this section">&para;</a></h2>
+<h2 id="lists">Lists</h2>
 <p>Ordered and mutable. Index with <code>[]</code> (negative indices allowed).</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>let xs = [1, 2, 3]
 </span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>xs.push(4)            # [1, 2, 3, 4]
@@ -2229,7 +2229,7 @@ doesn't touch the original.</p>
 <p>Take a range with a <a href="#slicing">slice</a>: <code>xs[1:3]</code>, <code>xs[:2]</code>, <code>xs[-2:]</code>.</p>
 <p>See <a href="#type-methods">list methods</a> for <code>push</code>, <code>pop</code>, <code>contains</code>, <code>insert</code>, etc.</p>
 <hr />
-<h2 id="dicts">Dicts<a class="headerlink" href="#dicts" title="Anchor link to this section">&para;</a></h2>
+<h2 id="dicts">Dicts</h2>
 <p>String-keyed maps. Keys that aren't strings are converted with <code>str()</code>.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>let user = {&quot;name&quot;: &quot;Ada&quot;, &quot;age&quot;: 36}
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>user[&quot;role&quot;] = &quot;engineer&quot;     # add / update
@@ -2250,8 +2250,8 @@ doesn't touch the original.</p>
 </span></code></pre></div>
 <p>See <a href="#type-methods">dict methods</a> for <code>keys</code>, <code>values</code>, <code>has</code>, <code>get</code>, <code>remove</code>.</p>
 <hr />
-<h2 id="control-flow">Control flow<a class="headerlink" href="#control-flow" title="Anchor link to this section">&para;</a></h2>
-<h3 id="if-else">if / else<a class="headerlink" href="#if-else" title="Anchor link to this section">&para;</a></h3>
+<h2 id="control-flow">Control flow</h2>
+<h3 id="if-else">if / else</h3>
 <p>Parentheses around the condition are optional.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>if x &gt; 0 {
 </span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    print(&quot;positive&quot;)
@@ -2261,27 +2261,27 @@ doesn't touch the original.</p>
 </span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>    print(&quot;zero&quot;)
 </span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>}
 </span></code></pre></div>
-<h3 id="while">while<a class="headerlink" href="#while" title="Anchor link to this section">&para;</a></h3>
+<h3 id="while">while</h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>let n = 3
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>while n &gt; 0 {
 </span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    print(n)
 </span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    n -= 1
 </span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>}
 </span></code></pre></div>
-<h3 id="for-c-style">for (C-style)<a class="headerlink" href="#for-c-style" title="Anchor link to this section">&para;</a></h3>
+<h3 id="for-c-style">for (C-style)</h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>for (let i = 0; i &lt; 5; i = i + 1) {
 </span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    print(i)        # 0 1 2 3 4
 </span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>}
 </span></code></pre></div>
 <p>The parentheses are optional: <code>for let i = 0; i &lt; 5; i += 1 { … }</code>.</p>
-<h3 id="for-in-iteration">for … in (iteration)<a class="headerlink" href="#for-in-iteration" title="Anchor link to this section">&para;</a></h3>
+<h3 id="for-in-iteration">for … in (iteration)</h3>
 <p>Iterates over a <strong>list</strong> (elements), <strong>string</strong> (characters), or <strong>dict</strong> (keys):</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>for c in &quot;abc&quot;          { write(c, &quot; &quot;) }   # a b c
 </span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>for x in [10, 20]       { print(x) }         # 10, 20
 </span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>for k in {&quot;a&quot;: 1}       { print(k) }         # a
 </span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>for i in range(3)       { print(i) }         # 0, 1, 2
 </span></code></pre></div>
-<h3 id="break-continue">break / continue<a class="headerlink" href="#break-continue" title="Anchor link to this section">&para;</a></h3>
+<h3 id="break-continue">break / continue</h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>for i in range(10) {
 </span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>    if i == 3 { continue }   # skip 3
 </span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>    if i == 6 { break }      # stop at 6
@@ -2289,7 +2289,7 @@ doesn't touch the original.</p>
 </span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>}
 </span></code></pre></div>
 <hr />
-<h2 id="functions-closures">Functions &amp; closures<a class="headerlink" href="#functions-closures" title="Anchor link to this section">&para;</a></h2>
+<h2 id="functions-closures">Functions &amp; closures</h2>
 <p>Declare with <code>fn</code>. <code>return</code> is optional; a function with no <code>return</code> yields <code>nil</code>.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>fn add(a, b) {
 </span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>    return a + b
@@ -2314,7 +2314,7 @@ doesn't touch the original.</p>
 <p>The number of arguments must match the number of parameters (there are no
 default or variadic parameters for user functions).</p>
 <hr />
-<h2 id="type-annotations">Type annotations<a class="headerlink" href="#type-annotations" title="Anchor link to this section">&para;</a></h2>
+<h2 id="type-annotations">Type annotations</h2>
 <p>Types are <strong>optional</strong>. A program with no annotations behaves exactly as it
 always has, and an unannotated parameter accepts anything. What an annotation
 buys is a guarantee: it is checked where the value enters, so from then on the
@@ -2358,7 +2358,7 @@ is an error:</p>
 <p>Annotations may be mixed freely with unannotated code. A typed function can call
 an untyped one and vice versa; only what is declared is enforced.</p>
 <hr />
-<h2 id="classes-inheritance">Classes &amp; inheritance<a class="headerlink" href="#classes-inheritance" title="Anchor link to this section">&para;</a></h2>
+<h2 id="classes-inheritance">Classes &amp; inheritance</h2>
 <p>Declare with <code>class</code>. <code>init</code> is the constructor. Methods refer to the instance
 with <code>this</code>. The <code>fn</code> keyword before a method is optional.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>class Animal {
@@ -2395,7 +2395,7 @@ with <code>this</code>. The <code>fn</code> keyword before a method is optional.
   print.</li>
 </ul>
 <hr />
-<h2 id="modules">Modules<a class="headerlink" href="#modules" title="Anchor link to this section">&para;</a></h2>
+<h2 id="modules">Modules</h2>
 <p>Each <code>.be</code> or <code>.bee</code> file is a module. The <code>.be</code>/<code>.bee</code> extension is added
 automatically, and dotted names map to sub-directories (<code>a.b.c</code> → <code>a/b/c.bee</code>).</p>
 <p><code>import name</code> looks, in order, in:</p>
@@ -2440,7 +2440,7 @@ it by name - see the <a href="../hive/">Hive guide</a>.</p>
 from a C++ header by <code>beegen</code>) imports exactly like a <code>.bee</code> file. See the
 <a href="../bindings/">bindings guide</a>.</p>
 <hr />
-<h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Anchor link to this section">&para;</a></h2>
+<h2 id="error-handling">Error handling</h2>
 <p>Raise an error with <code>throw</code>, and handle it with <code>try</code> / <code>catch</code> / <code>finally</code>.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>try {
 </span><span id="__span-39-2"><a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>    risky()
@@ -2477,9 +2477,9 @@ from a C++ header by <code>beegen</code>) imports exactly like a <code>.bee</cod
 <p>There is no automatic re-raise; if <code>catch</code> doesn't handle everything, <code>throw</code> the
 value again inside the handler.</p>
 <hr />
-<h2 id="built-in-functions">Built-in functions<a class="headerlink" href="#built-in-functions" title="Anchor link to this section">&para;</a></h2>
+<h2 id="built-in-functions">Built-in functions</h2>
 <p>Always available, no import required.</p>
-<h3 id="io">I/O<a class="headerlink" href="#io" title="Anchor link to this section">&para;</a></h3>
+<h3 id="io">I/O</h3>
 <table>
 <thead>
 <tr>
@@ -2502,7 +2502,7 @@ value again inside the handler.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="conversion-inspection">Conversion &amp; inspection<a class="headerlink" href="#conversion-inspection" title="Anchor link to this section">&para;</a></h3>
+<h3 id="conversion-inspection">Conversion &amp; inspection</h3>
 <table>
 <thead>
 <tr>
@@ -2541,7 +2541,7 @@ value again inside the handler.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="math">Math<a class="headerlink" href="#math" title="Anchor link to this section">&para;</a></h3>
+<h3 id="math">Math</h3>
 <table>
 <thead>
 <tr>
@@ -2580,7 +2580,7 @@ value again inside the handler.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="collections">Collections<a class="headerlink" href="#collections" title="Anchor link to this section">&para;</a></h3>
+<h3 id="collections">Collections</h3>
 <table>
 <thead>
 <tr>
@@ -2607,7 +2607,7 @@ value again inside the handler.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="misc">Misc<a class="headerlink" href="#misc" title="Anchor link to this section">&para;</a></h3>
+<h3 id="misc">Misc</h3>
 <table>
 <thead>
 <tr>
@@ -2638,10 +2638,10 @@ value again inside the handler.</p>
 </span><span id="__span-41-6"><a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a>assert(1 + 1 == 2, &quot;math broke&quot;)
 </span></code></pre></div>
 <hr />
-<h2 id="system-library">System library<a class="headerlink" href="#system-library" title="Anchor link to this section">&para;</a></h2>
+<h2 id="system-library">System library</h2>
 <p>These built-ins reach outside the program: the filesystem, the clock, the OS
 environment, and external processes. They're always available (no import).</p>
-<h3 id="file-io">File I/O<a class="headerlink" href="#file-io" title="Anchor link to this section">&para;</a></h3>
+<h3 id="file-io">File I/O</h3>
 <table>
 <thead>
 <tr>
@@ -2688,7 +2688,7 @@ environment, and external processes. They're always available (no import).</p>
 </span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a>print(read_lines(&quot;notes.txt&quot;))     # [&quot;hello&quot;, &quot;world&quot;]
 </span><span id="__span-42-3"><a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a>if file_exists(&quot;notes.txt&quot;) { remove_file(&quot;notes.txt&quot;) }
 </span></code></pre></div>
-<h3 id="time-date">Time &amp; date<a class="headerlink" href="#time-date" title="Anchor link to this section">&para;</a></h3>
+<h3 id="time-date">Time &amp; date</h3>
 <table>
 <thead>
 <tr>
@@ -2724,7 +2724,7 @@ environment, and external processes. They're always available (no import).</p>
 </span><span id="__span-43-3"><a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a>print(&quot;took&quot;, clock() - t0, &quot;seconds&quot;)
 </span><span id="__span-43-4"><a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a>print(format_time(&quot;%Y-%m-%d&quot;))     # 2026-08-05
 </span></code></pre></div>
-<h3 id="random">Random<a class="headerlink" href="#random" title="Anchor link to this section">&para;</a></h3>
+<h3 id="random">Random</h3>
 <table>
 <thead>
 <tr>
@@ -2759,7 +2759,7 @@ environment, and external processes. They're always available (no import).</p>
 </span><span id="__span-44-2"><a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a>print(random_int(1, 6))            # a dice roll, reproducible
 </span><span id="__span-44-3"><a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a>print(random_choice([&quot;red&quot;, &quot;green&quot;, &quot;blue&quot;]))
 </span></code></pre></div>
-<h3 id="environment-arguments">Environment &amp; arguments<a class="headerlink" href="#environment-arguments" title="Anchor link to this section">&para;</a></h3>
+<h3 id="environment-arguments">Environment &amp; arguments</h3>
 <table>
 <thead>
 <tr>
@@ -2786,7 +2786,7 @@ environment, and external processes. They're always available (no import).</p>
 </span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a>print(env(&quot;HOME&quot;))
 </span><span id="__span-45-3"><a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a>print(env(&quot;MISSING&quot;, &quot;n/a&quot;))
 </span></code></pre></div>
-<h3 id="processes">Processes<a class="headerlink" href="#processes" title="Anchor link to this section">&para;</a></h3>
+<h3 id="processes">Processes</h3>
 <table>
 <thead>
 <tr>
@@ -2807,7 +2807,7 @@ environment, and external processes. They're always available (no import).</p>
 </span><span id="__span-46-4"><a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a>}
 </span></code></pre></div>
 <hr />
-<h2 id="threads">Threads<a class="headerlink" href="#threads" title="Anchor link to this section">&para;</a></h2>
+<h2 id="threads">Threads</h2>
 <p>Bee has a <strong>global interpreter lock (GIL)</strong>, like CPython: threads run
 concurrently and share data safely, but only one runs Bee code at a time. This
 is ideal for I/O-bound work (network, files, <code>sleep</code>, <code>exec</code>) - the lock is
@@ -2861,7 +2861,7 @@ Errors thrown inside a thread are re-raised by <code>join</code>, so wrap it in 
 function to <code>spawn</code> (<code>spawn(worker, arg)</code>), not an inline one.</p>
 </blockquote>
 <hr />
-<h2 id="buffers">Buffers<a class="headerlink" href="#buffers" title="Anchor link to this section">&para;</a></h2>
+<h2 id="buffers">Buffers</h2>
 <p>A <strong>buffer</strong> is a contiguous typed array: raw bytes with a dtype and a shape. Use
 one instead of a list when data is large or when it has to reach a C library -
 a list of numbers costs 16 bytes an element and is converted one element at a
@@ -2876,7 +2876,7 @@ time, while a buffer is handed over as a single pointer with no copy at all.</p>
 <p>Element types: <code>f32</code>, <code>f64</code>, <code>i8</code>, <code>u8</code>, <code>i16</code>, <code>u16</code>, <code>i32</code>, <code>i64</code> (<code>float32</code>,
 <code>uint8</code> … also work). Values are read and written as ordinary numbers and stored
 in the dtype, so a <code>u8</code> buffer keeps one byte per element.</p>
-<h3 id="creating">Creating<a class="headerlink" href="#creating" title="Anchor link to this section">&para;</a></h3>
+<h3 id="creating">Creating</h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-51-1"><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a>zeros([480, 640, 3], &quot;u8&quot;)        # an image&#39;s worth of pixels, 900 KB
 </span><span id="__span-51-2"><a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a>ones(4)                           # buffer&lt;f64&gt;[4] [1, 1, 1, 1]
 </span><span id="__span-51-3"><a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a>full([2, 2], 7, &quot;i32&quot;)            # every element 7
@@ -2884,7 +2884,7 @@ in the dtype, so a <code>u8</code> buffer keeps one byte per element.</p>
 </span><span id="__span-51-5"><a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a>buffer_from([[1, 2], [3, 4]], &quot;u8&quot;)   # nesting sets the shape
 </span><span id="__span-51-6"><a id="__codelineno-51-6" name="__codelineno-51-6" href="#__codelineno-51-6"></a>to_list(b)                        # back to nested lists
 </span></code></pre></div>
-<h3 id="reading-and-writing">Reading and writing<a class="headerlink" href="#reading-and-writing" title="Anchor link to this section">&para;</a></h3>
+<h3 id="reading-and-writing">Reading and writing</h3>
 <p><code>[]</code> indexes flat, whatever the shape; <code>at</code> and <code>set_at</code> take one index per
 dimension. Negative indices count from the end.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-52-1"><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a>b[0] = 1.5
@@ -2895,12 +2895,12 @@ dimension. Negative indices count from the end.</p>
 </span><span id="__span-52-6"><a id="__codelineno-52-6" name="__codelineno-52-6" href="#__codelineno-52-6"></a>print(at(b, 1, 2))                # 9
 </span><span id="__span-52-7"><a id="__codelineno-52-7" name="__codelineno-52-7" href="#__codelineno-52-7"></a>fill(b, 0)                        # every element
 </span></code></pre></div>
-<h3 id="shape-and-type">Shape and type<a class="headerlink" href="#shape-and-type" title="Anchor link to this section">&para;</a></h3>
+<h3 id="shape-and-type">Shape and type</h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-53-1"><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>reshape(b, [3, 2])                # same data, new shape (a copy)
 </span><span id="__span-53-2"><a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a>astype(b, &quot;u8&quot;)                   # converted copy
 </span><span id="__span-53-3"><a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a>copy(b)                           # independent copy
 </span></code></pre></div>
-<h3 id="arithmetic">Arithmetic<a class="headerlink" href="#arithmetic" title="Anchor link to this section">&para;</a></h3>
+<h3 id="arithmetic">Arithmetic</h3>
 <p>Enough to prepare and inspect data, not a numeric library. The second operand may
 be a buffer of the same length or a single number.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-54-1"><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>buf_add(b, 1)      buf_sub(a, b)     buf_mul(b, 255)    buf_div(b, 2)
@@ -2910,9 +2910,9 @@ be a buffer of the same length or a single number.</p>
 is <code>true</code>. Passing one to a native module is a pointer hand-off - see the
 <a href="../bindings/#buffers-bulk-data-without-a-copy">bindings guide</a>.</p>
 <hr />
-<h2 id="type-methods">Type methods<a class="headerlink" href="#type-methods" title="Anchor link to this section">&para;</a></h2>
+<h2 id="type-methods">Type methods</h2>
 <p>Called with dot syntax on a value, e.g. <code>"hi".upper()</code>.</p>
-<h3 id="string">String<a class="headerlink" href="#string" title="Anchor link to this section">&para;</a></h3>
+<h3 id="string">String</h3>
 <table>
 <thead>
 <tr>
@@ -2959,7 +2959,7 @@ is <code>true</code>. Passing one to a native module is a pointer hand-off - see
 </tr>
 </tbody>
 </table>
-<h3 id="list">List<a class="headerlink" href="#list" title="Anchor link to this section">&para;</a></h3>
+<h3 id="list">List</h3>
 <table>
 <thead>
 <tr>
@@ -2998,7 +2998,7 @@ is <code>true</code>. Passing one to a native module is a pointer hand-off - see
 </tr>
 </tbody>
 </table>
-<h3 id="dict">Dict<a class="headerlink" href="#dict" title="Anchor link to this section">&para;</a></h3>
+<h3 id="dict">Dict</h3>
 <table>
 <thead>
 <tr>
@@ -3044,7 +3044,7 @@ is <code>true</code>. Passing one to a native module is a pointer hand-off - see
 </span><span id="__span-55-9"><a id="__codelineno-55-9" name="__codelineno-55-9" href="#__codelineno-55-9"></a>print(d.has(&quot;a&quot;))         # true
 </span></code></pre></div>
 <hr />
-<h2 id="the-repl">The REPL<a class="headerlink" href="#the-repl" title="Anchor link to this section">&para;</a></h2>
+<h2 id="the-repl">The REPL</h2>
 <p>Run <code>bee</code> with no arguments for an interactive session. A bare expression prints
 its value; definitions persist across lines, and an open block keeps prompting
 with <code>...</code> until it closes:</p>
@@ -3070,7 +3070,7 @@ with <code>...</code> until it closes:</p>
 </span><span id="__span-57-3"><a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;print(&quot;hi&quot;)&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>bee<span class="w">       </span><span class="c1"># same, in a pipeline</span>
 </span></code></pre></div>
 <hr />
-<h2 id="runtime-errors">Runtime errors<a class="headerlink" href="#runtime-errors" title="Anchor link to this section">&para;</a></h2>
+<h2 id="runtime-errors">Runtime errors</h2>
 <p>An uncaught error prints what went wrong and a <strong>stack trace</strong> -- the file, line
 and function for every call on the way in, innermost first -- and the interpreter
 exits with a non-zero status:</p>
@@ -3095,7 +3095,7 @@ its location, so printing it inside your own message stays readable:</p>
 </span></code></pre></div>
 <p>Common runtime errors include undefined variables, wrong argument counts,
 indexing out of range, calling a non-callable, and type mismatches in operators.</p>
-<h3 id="recursion-depth">Recursion depth<a class="headerlink" href="#recursion-depth" title="Anchor link to this section">&para;</a></h3>
+<h3 id="recursion-depth">Recursion depth</h3>
 <p>Bee stops a runaway recursion with an error instead of letting the process die:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-61-1"><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a>Runtime error: call stack overflow in &#39;walk&#39; (deeper than 2293 nested calls) -- unbounded recursion?
 </span><span id="__span-61-2"><a id="__codelineno-61-2" name="__codelineno-61-2" href="#__codelineno-61-2"></a>       if the depth is intentional, raise it with BEE_MAX_DEPTH (and the stack with &#39;ulimit -s&#39;)
@@ -3108,7 +3108,7 @@ genuinely buys deeper recursion; <code>BEE_MAX_DEPTH</code> overrides it outrigh
 traces are truncated in the middle -- the innermost and outermost frames are the
 informative ones.</p>
 <hr />
-<h2 id="editor-support">Editor support<a class="headerlink" href="#editor-support" title="Anchor link to this section">&para;</a></h2>
+<h2 id="editor-support">Editor support</h2>
 <p>A VS Code extension, in its own repository at
 <a href="https://github.com/beelang-project/vscode-bee">beelang-project/vscode-bee</a>,
 provides syntax highlighting, completions (keywords, built-ins, <code>.</code>-methods, and
@@ -3116,7 +3116,7 @@ file symbols), hovers, and snippets. See
 <a href="https://github.com/beelang-project/vscode-bee#readme">its README</a> for
 installation.</p>
 <hr />
-<h2 id="a-complete-example">A complete example<a class="headerlink" href="#a-complete-example" title="Anchor link to this section">&para;</a></h2>
+<h2 id="a-complete-example">A complete example</h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-62-1"><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a># fizzbuzz, plus a tiny class
 </span><span id="__span-62-2"><a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a>
 </span><span id="__span-62-3"><a id="__codelineno-62-3" name="__codelineno-62-3" href="#__codelineno-62-3"></a>fn fizzbuzz(n) {

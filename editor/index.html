@@ -1100,20 +1100,20 @@
   
 
 
-<h1 id="vs-code-extension">VS Code Extension<a class="headerlink" href="#vs-code-extension" title="Anchor link to this section">&para;</a></h1>
+<h1 id="vs-code-extension">VS Code Extension</h1>
 <p>Language support for Bee - <strong>syntax highlighting, smart completions, hovers,
 and snippets</strong> for <code>.be</code> and <code>.bee</code> files. It's pure editor tooling and does
 <strong>not</strong> bundle the interpreter.</p>
 <p>The extension lives in its own repository,
 <a href="https://github.com/beelang-project/vscode-bee">beelang-project/vscode-bee</a>,
 and is versioned independently of the interpreter.</p>
-<h2 id="features">Features<a class="headerlink" href="#features" title="Anchor link to this section">&para;</a></h2>
-<h3 id="syntax-highlighting">Syntax highlighting<a class="headerlink" href="#syntax-highlighting" title="Anchor link to this section">&para;</a></h3>
+<h2 id="features">Features</h2>
+<h3 id="syntax-highlighting">Syntax highlighting</h3>
 <p>A full TextMate grammar covering keywords, strings (single &amp; double quoted),
 numbers, both comment styles (<code>#</code> and <code>//</code>), class and function declarations,
 built-in functions, constants, and operators. It also highlights <code>hive.json</code>
 and <code>hive.lock</code> package files.</p>
-<h3 id="completions">Completions<a class="headerlink" href="#completions" title="Anchor link to this section">&para;</a></h3>
+<h3 id="completions">Completions</h3>
 <ul>
 <li><strong>Keywords</strong> - <code>let</code>, <code>fn</code>, <code>class</code>, <code>if</code>, <code>for</code>, <code>while</code>, <code>return</code>, <code>import</code>, …</li>
 <li><strong>Built-in functions</strong> - with signatures and inline documentation.</li>
@@ -1122,9 +1122,9 @@ and <code>hive.lock</code> package files.</p>
 <li><strong>Local symbols</strong> - functions, classes, <code>let</code> variables, parameters, and loop
   variables declared in the current file.</li>
 </ul>
-<h3 id="hovers">Hovers<a class="headerlink" href="#hovers" title="Anchor link to this section">&para;</a></h3>
+<h3 id="hovers">Hovers</h3>
 <p>Hover any built-in function to see its signature and a short description.</p>
-<h3 id="snippets">Snippets<a class="headerlink" href="#snippets" title="Anchor link to this section">&para;</a></h3>
+<h3 id="snippets">Snippets</h3>
 <p>Tab-completable snippets for common constructs:</p>
 <table>
 <thead>
@@ -1168,13 +1168,13 @@ and <code>hive.lock</code> package files.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="editing-conveniences">Editing conveniences<a class="headerlink" href="#editing-conveniences" title="Anchor link to this section">&para;</a></h3>
+<h3 id="editing-conveniences">Editing conveniences</h3>
 <p>Auto-closing brackets and quotes, comment toggling (<span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-slash">/</kbd></span>), and
 sensible auto-indentation.</p>
-<h3 id="file-icons">File icons<a class="headerlink" href="#file-icons" title="Anchor link to this section">&para;</a></h3>
+<h3 id="file-icons">File icons</h3>
 <p><code>.be</code> and <code>.bee</code> files get a bee icon in the Explorer (with a file-icon theme
 that shows language icons, such as the default <strong>Seti</strong> theme).</p>
-<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Anchor link to this section">&para;</a></h2>
+<h2 id="installation">Installation</h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">From a released <code>.vsix</code></label><label for="__tabbed_1_2">From source</label><label for="__tabbed_1_3">Package a <code>.vsix</code> yourself</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1209,7 +1209,7 @@ interpreter (see <a href="../getting-started/">Getting Started</a>) so you can:<
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bee<span class="w"> </span>path/to/script.bee
 </span></code></pre></div>
 </div>
-<h2 id="known-limitations">Known limitations<a class="headerlink" href="#known-limitations" title="Anchor link to this section">&para;</a></h2>
+<h2 id="known-limitations">Known limitations</h2>
 <ul>
 <li><strong>Method completion</strong> after <code>.</code> lists the union of string / list / dict
   methods - the extension does no type inference, so pick the one that fits your
@@ -1219,7 +1219,7 @@ interpreter (see <a href="../getting-started/">Getting Started</a>) so you can:<
 <li>Highlighting needs no activation; completions and hovers activate on the first
   <code>.be</code> / <code>.bee</code> file you open.</li>
 </ul>
-<h2 id="develop-it">Develop it<a class="headerlink" href="#develop-it" title="Anchor link to this section">&para;</a></h2>
+<h2 id="develop-it">Develop it</h2>
 <p>Open the extension repo in VS Code and press <span class="keys"><kbd class="key-f5">F5</kbd></span> to launch a second window
 (the <em>Extension Development Host</em>) with the extension loaded - ideal for hacking
 on the grammar or the completion/hover providers. There's no build step; the
