@@ -1,6 +1,6 @@
 site_name: Bee
 site_description: >-
-  The Bee scripting language: a small, friendly, dynamically-typed language
+  The Bee programming language: a small, friendly, dynamically-typed language
   with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings,
   and first-class VS Code support.
 site_author: Atanu Debnath
@@ -104,6 +104,7 @@ nav:
   - Get started: getting-started.md
   - Download: download.md
   - Language guide: language.md
+  - Compile: compile.md
   - Packages:
       - Using packages: hive.md
       - C++ bindings: bindings.md

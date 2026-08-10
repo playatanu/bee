@@ -1,5 +1,5 @@
 # Build the `bee` interpreter, with an optional LLVM JIT backend.
-VERSION  ?= 0.3.3
+VERSION  ?= 0.3.4
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pthread
 CXXFLAGS += -DBEE_VERSION=\"$(VERSION)\"
@@ -84,13 +84,28 @@ endif
 OBJ      := $(SRC:.cpp=.o)
 HIVE_OBJ := $(HIVE_SRC:.cpp=.o)
 GEN_OBJ  := $(GEN_SRC:.cpp=.o)
-DEP      := $(OBJ:.o=.d) $(HIVE_OBJ:.o=.d) $(GEN_OBJ:.o=.d)
+
+# ---- AOT compiler (beec) --------------------------------------------------
+# `beec` turns a .bee program into a standalone native executable: it generates
+# C++ (src/aot_codegen.cpp) and links it against the runtime archive below, so
+# the produced binary embeds the runtime and needs no `bee` interpreter.
+#
+# libbee_runtime.a is every runtime object except main.o (the interpreter's own
+# entry point) plus the AOT support runtime; a compiled program provides its own
+# main().
+AOT_LIB    := libbee_runtime.a
+AOT_RT_OBJ := $(filter-out src/main.o,$(OBJ)) src/aot_runtime.o
+BEEC_BIN   := beec
+BEEC_OBJ   := src/beec_main.o src/aot_codegen.o src/lexer.o src/parser.o src/resolver.o
+
+DEP      := $(OBJ:.o=.d) $(HIVE_OBJ:.o=.d) $(GEN_OBJ:.o=.d) \
+            src/aot_runtime.d src/aot_codegen.d src/beec_main.d
 
 .PHONY: all clean run test
 
 # `make bee` / `make hive` / `make beegen` build just one of the three binaries;
 # $(JIT_TARGET) is the LLVM backend, empty when no llvm-config was found.
-all: $(BIN) $(HIVE_BIN) $(GEN_BIN) $(JIT_TARGET)
+all: $(BIN) $(HIVE_BIN) $(GEN_BIN) $(JIT_TARGET) $(AOT_LIB) $(BEEC_BIN)
 
 $(BIN): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
@@ -103,6 +118,21 @@ $(BIN): $(OBJ)
 $(JIT_LIB): src/jit_llvm.cpp $(wildcard src/*.hpp) src/bee_buffer.h
 	$(CXX) $(CXXFLAGS) -DBEE_JIT $(PIC) -fno-rtti -I$(LLVM_INC) -shared $(JIT_LDFLAGS) -o $@ \
 	    src/jit_llvm.cpp $(LLVM_LIBS)
+
+# The runtime archive an AOT-compiled program links against.
+$(AOT_LIB): $(AOT_RT_OBJ)
+	ar rcs $@ $^
+
+# The AOT compiler. It only needs the front end (lexer/parser/resolver) plus the
+# code generator; the runtime it links programs against is $(AOT_LIB), located
+# via the baked-in paths below (overridable at run time by BEE_AOT_* env vars).
+$(BEEC_BIN): $(BEEC_OBJ)
+	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread
+
+src/beec_main.o: src/beec_main.cpp
+	$(CXX) $(CXXFLAGS) -DBEE_AOT_INCDIR=\"$(CURDIR)/src\" \
+	    -DBEE_AOT_RUNTIME_LIB=\"$(CURDIR)/$(AOT_LIB)\" -DBEE_AOT_CXX=\"$(CXX)\" \
+	    -MMD -MP -c $< -o $@
 
 $(HIVE_BIN): $(HIVE_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(HIVE_LDFLAGS)
@@ -129,10 +159,11 @@ run: $(BIN) $(JIT_TARGET)
 
 # Language diagnostics, the two execution engines against each other, then hive
 # and module resolution, end to end.
-test: $(BIN) $(HIVE_BIN) $(GEN_BIN) $(JIT_TARGET)
+test: $(BIN) $(HIVE_BIN) $(GEN_BIN) $(JIT_TARGET) $(AOT_LIB) $(BEEC_BIN)
 	bash tests/lang_test.sh
 	bash tests/vm_diff_test.sh
 	bash tests/perf_guard_test.sh
+	bash tests/aot_test.sh
 	bash tests/hive_test.sh
 	bash tests/beegen_test.sh
 
@@ -144,4 +175,5 @@ bench: $(BIN) $(JIT_TARGET)
 
 clean:
 	rm -f $(OBJ) $(HIVE_OBJ) $(GEN_OBJ) $(DEP) $(BIN) $(HIVE_BIN) $(GEN_BIN) \
-	      $(JIT_LIB) libbee_jit.so libbee_jit.dylib
+	      $(JIT_LIB) libbee_jit.so libbee_jit.dylib \
+	      $(AOT_LIB) $(BEEC_BIN) src/aot_runtime.o src/aot_codegen.o src/beec_main.o

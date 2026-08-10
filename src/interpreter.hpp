@@ -171,6 +171,11 @@ public:
     // Command-line arguments after the script path (exposed via args()).
     void setScriptArgs(const std::vector<std::string>& a) { scriptArgs = a; }
 
+    // Set the "current file" an AOT-compiled program reports in error locations
+    // and stack traces. The interpreter sets this itself when running a file;
+    // an AOT binary has no runFile step, so its driver calls this once.
+    void aotSetCurrentFile(const std::string& path);
+
     // The global interpreter lock (GIL). Held while a thread runs Bee code;
     // blocking built-ins release it so other threads can make progress.
     std::mutex gil;

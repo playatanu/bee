@@ -11,6 +11,40 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-08-10
+
+### Added
+
+- **Ahead-of-time compiler (`beec`).** A program can now be compiled to a
+  standalone native executable that runs without the interpreter:
+
+  ```bash
+  beec hello.bee -o hello
+  ./hello
+  ```
+
+  `beec` reuses the lexer, parser, and resolver, then generates C++ in which
+  each Bee function becomes a native function and variables become
+  reference-counted cells (so closures capture correctly); every operation is
+  delegated to the same runtime the interpreter uses, linked in as a static
+  library (`libbee_runtime.a`). The whole program's control flow and calls are
+  machine code - no bytecode or AST is interpreted at run time.
+
+  The compiler covers the whole language: variables and all operators,
+  strings/lists/dicts, indexing and slicing, `if`/`while`/`for`/`for..in`,
+  `break`/`continue`, `match`, functions, closures, recursion, first-class
+  functions, default and `...rest` parameters, classes with inheritance
+  (`this`/`super`/`new`, custom `str()`), destructuring `let`, list
+  comprehensions, `try`/`catch`/`finally`/`throw`, threads, and `import`
+  (resolved as the interpreter does -- sibling `.bee`/`.be` files, a `lib/`
+  folder, `hive_modules/` packages up the tree honouring each `hive.json`
+  `main`, `$BEE_PATH`, and `~/.hive/lib` -- and compiled into the same binary,
+  dependencies and all). Only importing a native C/C++ `.so` extension is
+  unsupported, and it is *reported* with a file and line rather than
+  miscompiled. See [docs/COMPILING.md](compile.md). AOT output is
+  standalone but not yet type-specialised, so numeric hot loops still run
+  fastest under the JIT.
+
 ## [0.3.3] - 2026-08-10
 
 ### Fixed
@@ -195,7 +229,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The receiver is now passed directly, with the method resolved once per class
   at each call site. Instance method dispatch is **28.7× faster** than 0.3.1.
 
-- **A benchmark suite**, in [`bench/`](bench/): 17 programs covering loops,
+- **A benchmark suite**, in [`bench/`](https://github.com/beelang-project/bee/tree/main/bench/): 17 programs covering loops,
   calls, methods, classes, dicts, strings, closures, sorting and error handling,
   with equivalents in Python and Go. `make bench` times the current build;
   `bench/run.sh --vs <other-bee> --all` compares against another build, CPython
@@ -377,7 +411,7 @@ up from 100.
   ```cpp
   extern "C" const char* bee_native_abi() { return BEE_NATIVE_ABI; }
   extern "C" int bee_module_init(bee::NativeModule* m) {
-      m->def("add", 2, [](bee::Interpreter&, std::vector<bee::Value>& a) {
+      m->def("add", 2, [](https://github.com/beelang-project/bee/blob/main/bee::Interpreter&, std::vector<bee::Value>& a) {
           return bee::Value(bee::native::num(a[0], "add", 0) +
                             bee::native::num(a[1], "add", 1));
       });
@@ -597,7 +631,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.
   packing, plus the usual descriptive fields. Unknown keys are preserved when
   Hive rewrites the file.
 
-- **A worked example** in [`examples/hive-demo/`](https://github.com/beelang-project/bee/tree/main/examples/hive-demo): pack a
+- **A worked example** in [`examples/hive-demo/`](https://github.com/beelang-project/bee/tree/main/examples/hive-demo/): pack a
   package, install it, import it - no registry and no network needed.
 
 ### Tooling & tests
@@ -692,8 +726,10 @@ language or API changes - existing programs run identically, only faster. All
 
 ## [0.1.0] - 2026-08-06
 
-The first public release of Bee - a small, friendly scripting language with
-a built-in native (LLVM) JIT. ### Language
+The first public release of Bee - a small, friendly programming language with
+a built-in native (LLVM) JIT. 🐝
+
+### Language
 
 - Dynamically-typed values: `nil`, booleans, numbers (64-bit float), strings,
   lists, and dicts.
@@ -742,7 +778,7 @@ a built-in native (LLVM) JIT. ### Language
   `VERSION`.
 - **Debian/Ubuntu `.deb`** package ([`packaging/build-deb.sh`](https://github.com/beelang-project/bee/blob/main/packaging/build-deb.sh))
   built with the JIT; dependencies are auto-detected.
-- **Windows installer** ([`packaging/windows/`](https://github.com/beelang-project/bee/tree/main/packaging/windows)) via Inno
+- **Windows installer** ([`packaging/windows/`](https://github.com/beelang-project/bee/tree/main/packaging/windows/)) via Inno
   Setup - adds `bee` to `PATH`, associates `.be` / `.bee` files, and registers
   an uninstaller.
 - **GitHub Actions release workflow** that builds both packages and publishes
@@ -758,7 +794,7 @@ a built-in native (LLVM) JIT. ### Language
 ### Documentation & examples
 
 - Full [language reference](language.md).
-- A topic-by-topic set of 14 runnable [examples](https://github.com/beelang-project/bee/tree/main/examples).
+- A topic-by-topic set of 14 runnable [examples](https://github.com/beelang-project/bee/tree/main/examples/).
 
 ### Known limitations
 

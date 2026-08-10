@@ -1,0 +1,35 @@
+# 16 — Pattern matching with `match`
+#
+#     bee examples/16_match.bee
+
+# `match` compares a subject against each case in turn and runs the first that
+# matches. A single case can list several values; `default` catches the rest.
+
+fn day_kind(day) {
+    match day {
+        case "sat", "sun" {
+            return "weekend"
+        }
+        case "mon", "tue", "wed", "thu", "fri" {
+            return "weekday"
+        }
+        default {
+            return "unknown"
+        }
+    }
+}
+
+for d in ["mon", "sat", "sun", "xyz"] {
+    print(f"{d}: {day_kind(d)}")
+}
+
+# It works on numbers too.
+fn bucket(n) {
+    match n {
+        case 0 { return "empty" }
+        case 1, 2, 3 { return "small" }
+        default { return "large" }
+    }
+}
+
+print(bucket(0), bucket(2), bucket(100))

@@ -17,14 +17,14 @@ cd examples/hive-demo/greet
 hive pack
 ```
 
-That writes `greet-0.1.0.hive` and prints its SHA-256. The archive is a plain
-container — `head -2 greet-0.1.0.hive` shows the manifest and file list.
+That writes `greet-0.1.0.pkg` and prints its SHA-256. The `.pkg` is a compact,
+self-contained container (see the [format notes](../../docs/HIVE.md#the-pkg-package-format)).
 
 ## 2. Install it into the app
 
 ```bash
 cd ../app
-hive install ../greet/greet-0.1.0.hive
+hive install ../greet/greet-0.1.0.pkg
 ```
 
 Hive unpacks it to `app/hive_modules/greet/`, records the install in
@@ -50,7 +50,27 @@ Namaste, duniya!
 `import greet` found the package because `bee` searches `hive_modules/` in the
 script's directory and every directory above it. Nothing had to be configured.
 
-## 4. Clean up
+## 4. Compile it to a native binary (optional)
+
+The app depends on an installed package, but it still compiles to a standalone
+executable with [`beec`](../../docs/COMPILING.md) — the package is resolved from
+`hive_modules/` and compiled straight into the binary:
+
+```bash
+beec main.bee -o greet-demo
+./greet-demo
+```
+
+```
+Hello, Bee!
+Bonjour, monde!
+Namaste, duniya!
+```
+
+No interpreter and no `hive_modules/` are needed to run `greet-demo` — the
+dependency is baked in.
+
+## 5. Clean up
 
 ```bash
 hive uninstall greet

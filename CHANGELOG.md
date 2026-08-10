@@ -6,6 +6,40 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-08-10
+
+### Added
+
+- **Ahead-of-time compiler (`beec`).** A program can now be compiled to a
+  standalone native executable that runs without the interpreter:
+
+  ```bash
+  beec hello.bee -o hello
+  ./hello
+  ```
+
+  `beec` reuses the lexer, parser, and resolver, then generates C++ in which
+  each Bee function becomes a native function and variables become
+  reference-counted cells (so closures capture correctly); every operation is
+  delegated to the same runtime the interpreter uses, linked in as a static
+  library (`libbee_runtime.a`). The whole program's control flow and calls are
+  machine code - no bytecode or AST is interpreted at run time.
+
+  The compiler covers the whole language: variables and all operators,
+  strings/lists/dicts, indexing and slicing, `if`/`while`/`for`/`for..in`,
+  `break`/`continue`, `match`, functions, closures, recursion, first-class
+  functions, default and `...rest` parameters, classes with inheritance
+  (`this`/`super`/`new`, custom `str()`), destructuring `let`, list
+  comprehensions, `try`/`catch`/`finally`/`throw`, threads, and `import`
+  (resolved as the interpreter does -- sibling `.bee`/`.be` files, a `lib/`
+  folder, `hive_modules/` packages up the tree honouring each `hive.json`
+  `main`, `$BEE_PATH`, and `~/.hive/lib` -- and compiled into the same binary,
+  dependencies and all). Only importing a native C/C++ `.so` extension is
+  unsupported, and it is *reported* with a file and line rather than
+  miscompiled. See [docs/COMPILING.md](docs/COMPILING.md). AOT output is
+  standalone but not yet type-specialised, so numeric hot loops still run
+  fastest under the JIT.
+
 ## [0.3.3] — 2026-08-10
 
 ### Fixed
@@ -687,7 +721,7 @@ language or API changes — existing programs run identically, only faster. All
 
 ## [0.1.0] — 2026-08-06
 
-The first public release of Bee — a small, friendly scripting language with
+The first public release of Bee — a small, friendly programming language with
 a built-in native (LLVM) JIT. 🐝
 
 ### Language

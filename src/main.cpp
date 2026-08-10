@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
             return 0;
         }
         if (arg == "-h" || arg == "--help") {
-            std::cout << "bee " << BEE_VERSION << " - a small, friendly scripting language\n\n";
+            std::cout << "bee " << BEE_VERSION << " - a small, friendly programming language\n\n";
             std::cout << "usage: " << prog << " <script.bee> [args...]\n";
             std::cout << "       " << prog << " -e '<code>'      run one line of code\n";
             std::cout << "       " << prog << "                  start the interactive REPL\n";

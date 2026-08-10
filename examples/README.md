@@ -24,9 +24,18 @@ Work through them in order, or jump to the topic you need:
 | 12 | `12_fizzbuzz.bee`                   | A complete small program |
 | 13 | `13_benchmark.bee`                  | A numeric benchmark for the native JIT |
 | 14 | `14_input.bee`                      | Reading user input (`input()`) and command-line args (`args()`) |
+| 15 | `15_compiling.bee`                  | Compiling a program to a native binary with `beec` |
+| 16 | `16_match.bee`                      | Pattern matching with `match` |
 
 `mathutil.bee` is a library module imported by `08_modules.bee` — not a
 standalone program.
+
+Most of these also compile to a standalone native executable with `beec`, the
+ahead-of-time compiler — for example:
+
+```bash
+beec examples/15_compiling.bee -o wordcount && ./wordcount
+```
 
 [`hive-demo/`](hive-demo/) is a walkthrough of the package manager: pack a
 package, install it, import it. It needs no registry and no network.

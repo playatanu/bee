@@ -4,12 +4,12 @@
 
 # Bee
 
-**Bee** - a friendly scripting language with a built-in native (LLVM) JIT.
+**Bee** - a friendly programming language with a built-in native (LLVM) JIT.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4c9a2a.svg?style=flat-square)](LICENSE)
 [![Language: C++17](https://img.shields.io/badge/C%2B%2B-17-00599c.svg?style=flat-square)](Makefile)
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](#-installation)
-[![Version](https://img.shields.io/badge/version-0.3.3-f5b51e.svg?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-0.3.4-f5b51e.svg?style=flat-square)](#)
 
 [Install](#-installation) · [Quick start](#-quick-start) · [Language tour](#-language-tour) · [Packages](#-packages) · [Bindings](#-c-bindings) · [Docs](docs/LANGUAGE.md) · [Examples](examples/)
 
@@ -42,6 +42,7 @@ Bee is a dynamically-typed language designed to be **easy to read and quick to p
 - **Threads with a GIL** — safe shared state and real overlap for I/O-bound work.
 - **Rich standard library** — strings, lists, dicts, math, files, time, random, env, and process execution — no imports needed.
 - **Native LLVM JIT** — numeric-heavy functions are compiled to native code and run at near-native speed, transparently.
+- **Ahead-of-time compilation** — `beec` turns a program into a standalone native executable that runs without the interpreter. See the [compiling guide](docs/COMPILING.md).
 - **First-class editor support** — a VS Code extension with highlighting, completions, hovers, and snippets.
 
 ## 📦 Installation
@@ -50,8 +51,8 @@ Bee is a dynamically-typed language designed to be **easy to read and quick to p
 
 | Platform | Package | How |
 |----------|---------|-----|
-| **Windows** | `bee-0.3.3-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
-| **Debian / Ubuntu** | `bee-0.3.3-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.3-amd64.deb`. Installs `bee` and `hive`. |
+| **Windows** | `bee-0.3.4-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
+| **Debian / Ubuntu** | `bee-0.3.4-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.4-amd64.deb`. Installs `bee` and `hive`. |
 
 > Grab the latest packages from the [**Releases**](https://github.com/beelang-project/bee/releases) page.
 
@@ -99,7 +100,7 @@ A source file uses the `.be` or `.bee` extension. Statements may end with an
 optional semicolon; newlines are not significant.
 
 ```bash
-bee --version              # bee 0.3.3
+bee --version              # bee 0.3.4
 bee --help                 # usage and options
 bee                        # an interactive REPL
 bee -e 'print(1 + 1)'      # run one line
@@ -248,6 +249,27 @@ bee examples/13_benchmark.bee
 
 > If LLVM isn't found at build time, `make` falls back to a JIT-less binary that
 > behaves identically, just slower — handy for minimal environments.
+
+## 🧱 Compile to a native binary
+
+`beec`, Bee's ahead-of-time compiler, turns a program into a standalone native
+executable — a real binary you can ship and run with no interpreter installed:
+
+```bash
+beec hello.bee -o hello   # generates C++, links the runtime, emits a native binary
+./hello                   # runs on its own
+```
+
+It compiles the whole language — variables, operators, strings, lists, dicts,
+control flow, `match`, functions, closures, classes and inheritance,
+destructuring, list comprehensions, error handling, threads, `import` (resolved
+like the interpreter — sibling files, `lib/`, and `hive_modules/` packages —
+and compiled into the same binary, dependencies and all), and the whole standard
+library. The one thing it can't yet handle — importing a native C/C++ `.so`
+extension — is *reported* with a file and line rather than miscompiled. The build
+machine needs a C++17 compiler; the output needs nothing.
+
+**[Full guide → docs/COMPILING.md](docs/COMPILING.md)**
 
 ## 🧩 Editor support
 

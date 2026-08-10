@@ -280,6 +280,10 @@ static void recycleEnv(std::shared_ptr<Environment>& e) {
     tlsEnvPool.push_back(std::move(e));
 }
 
+void Interpreter::aotSetCurrentFile(const std::string& path) {
+    tlsCurrentFile = internFile(path);
+}
+
 // Swap in a file (and restore the previous one) for the duration of a scope.
 namespace {
 struct FileScope {
@@ -1615,7 +1619,7 @@ Value Interpreter::applyBinary(TokenType op, const Value& l, const Value& r, int
         case TokenType::PERCENT:
             needNums();
             if (r.asNumber() == 0) error("modulo by zero", line);
-            return Value(std::fmod(l.asNumber(), r.asNumber()));
+            return Value(beeMod(l.asNumber(), r.asNumber()));
 
         case TokenType::LT: case TokenType::GT:
         case TokenType::LE: case TokenType::GE: {
@@ -1907,6 +1911,22 @@ Value Interpreter::callValue(const Value& callee, std::vector<Value>& args, int 
 
 Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector<Value>& args,
                                 int line) {
+    // An AOT-compiled (native) function: run its machine code directly. A bound
+    // method receives its receiver as the first argument; the compiled body
+    // expects that layout. The scope enforces the recursion-depth limit and
+    // records a trace frame, exactly as an interpreted call would.
+    if (fn->native) {
+        CallScope scope(*this, fn, line);
+        if (fn->boundThis) {
+            std::vector<Value> a;
+            a.reserve(args.size() + 1);
+            a.push_back(Value(fn->boundThis));
+            for (auto& x : args) a.push_back(x);
+            return fn->native(*this, a);
+        }
+        return fn->native(*this, args);
+    }
+
     const FunctionStmt* decl = fn->decl;
     size_t np = decl->params.size();
     size_t provided = args.size();

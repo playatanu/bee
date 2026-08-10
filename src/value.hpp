@@ -7,8 +7,28 @@
 #include <functional>
 #include <variant>
 #include <stdexcept>
+#include <cmath>
 
 namespace bee {
+
+// Modulo on Bee's numbers. Bee has only doubles, so `%` used std::fmod -- a
+// non-inlined libcall that measured ~3x slower than an integer remainder. For
+// integer-valued operands (the common case in loops: `i % 7`, `x % 2`) an
+// integer `%` gives a bit-identical result and is far cheaper. Doubles with
+// magnitude <= 2^53 are exact integers that fit in int64, so the cast is well
+// defined; anything larger, or with a fractional part, falls back to fmod.
+// Callers guarantee b != 0 (they report modulo-by-zero themselves), but the
+// fast path double-checks before dividing.
+inline double beeMod(double a, double b) {
+    constexpr double kExactIntLimit = 9007199254740992.0;  // 2^53
+    if (a >= -kExactIntLimit && a <= kExactIntLimit &&
+        b >= -kExactIntLimit && b <= kExactIntLimit) {
+        long long ia = (long long)a, ib = (long long)b;
+        if ((double)ia == a && (double)ib == b && ib != 0)
+            return (double)(ia % ib);
+    }
+    return std::fmod(a, b);
+}
 
 // Forward declarations
 struct FunctionStmt;      // AST node (defined in ast.hpp)
@@ -211,6 +231,10 @@ struct Value {
 // A user-defined function or method.
 struct Function {
     const FunctionStmt* decl = nullptr;          // AST for params + body
+    // An AOT-compiled body. When set, the function is native code rather than an
+    // interpreted AST: callFunction invokes this directly (and `decl` is null).
+    // A bound method receives its receiver as the first argument.
+    std::function<Value(Interpreter&, std::vector<Value>&)> native;
     std::shared_ptr<Environment> closure;        // captured lexical scope
     std::shared_ptr<Instance> boundThis;         // non-null for bound methods
     std::shared_ptr<Class> definingClass;        // for `super` resolution

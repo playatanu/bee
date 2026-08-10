@@ -1,7 +1,7 @@
 ---
 title: The Bee Scripting Language
 description: >-
-  Bee is a small, friendly scripting language that's easy to read and quick to
+  Bee is a small, friendly programming language that's easy to read and quick to
   learn, with a built-in native (LLVM) JIT that keeps tight loops fast.
 hide:
   - navigation
@@ -14,7 +14,7 @@ hide:
 
 # Bee
 
-<p class="tagline">A friendly scripting language with a built-in native (LLVM) JIT.</p>
+<p class="tagline">A friendly programming language with a built-in native (LLVM) JIT.</p>
 
 [Download](download.md){ .md-button .md-button--primary }
 [Get started](getting-started.md){ .md-button }
@@ -80,6 +80,12 @@ package manager installs it in one command.
 ### Fast when it matters
 Bee quietly speeds up heavy number work in the background, so your programs
 stay quick with no effort from you.
+</div>
+
+<div class="bee-card" markdown>
+### Compiles to a binary
+Turn a program into a standalone native executable with `beec` - ship one file,
+no interpreter required. [Compile a program](compile.md)
 </div>
 
 </div>

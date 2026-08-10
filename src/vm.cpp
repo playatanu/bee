@@ -320,7 +320,7 @@ Value Vm::run(Interpreter& I, Chunk& ch, const std::shared_ptr<Function>& fn,
     }
 
     BEE_DIVLIKE(DIV, TokenType::SLASH,   "division by zero", x.asNumber() / y.asNumber())
-    BEE_DIVLIKE(MOD, TokenType::PERCENT, "modulo by zero",   std::fmod(x.asNumber(), y.asNumber()))
+    BEE_DIVLIKE(MOD, TokenType::PERCENT, "modulo by zero",   beeMod(x.asNumber(), y.asNumber()))
 #undef BEE_DIVLIKE
 
     // The typed forms. Both operands are numbers by construction -- a declared
@@ -365,7 +365,7 @@ Value Vm::run(Interpreter& I, Chunk& ch, const std::shared_ptr<Function>& fn,
     }
 
     BEE_DIV_NUM(DIV, "division by zero", a / b)
-    BEE_DIV_NUM(MOD, "modulo by zero",   std::fmod(a, b))
+    BEE_DIV_NUM(MOD, "modulo by zero",   beeMod(a, b))
 #undef BEE_DIV_NUM
 
     // A buffer holds unboxed numbers in contiguous memory, so a typed index is

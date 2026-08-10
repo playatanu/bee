@@ -12,6 +12,7 @@ packaging/windows/bee.exe
 /libbee_jit.so
 /libbee_jit.dylib
 /bee_jit.dll
+/libbee_runtime.a
 /hive
 /hive.exe
 hive.exe
@@ -20,6 +21,10 @@ packaging/windows/hive.exe
 /beegen.exe
 beegen.exe
 packaging/windows/beegen.exe
+/beec
+/beec.exe
+beec.exe
+packaging/windows/beec.exe
 
 # Scratch directory created by bench/run.sh for its startup-floor probe.
 bench/.tmp/
