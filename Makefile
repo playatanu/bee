@@ -1,5 +1,5 @@
 # Build the `bee` interpreter, with an optional LLVM JIT backend.
-VERSION  ?= 0.3.4
+VERSION  ?= 0.3.5
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pthread
 CXXFLAGS += -DBEE_VERSION=\"$(VERSION)\"
@@ -98,6 +98,14 @@ AOT_RT_OBJ := $(filter-out src/main.o,$(OBJ)) src/aot_runtime.o
 BEEC_BIN   := beec
 BEEC_OBJ   := src/beec_main.o src/aot_codegen.o src/lexer.o src/parser.o src/resolver.o
 
+# Paths baked into beec so it can find the AOT headers, the runtime archive and a
+# C++ compiler at run time. Default to this build tree; a packaged build (see
+# packaging/build-deb.sh) overrides them with the installed locations, e.g.
+#   make AOT_INCDIR=/usr/include/bee AOT_RUNTIME_LIB=/usr/lib/bee/libbee_runtime.a AOT_CXX=c++
+AOT_INCDIR      ?= $(CURDIR)/src
+AOT_RUNTIME_LIB ?= $(CURDIR)/$(AOT_LIB)
+AOT_CXX         ?= $(CXX)
+
 DEP      := $(OBJ:.o=.d) $(HIVE_OBJ:.o=.d) $(GEN_OBJ:.o=.d) \
             src/aot_runtime.d src/aot_codegen.d src/beec_main.d
 
@@ -130,8 +138,8 @@ $(BEEC_BIN): $(BEEC_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ -pthread
 
 src/beec_main.o: src/beec_main.cpp
-	$(CXX) $(CXXFLAGS) -DBEE_AOT_INCDIR=\"$(CURDIR)/src\" \
-	    -DBEE_AOT_RUNTIME_LIB=\"$(CURDIR)/$(AOT_LIB)\" -DBEE_AOT_CXX=\"$(CXX)\" \
+	$(CXX) $(CXXFLAGS) -DBEE_AOT_INCDIR=\"$(AOT_INCDIR)\" \
+	    -DBEE_AOT_RUNTIME_LIB=\"$(AOT_RUNTIME_LIB)\" -DBEE_AOT_CXX=\"$(AOT_CXX)\" \
 	    -MMD -MP -c $< -o $@
 
 $(HIVE_BIN): $(HIVE_OBJ)

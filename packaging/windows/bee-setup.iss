@@ -20,7 +20,7 @@
 #define MyAppName        "BeeLang"
 ; Version can be overridden from the command line: iscc /DMyAppVersion=1.2.3 ...
 #ifndef MyAppVersion
-  #define MyAppVersion   "0.3.3"
+  #define MyAppVersion   "0.3.5"
 #endif
 #define MyAppPublisher   "Atanu Debnath"
 #define MyAppExeName     "bee.exe"
@@ -30,9 +30,9 @@ AppId={{5E5C1B7A-6C2E-4E7C-9E4E-B0EE1A9C0001}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL=https://github.com/beelang-project/bee
-AppSupportURL=https://github.com/beelang-project/bee/issues
-AppUpdatesURL=https://github.com/beelang-project/bee/releases
+AppPublisherURL=https://github.com/playatanu/bee
+AppSupportURL=https://github.com/playatanu/bee/issues
+AppUpdatesURL=https://github.com/playatanu/bee/releases
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes

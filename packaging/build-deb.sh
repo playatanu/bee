@@ -9,7 +9,7 @@
 #
 set -euo pipefail
 
-VERSION="${VERSION:-0.3.3}"
+VERSION="${VERSION:-0.3.5}"
 ARCH="$(dpkg --print-architecture)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKG="bee"
@@ -25,7 +25,13 @@ mkdir -p "$ROOT/dist"
 # Build via the Makefile: it auto-detects llvm-config and builds the JIT backend
 # as libbee_jit.so (handling -fPIC/-fno-rtti for the LLVM translation unit).
 make -C "$ROOT" clean >/dev/null
-make -C "$ROOT" VERSION="$VERSION"
+# Bake the *installed* locations into beec so the AOT compiler finds its headers
+# (/usr/include/bee), its runtime archive (/usr/lib/bee/libbee_runtime.a) and a
+# C++ compiler on the user's machine -- not this build tree's paths.
+make -C "$ROOT" VERSION="$VERSION" \
+     AOT_INCDIR=/usr/include/bee \
+     AOT_RUNTIME_LIB=/usr/lib/bee/libbee_runtime.a \
+     AOT_CXX=c++
 
 # The JIT now lives in libbee_jit.so, dlopen'd on first compile -- `bee` itself
 # links no LLVM. Fail loudly if the backend did not get built, and confirm it is
@@ -47,6 +53,12 @@ strip "$ROOT/dist/hive"
 # package dependency: without libclang installed it simply says so.
 cp "$ROOT/beegen" "$ROOT/dist/beegen"
 strip "$ROOT/dist/beegen"
+# beec (the AOT compiler) shells out to a C++ compiler at run time and links the
+# program against libbee_runtime.a. Both ride along; the headers it needs are the
+# same ones installed under /usr/include/bee for native modules.
+cp "$ROOT/beec" "$ROOT/dist/beec"
+strip "$ROOT/dist/beec"
+cp "$ROOT/libbee_runtime.a" "$ROOT/dist/libbee_runtime.a"
 
 # Auto-detect the runtime packages the JIT backend links against, so Depends is
 # right on whatever LLVM version this machine has (e.g. libllvm18).
@@ -64,6 +76,10 @@ install -Dm0755 "$ROOT/dist/bee"                 "$STAGE/usr/bin/bee"
 install -Dm0755 "$ROOT/dist/libbee_jit.so"       "$STAGE/usr/lib/bee/libbee_jit.so"
 install -Dm0755 "$ROOT/dist/hive"                "$STAGE/usr/bin/hive"
 install -Dm0755 "$ROOT/dist/beegen"              "$STAGE/usr/bin/beegen"
+install -Dm0755 "$ROOT/dist/beec"                "$STAGE/usr/bin/beec"
+# The runtime archive beec links AOT-compiled programs against (paths baked into
+# beec above point here).
+install -Dm0644 "$ROOT/dist/libbee_runtime.a"    "$STAGE/usr/lib/bee/libbee_runtime.a"
 for f in "$ROOT"/examples/*.bee; do
     install -Dm0644 "$f" "$STAGE/usr/share/bee/examples/$(basename "$f")"
 done
@@ -78,7 +94,7 @@ for h in "$ROOT"/src/*.hpp "$ROOT"/src/*.h; do
 done
 
 # Fail the build rather than ship headers that can't compile a native module.
-for required in bee_native.hpp bee_buffer.h interpreter.hpp value.hpp; do
+for required in bee_native.hpp bee_buffer.h interpreter.hpp value.hpp bee_aot.hpp; do
     if [ ! -f "$STAGE/usr/include/bee/$required" ]; then
         echo "[deb] error: $required missing from the header set" >&2
         exit 1
@@ -104,7 +120,7 @@ Architecture: $ARCH
 Maintainer: Atanu Debnath <playatanu@gmail.com>
 Section: devel
 Priority: optional
-Homepage: https://github.com/beelang-project/bee
+Homepage: https://github.com/playatanu/bee
 Depends: $DEPS
 Installed-Size: $INSTALLED_KB
 Description: Bee - a small dynamically-typed scripting language

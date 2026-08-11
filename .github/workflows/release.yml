@@ -30,7 +30,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             export VERSION="${GITHUB_REF_NAME#v}"
           else
-            export VERSION="0.3.4"
+            export VERSION="0.3.5"
           fi
           bash packaging/build-deb.sh
 
@@ -60,11 +60,17 @@ jobs:
       - name: Compile bee.exe, hive.exe, beegen.exe and the JIT backend
         shell: msys2 {0}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.3.4"; fi
-          # bee.exe links no LLVM. src/*.cpp includes src/jit.cpp (the dlopen
-          # front end) and src/jit_llvm.cpp (guarded to nothing without BEE_JIT).
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.3.5"; fi
+          # bee.exe links no LLVM. src/jit.cpp is the dlopen front end. This is
+          # the interpreter's own source list -- the same set as the Makefile's
+          # $(SRC). It deliberately does NOT glob src/*.cpp: that would also pull
+          # in src/beec_main.cpp (the AOT compiler's own main()) and the AOT code
+          # generator/runtime, giving "multiple definition of `main`".
           g++ -std=c++17 -O2 -static -pthread -DBEE_VERSION="\"$ver\"" \
-              src/*.cpp -o packaging/windows/bee.exe
+              src/lexer.cpp src/parser.cpp src/resolver.cpp src/compiler.cpp \
+              src/vm.cpp src/interpreter.cpp src/builtins_sys.cpp \
+              src/builtins_extra.cpp src/builtins_buffer.cpp src/jit.cpp \
+              src/main.cpp -o packaging/windows/bee.exe
           # The LLVM JIT backend, dlopen'd by bee.exe on first compile. -static
           # makes the DLL self-contained; --link-static folds LLVM in too. It
           # shares bee.exe's heap through ucrtbase.dll (UCRT), so std containers
@@ -93,7 +99,7 @@ jobs:
           if ($env:GITHUB_REF -like 'refs/tags/v*') {
             $ver = $env:GITHUB_REF_NAME -replace '^v',''
           } else {
-            $ver = '0.3.4'
+            $ver = '0.3.5'
           }
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" packaging\windows\bee-setup.iss
 

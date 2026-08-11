@@ -6,6 +6,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.5] — 2026-08-11
+
+### Fixed
+
+- **Windows release build.** The installer's compile step globbed `src/*.cpp`
+  into `bee.exe`, which since 0.3.4 also swept in `src/beec_main.cpp` — the AOT
+  compiler's own `main()` — and failed to link (`multiple definition of
+  'main'`). It now compiles the explicit interpreter source list, matching the
+  Makefile's `$(SRC)`.
+- **`beec` missing from the Debian/Ubuntu package.** The `.deb` built the AOT
+  compiler but never installed it, so `beec` was absent after `apt install`.
+  The package now ships `beec` (`/usr/bin/beec`) and the runtime archive it
+  links against (`/usr/lib/bee/libbee_runtime.a`), and `beec` is built with
+  those installed paths baked in so it finds its headers and runtime on the
+  user's machine rather than the build tree's.
+
+### Changed
+
+- Repository moved to [github.com/playatanu/bee](https://github.com/playatanu/bee);
+  links and package metadata updated accordingly.
+
 ## [0.3.4] — 2026-08-10
 
 ### Added
@@ -797,10 +818,12 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions — pass named functions (e.g. to `spawn`).
 
-[0.3.3]: https://github.com/beelang-project/bee/releases/tag/v0.3.3
-[0.3.2]: https://github.com/beelang-project/bee/releases/tag/v0.3.2
-[0.3.1]: https://github.com/beelang-project/bee/releases/tag/v0.3.1
-[0.3.0]: https://github.com/beelang-project/bee/releases/tag/v0.3.0
-[0.2.0]: https://github.com/beelang-project/bee/releases/tag/v0.2.0
-[0.1.1]: https://github.com/beelang-project/bee/releases/tag/v0.1.1
-[0.1.0]: https://github.com/beelang-project/bee/releases/tag/v0.1.0
+[0.3.5]: https://github.com/playatanu/bee/releases/tag/v0.3.5
+[0.3.4]: https://github.com/playatanu/bee/releases/tag/v0.3.4
+[0.3.3]: https://github.com/playatanu/bee/releases/tag/v0.3.3
+[0.3.2]: https://github.com/playatanu/bee/releases/tag/v0.3.2
+[0.3.1]: https://github.com/playatanu/bee/releases/tag/v0.3.1
+[0.3.0]: https://github.com/playatanu/bee/releases/tag/v0.3.0
+[0.2.0]: https://github.com/playatanu/bee/releases/tag/v0.2.0
+[0.1.1]: https://github.com/playatanu/bee/releases/tag/v0.1.1
+[0.1.0]: https://github.com/playatanu/bee/releases/tag/v0.1.0
