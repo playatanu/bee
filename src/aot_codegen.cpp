@@ -315,6 +315,7 @@ private:
 
     std::string curThisCell_;    // the current method's `this` cell, or "" outside a method
     std::string curSuperName_;   // the current class's superclass name, or "" if none
+    TypeAnn curReturnType_;      // the enclosing function's declared return type
     std::string genv_ = "(*I.globals)";   // the named env the current top-level scope binds into
     std::map<std::string, const AotModule*> modByName_;
     bool rangeIsBuiltin_ = true;   // is `range` still the built-in (never user-bound)?
@@ -400,6 +401,26 @@ private:
         return "bee::Value()";
     }
 
+    // The C++ enumerator for a sized numeric type, e.g. "bee::TypeAnn::NumTy::I32".
+    static std::string numTyEnum(TypeAnn::NumTy t) {
+        const char* n = "Dyn";
+        switch (t) {
+            case TypeAnn::NumTy::I8:  n = "I8";  break; case TypeAnn::NumTy::U8:  n = "U8";  break;
+            case TypeAnn::NumTy::I16: n = "I16"; break; case TypeAnn::NumTy::U16: n = "U16"; break;
+            case TypeAnn::NumTy::I32: n = "I32"; break; case TypeAnn::NumTy::U32: n = "U32"; break;
+            case TypeAnn::NumTy::I64: n = "I64"; break; case TypeAnn::NumTy::U64: n = "U64"; break;
+            case TypeAnn::NumTy::F16: n = "F16"; break; case TypeAnn::NumTy::F32: n = "F32"; break;
+            case TypeAnn::NumTy::F64: n = "F64"; break; case TypeAnn::NumTy::Dyn: n = "Dyn"; break;
+        }
+        return std::string("bee::TypeAnn::NumTy::") + n;
+    }
+    // Wrap a value expression in a sized-numeric coercion if `t` is one, else
+    // return it unchanged.
+    std::string coerceIfSized(const TypeAnn& t, const std::string& valExpr) {
+        if (!t.isSizedNum()) return valExpr;
+        return "bee::aot::coerceNum((" + valExpr + "), " + numTyEnum(t.num) + ")";
+    }
+
     std::string litExpr(LiteralExpr* e) {
         const Value& v = e->value;
         if (v.isString()) return "bee::Value(std::string(" + cstr(v.asString()) + "))";
@@ -415,7 +436,7 @@ private:
     }
 
     std::string assignExpr(AssignExpr* e) {
-        std::string val = emitExpr(e->value.get());
+        std::string val = coerceIfSized(e->declaredType, emitExpr(e->value.get()));
         std::string c = resolve(e->name);
         if (!c.empty()) return "bee::aot::store(" + c + ", (" + val + "))";
         // Assign through the cached global slot (see nameValue). The assignment
@@ -599,6 +620,8 @@ private:
         int savedIndent = indent_;
         indent_ = savedIndent + 1;
         std::string savedThis = curThisCell_;
+        TypeAnn savedRet = curReturnType_;
+        curReturnType_ = fn->returnType;
         pushScope();   // function scope: params + locals are cells
 
         int off = isMethod ? 1 : 0;
@@ -637,8 +660,11 @@ private:
                                    ? emitExpr(fn->defaults[i].get())
                                    : std::string("bee::Value()");
             std::string c = declare(fn->params[i]);
-            emit("auto " + c + " = bee::aot::cell((int)args.size() > " + std::to_string(ai) +
-                 " ? args[" + std::to_string(ai) + "] : (" + dflt + "));");
+            std::string pinit = "(int)args.size() > " + std::to_string(ai) + " ? args[" +
+                                std::to_string(ai) + "] : (" + dflt + ")";
+            if (i < (int)fn->paramTypes.size())   // `fn f(x: i8)` wraps the bound argument
+                pinit = coerceIfSized(fn->paramTypes[i], "(" + pinit + ")");
+            emit("auto " + c + " = bee::aot::cell((" + pinit + "));");
         }
 
         for (auto& st : fn->body) emitStmt(st.get());
@@ -647,6 +673,7 @@ private:
         popScope();
         indent_ = savedIndent;
         curThisCell_ = savedThis;
+        curReturnType_ = savedRet;
         std::string body = popOut(prev);
         return "bee::aot::makeFn(" + cstr(fn->name) +
                ", [=](bee::Interpreter& I, std::vector<bee::Value>& args) -> bee::Value {\n" +
@@ -678,6 +705,7 @@ private:
     void letStmt(LetStmt* s) {
         if (s->isDestructure) { destructureLet(s); return; }
         std::string init = s->initializer ? emitExpr(s->initializer.get()) : std::string("bee::Value()");
+        init = coerceIfSized(s->type, init);   // `let x: i8 = ...` wraps into range
         if (scopes_.back().global) {
             emit("bee::aot::defineIn(" + genv_ + ", " + cstr(s->name) + ", (" + init + "));");
         } else {
@@ -824,7 +852,7 @@ private:
     }
 
     void returnStmt(ReturnStmt* s) {
-        if (s->value) emit("return (" + emitExpr(s->value.get()) + ");");
+        if (s->value) emit("return (" + coerceIfSized(curReturnType_, emitExpr(s->value.get())) + ");");
         else emit("return bee::Value();");
     }
 

@@ -277,6 +277,7 @@ void Resolver::resolveStmt(Stmt* s) {
                 ls->global = (ls->slot < 0);
                 if (ls->isConst) markConst(ls->name);
                 recordType(ls->name, ls->type);
+                if (ls->type.isSizedNum() && curFn_) curFn_->usesSized = true;
             }
             break;
         }
@@ -405,6 +406,13 @@ void Resolver::resolveStmt(Stmt* s) {
 }
 
 void Resolver::resolveFunction(FunctionStmt* fn, bool isMethod, bool hasSuper) {
+    FunctionStmt* savedFn = curFn_;
+    curFn_ = fn;
+    // A sized numeric type anywhere in the signature (or, via the body handlers
+    // below, inside it) makes the VM and JIT decline this function so the
+    // tree-walker's wrapping semantics apply.
+    fn->usesSized = fn->returnType.isSizedNum();
+    for (const auto& t : fn->paramTypes) if (t.isSizedNum()) fn->usesSized = true;
     beginScope(false);
     if (isMethod) declare("this");    // slot 0
     if (hasSuper) declare("@super");  // slot 1
@@ -417,6 +425,7 @@ void Resolver::resolveFunction(FunctionStmt* fn, bool isMethod, bool hasSuper) {
         if (d) resolveExpr(d.get());
     resolveStatements(fn->body);      // params and body share the one frame scope
     fn->frameSlots = endScope();
+    curFn_ = savedFn;
 }
 
 void Resolver::resolveClass(ClassStmt* c) {
@@ -461,6 +470,7 @@ void Resolver::resolveExpr(Expr* e) {
                                          "): cannot assign to const '" + a->name + "'");
             resolveNameUse(a->name, a->depth, a->slot, a->global);
             a->declaredType = declaredTypeOf(a->name);
+            if (a->declaredType.isSizedNum() && curFn_) curFn_->usesSized = true;
             break;
         }
 

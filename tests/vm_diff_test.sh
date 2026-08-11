@@ -520,6 +520,17 @@ for (let i = 1; i < 60000; i = i + 1) { s = s + 100 / (i - 30000) }
 print(s)
 EOF
 
+# Sized numeric types: the VM/JIT decline these functions (usesSized), so both
+# engines run them on the tree-walker and must still agree on the wrapping.
+prog "sized numeric types wrap identically" <<'EOF'
+fn hot(n: i32) -> u8 {
+    let acc: u8 = 0
+    for i in range(n) { acc = acc + 1 }
+    return acc
+}
+print(hot(1000), hot(300), hot(256))
+EOF
+
 echo
 if [ "$fail" -eq 0 ]; then
     echo "all $pass differential checks passed"

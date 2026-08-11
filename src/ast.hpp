@@ -1,6 +1,9 @@
 #pragma once
 #include "value.hpp"
 #include "token.hpp"
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 #include <memory>
 #include <vector>
 #include <string>
@@ -60,13 +63,104 @@ struct TypeAnn {
         }
         return "any";
     }
+    // Coerce a number into a sized numeric type -- the one place all engines
+    // (tree-walker, VM, AOT) agree on, so they produce bit-identical results.
+    // Integers truncate toward zero then wrap two's-complement into range;
+    // floats round to the type's precision. Non-finite -> 0 for integers
+    // (a double->intN cast is otherwise undefined). Bee's numbers are doubles,
+    // so i64/u64 carry only the ~53 bits a double can represent.
+    static double coerce(double x, NumTy t) {
+        switch (t) {
+            case NumTy::Dyn: case NumTy::F64: return x;
+            case NumTy::F32: return (double)(float)x;
+            case NumTy::F16: return f16round(x);
+            default: break;   // integers
+        }
+        if (!std::isfinite(x)) return 0.0;
+        int bits; bool sign;
+        switch (t) {
+            case NumTy::I8:  bits = 8;  sign = true;  break;
+            case NumTy::U8:  bits = 8;  sign = false; break;
+            case NumTy::I16: bits = 16; sign = true;  break;
+            case NumTy::U16: bits = 16; sign = false; break;
+            case NumTy::I32: bits = 32; sign = true;  break;
+            case NumTy::U32: bits = 32; sign = false; break;
+            case NumTy::I64: bits = 64; sign = true;  break;
+            case NumTy::U64: bits = 64; sign = false; break;
+            default: return x;
+        }
+        double m = std::ldexp(1.0, bits);          // 2^bits (exact as a double)
+        double r = std::fmod(std::trunc(x), m);    // (-m, m), toward zero
+        if (r < 0) r += m;                          // [0, m)
+        if (sign && r >= m / 2) r -= m;             // signed range
+        return r;
+    }
+    // Round a double to IEEE-754 binary16 precision (returned as a double).
+    // Self-contained so it matches everywhere; overflow saturates to +/-inf.
+    static double f16round(double x) {
+        float f = (float)x;
+        uint32_t b;
+        std::memcpy(&b, &f, 4);
+        uint32_t sgn = (b >> 16) & 0x8000u;
+        int32_t  exp = (int32_t)((b >> 23) & 0xFF) - 127 + 15;
+        uint32_t man = b & 0x7FFFFFu;
+        float out;
+        if (((b >> 23) & 0xFF) == 0xFF) {           // inf / nan
+            uint32_t h = sgn | 0x7C00u | (man ? 0x200u : 0);
+            return (double)halfToFloat(h);
+        }
+        if (exp >= 0x1F) return (double)halfToFloat(sgn | 0x7C00u);   // overflow -> inf
+        uint32_t h;
+        if (exp <= 0) {                              // subnormal / underflow to 0
+            if (exp < -10) h = sgn;
+            else {
+                man |= 0x800000u;
+                int shift = 14 - exp;
+                uint32_t rounded = (man + (1u << (shift - 1)) - 1 + ((man >> shift) & 1)) >> shift;
+                h = sgn | rounded;
+            }
+        } else {
+            uint32_t mant = man >> 13;
+            uint32_t round = man & 0x1FFFu;
+            h = sgn | ((uint32_t)exp << 10) | mant;
+            if (round > 0x1000u || (round == 0x1000u && (mant & 1))) h++;   // round to nearest even
+        }
+        out = halfToFloat(h);
+        return (double)out;
+    }
+    static float halfToFloat(uint32_t h) {
+        uint32_t sgn = (h & 0x8000u) << 16;
+        uint32_t exp = (h >> 10) & 0x1F;
+        uint32_t man = h & 0x3FFu;
+        uint32_t b;
+        if (exp == 0) {
+            if (man == 0) b = sgn;
+            else {                                   // subnormal
+                exp = 127 - 15 + 1;
+                while (!(man & 0x400u)) { man <<= 1; exp--; }
+                man &= 0x3FFu;
+                b = sgn | (exp << 23) | (man << 13);
+            }
+        } else if (exp == 0x1F) {
+            b = sgn | 0x7F800000u | (man << 13);
+        } else {
+            b = sgn | ((exp - 15 + 127) << 23) | (man << 13);
+        }
+        float f; std::memcpy(&f, &b, 4); return f;
+    }
+
     // Map a sized-numeric type name to its NumTy, or Dyn if not one.
     static NumTy numTyNamed(const std::string& s) {
-        if (s == "i8")  return NumTy::I8;   if (s == "u8")  return NumTy::U8;
-        if (s == "i16") return NumTy::I16;  if (s == "u16") return NumTy::U16;
-        if (s == "i32") return NumTy::I32;  if (s == "u32") return NumTy::U32;
-        if (s == "i64") return NumTy::I64;  if (s == "u64") return NumTy::U64;
-        if (s == "f16") return NumTy::F16;  if (s == "f32") return NumTy::F32;
+        if (s == "i8")  return NumTy::I8;
+        if (s == "u8")  return NumTy::U8;
+        if (s == "i16") return NumTy::I16;
+        if (s == "u16") return NumTy::U16;
+        if (s == "i32") return NumTy::I32;
+        if (s == "u32") return NumTy::U32;
+        if (s == "i64") return NumTy::I64;
+        if (s == "u64") return NumTy::U64;
+        if (s == "f16") return NumTy::F16;
+        if (s == "f32") return NumTy::F32;
         if (s == "f64") return NumTy::F64;
         return NumTy::Dyn;
     }
@@ -327,6 +421,11 @@ struct FunctionStmt : Stmt {
     // True when any parameter or the return is annotated, so the common
     // unannotated case skips the per-call check with a single test.
     bool typed = false;
+    // True when a sized numeric type (i8..u64, f16/f32/f64) appears in the
+    // signature or body. Such a function needs wrapping semantics only the
+    // tree-walker implements, so the register VM and the LLVM JIT decline it
+    // (see the resolver, which sets this). Keeps the three engines in agreement.
+    bool usesSized = false;
     int restParam = -1;             // index of a `...rest` param, or -1
     std::vector<StmtPtr> body;
     // Resolver-filled frame layout: total slots, and where params begin (after

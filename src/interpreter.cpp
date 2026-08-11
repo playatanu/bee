@@ -357,6 +357,14 @@ void Interpreter::checkReturnType(const FunctionStmt& decl, const Value& v, int 
           typeNameOf(v), line);
 }
 
+// Wrap a number into a sized numeric annotation (i8..u64, f16/f32/f64) -- the
+// shared coercion every engine agrees on. A no-op for `num`/non-sized types or
+// a non-number (which checkDeclared/checkParamType would already have rejected).
+Value Interpreter::coerceToType(const TypeAnn& t, const Value& v) {
+    if (t.isSizedNum() && v.isNumber()) return Value(TypeAnn::coerce(v.asNumber(), t.num));
+    return v;
+}
+
 // ---- shapes ---------------------------------------------------------------
 // Shapes live for the process's lifetime: there is one per distinct sequence of
 // field names, which the program text bounds, and instances point at them
@@ -892,6 +900,7 @@ Flow Interpreter::execute(Stmt* stmt, std::shared_ptr<Environment>& env) {
             auto* s = static_cast<LetStmt*>(stmt);
             Value v = s->initializer ? evaluate(s->initializer.get(), env) : Value();
             checkDeclared(s->type, s->name, v, s->line);
+            v = coerceToType(s->type, v);   // `let x: i8 = ...` wraps into range
             if (!s->isDestructure) {
                 if (s->global) env->define(s->name, v);
                 else env->slots[(size_t)s->slot] = v;
@@ -1394,6 +1403,7 @@ Value Interpreter::evaluate(Expr* expr, std::shared_ptr<Environment>& env) {
             // An annotation binds the name for its whole life, not just its
             // initialiser, so an assignment has to satisfy it too.
             checkDeclared(e->declaredType, e->name, v, e->line);
+            v = coerceToType(e->declaredType, v);   // sized types wrap on every write
             if (!e->global) {
                 env->setAt(e->depth, e->slot, v);
             } else {
@@ -1942,7 +1952,8 @@ Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector
     // native code hit something it can't handle (e.g. division by zero); we
     // then fall through to the interpreter, which is safe because the JIT
     // subset has no side effects.
-    if (!fn->boundThis && !fn->definingClass && rest < 0 && provided == np && np <= kMaxJitArgs) {
+    if (!fn->boundThis && !fn->definingClass && rest < 0 && provided == np && np <= kMaxJitArgs &&
+        !decl->usesSized) {   // sized types need wrapping the JIT doesn't do
         // The argument types *are* the guard. Each call classifies what it is
         // actually passing; native code exists per signature, so a call with
         // different types simply finds none and runs interpreted. Numbers pass
@@ -2000,7 +2011,7 @@ Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector
     // Second fast path: a body the register VM could compile runs as bytecode,
     // with its frame in registers rather than an Environment. Exact arity only --
     // defaults and rest parameters stay on the tree-walker.
-    if (rest < 0 && provided == np) {
+    if (rest < 0 && provided == np && !decl->usesSized) {
         if (Chunk* ch = vm.chunkFor(decl)) {
             Value r = vm.run(*this, *ch, fn, args, line);
             if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);
@@ -2026,10 +2037,12 @@ Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector
             frame->slots[(size_t)base + i] = Value(restList);
         } else if (i < provided) {
             checkParamType(*decl, i, args[i], line);
-            frame->slots[(size_t)base + i] = args[i];
+            frame->slots[(size_t)base + i] =
+                i < decl->paramTypes.size() ? coerceToType(decl->paramTypes[i], args[i]) : args[i];
         } else if (i < decl->defaults.size() && decl->defaults[i]) {
             Value d = evaluate(decl->defaults[i].get(), frame);
             checkParamType(*decl, i, d, line);   // a default has to satisfy it too
+            if (i < decl->paramTypes.size()) d = coerceToType(decl->paramTypes[i], d);
             frame->slots[(size_t)base + i] = std::move(d);
         } else {
             error("function '" + functionName(*fn) + "' missing required argument '" +
@@ -2046,7 +2059,7 @@ Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector
             returnValue_ = Value();
             if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);
             checkReturnType(*decl, rv, s->line);
-            return rv;
+            return coerceToType(decl->returnType, rv);   // `-> i8` wraps the result
         }
         // A break/continue that no loop in this function absorbed.
         error(std::string(f == Flow::Break ? "'break'" : "'continue'") +

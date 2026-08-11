@@ -163,10 +163,13 @@ public:
     size_t callDepthLimit() const { return maxCallDepth; }
 
     // Enforce a declared parameter, return, `let` or assignment type; all
-    // no-ops when the thing in question was not annotated.
+    // no-ops when the thing in question was not annotated. Sized numeric types
+    // are coerced (wrapped) separately at the store sites via coerceToType().
     void checkParamType(const FunctionStmt& decl, size_t i, const Value& v, int line);
     void checkReturnType(const FunctionStmt& decl, const Value& v, int line);
     void checkDeclared(const TypeAnn& t, const std::string& name, const Value& v, int line);
+    // Wrap a value into a sized numeric annotation (no-op otherwise).
+    static Value coerceToType(const TypeAnn& t, const Value& v);
 
     // Command-line arguments after the script path (exposed via args()).
     void setScriptArgs(const std::vector<std::string>& a) { scriptArgs = a; }

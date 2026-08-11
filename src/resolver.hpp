@@ -31,6 +31,9 @@ private:
     std::vector<Scope> scopes;
     std::set<std::string> globalConsts;
     std::map<std::string, TypeAnn> globalTypes;
+    // The function currently being resolved (null at top level), so a sized
+    // numeric type seen in its body can flag it for the VM/JIT to decline.
+    FunctionStmt* curFn_ = nullptr;
 
     // A merged scope declares into the enclosing frame instead of getting one of
     // its own. Its names are visible only for its extent, so the enclosing

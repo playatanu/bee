@@ -115,6 +115,14 @@ inline Value& slotRef(Interpreter& I, Environment& env, const char* name, int li
     return *cache;
 }
 
+// Wrap a value into a sized numeric type (i8..u64, f16/f32/f64) at a typed
+// store -- annotated let/assignment/parameter/return. Numbers are coerced with
+// the shared TypeAnn::coerce so the result is identical to the tree-walker;
+// non-numbers pass through (the interpreter would have rejected them earlier).
+inline Value coerceNum(const Value& v, TypeAnn::NumTy t) {
+    return v.isNumber() ? Value(TypeAnn::coerce(v.asNumber(), t)) : v;
+}
+
 // Coerce a range() bound to a double, reporting exactly what the range built-in
 // does when called: the interpreter attaches the call line to a built-in's
 // RuntimeError via I.error(), so the native counting-loop specialisation of

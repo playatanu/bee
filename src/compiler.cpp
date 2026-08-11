@@ -23,6 +23,11 @@ public:
         if (nextReg_ > kMaxOperand) throw CompileBail{};
         line_ = fn->line;
 
+        // A sized-numeric return type needs wrapping the VM doesn't do; the
+        // tree-walker coerces at return, so hand the whole function to it.
+        // (Sized param/let/assign types bail via fromAnnotation below.)
+        if (fn->returnType.isSizedNum()) throw CompileBail{};
+
         // Declared parameters seed the register types. They are checked on
         // entry and on every assignment, so the annotation holds throughout.
         for (size_t i = 0; i < fn->paramTypes.size(); ++i)
@@ -67,6 +72,10 @@ private:
         regType_[r] = t;
     }
     static RT fromAnnotation(const TypeAnn& t) {
+        // Sized numeric types (i8..u64, f16/f32/f64) carry wrapping/rounding
+        // semantics the register VM doesn't implement yet, so abandon the
+        // function and let the tree-walker (which does) run it.
+        if (t.isSizedNum()) throw CompileBail{};
         switch (t.kind) {
             case TypeAnn::Kind::Num:    return RT::Num;
             case TypeAnn::Kind::Bool:   return RT::Bool;

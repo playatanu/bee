@@ -79,6 +79,18 @@ check num_ops      'print(7 / 2, 7 % 3, 2 < 3, 3 <= 3, 5 & 3, 1 << 4)'
 check div_zero     'print(1 / 0)'                             # errors identically
 check mixed_ops    'print("a" + "b", [1] + [2], "hi" * 2)'    # non-numeric fall back
 
+# Sized numeric types (i8..u64, f16/f32/f64): the AOT output must wrap/round
+# exactly as the tree-walker does at every typed store.
+check sized_wrap_u8  $'let a: u8 = 300\nlet b: u8 = 255 + 1\nprint(a, b)'
+check sized_wrap_i8  $'let a: i8 = 200\nlet b: i8 = 127 + 1\nprint(a, b)'
+check sized_assign   $'let x: i32 = 0\nx = 4294967296 + 5\nprint(x)'
+check sized_trunc    $'let s: i8 = 5.9\nlet t: i8 = -5.9\nlet u: u8 = -1\nprint(s, t, u)'
+check sized_param    $'fn w(n: u8) -> u8 { return n }\nprint(w(258), w(-1))'
+check sized_return   $'fn f() -> i16 { return 100000 }\nprint(f())'
+check sized_float    $'let f: f32 = 1.0 / 3.0\nprint(f)'
+check sized_half     $'let h: f16 = 1.0 / 3.0\nlet k: f16 = 65504.0\nprint(h, k)'
+check sized_loop     $'let acc: u8 = 0\nfor i in range(1000) { acc = acc + 1 }\nprint(acc)'
+
 echo
 echo "beec: unresolvable / unsupported imports are refused, not miscompiled"
 check_unsupported missing_module 'import definitely_not_a_real_module_xyz'
