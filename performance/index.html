@@ -12,7 +12,7 @@
         <meta name="author" content="Atanu Debnath">
       
       
-        <link rel="canonical" href="https://beelang-project.github.io/bee/performance/">
+        <link rel="canonical" href="https://playatanu.github.io/bee/performance/">
       
       
         <link rel="prev" href="../editor/">
@@ -63,12 +63,12 @@
   <meta property="og:site_name" content="Bee">
   <meta property="og:title" content="Performance - Bee">
   <meta property="og:description" content="How Bee performs and how its built-in LLVM JIT works - benchmarks, findings, and the optimisation plan.">
-  <meta property="og:image" content="https://beelang-project.github.io/bee/assets/bee.png">
-  <meta property="og:url" content="https://beelang-project.github.io/bee/performance/">
+  <meta property="og:image" content="https://playatanu.github.io/bee/assets/bee.png">
+  <meta property="og:url" content="https://playatanu.github.io/bee/performance/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Performance - Bee">
   <meta name="twitter:description" content="How Bee performs and how its built-in LLVM JIT works - benchmarks, findings, and the optimisation plan.">
-  <meta name="twitter:image" content="https://beelang-project.github.io/bee/assets/bee.png">
+  <meta name="twitter:image" content="https://playatanu.github.io/bee/assets/bee.png">
 
   </head>
   
@@ -211,13 +211,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/beelang-project/bee" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/playatanu/bee" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
   </div>
   <div class="md-source__repository">
-    beelang-project/bee
+    playatanu/bee
   </div>
 </a>
       </div>
@@ -423,13 +423,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/beelang-project/bee" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/playatanu/bee" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
   </div>
   <div class="md-source__repository">
-    beelang-project/bee
+    playatanu/bee
   </div>
 </a>
     </div>
@@ -2037,12 +2037,12 @@ overhead, and they are addressable.)</p>
 <p><code>make test</code> runs 215 checks: 77 language, 30 differential, 5 complexity guards,
 50 hive and 53 beegen.</p>
 <ul>
-<li><a href="https://github.com/beelang-project/bee/blob/main/tests/vm_diff_test.sh"><code>tests/vm_diff_test.sh</code></a> runs every example and 16
+<li><a href="https://github.com/playatanu/bee/blob/main/tests/vm_diff_test.sh"><code>tests/vm_diff_test.sh</code></a> runs every example and 16
   hand-written programs twice - once on the VM, once with <code>BEE_NO_VM=1</code> forcing
   the tree-walker - and requires identical stdout, stderr <strong>and</strong> exit code. So
   error messages, stack traces, <code>finally</code> ordering, per-iteration closure
   capture and uncaught-error exit codes are all covered, not just return values.</li>
-<li><a href="https://github.com/beelang-project/bee/blob/main/tests/perf_guard_test.sh"><code>tests/perf_guard_test.sh</code></a> checks <em>complexity</em>,
+<li><a href="https://github.com/playatanu/bee/blob/main/tests/perf_guard_test.sh"><code>tests/perf_guard_test.sh</code></a> checks <em>complexity</em>,
   not speed, with budgets an order of magnitude loose. It exists because two
   bugs got through everything else:</li>
 <li><strong>String building went quadratic</strong> when function bodies moved to the VM. The
@@ -2091,11 +2091,11 @@ argument for having one.</p>
 </tbody>
 </table>
 <p>Note that even <code>continue</code> is free here - the JIT lowers it to a branch
-(<a href="https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L297"><code>jit_llvm.cpp:297</code></a>).</p>
+(<a href="https://github.com/playatanu/bee/blob/main/src/jit_llvm.cpp#L297"><code>jit_llvm.cpp:297</code></a>).</p>
 <h3 id="but-any-real-code-leaves-the-subset">…but any real code leaves the subset</h3>
 <p>Codegen throws <code>JitBail</code> on the first construct outside the numeric subset
-(<a href="https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L301"><code>jit_llvm.cpp:301</code></a> for statements,
-<a href="https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L412"><code>jit_llvm.cpp:412</code></a> for expressions). That means a
+(<a href="https://github.com/playatanu/bee/blob/main/src/jit_llvm.cpp#L301"><code>jit_llvm.cpp:301</code></a> for statements,
+<a href="https://github.com/playatanu/bee/blob/main/src/jit_llvm.cpp#L412"><code>jit_llvm.cpp:412</code></a> for expressions). That means a
 single <code>xs[i]</code>, string, <code>print</code>, <code>for … in</code>, builtin call, field access, <code>try</code>,
 or <code>match</code> anywhere in the function drops the <strong>entire</strong> function or loop back to
 the tree-walker. Since real programs touch lists, real programs are never
@@ -2190,17 +2190,17 @@ static types, does the loop iteration in 1-2 ns.</p>
 <hr />
 <h2 id="root-causes">Root causes</h2>
 <h3 id="1-control-flow-is-implemented-with-c-exceptions">1. Control flow is implemented with C++ exceptions</h3>
-<p><a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L844"><code>interpreter.cpp:844</code></a>,
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L878"><code>:878</code></a>,
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L880"><code>:880</code></a>:</p>
+<p><a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L844"><code>interpreter.cpp:844</code></a>,
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L878"><code>:878</code></a>,
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L880"><code>:880</code></a>:</p>
 <div class="language-cpp highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">case</span><span class="w"> </span><span class="no">Stmt</span><span class="o">::</span><span class="no">Kind</span><span class="o">::</span><span class="no">Return</span><span class="p">:</span><span class="w">   </span><span class="k">throw</span><span class="w"> </span><span class="n">ReturnSignal</span><span class="p">{</span><span class="n">v</span><span class="p">};</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">case</span><span class="w"> </span><span class="no">Stmt</span><span class="o">::</span><span class="no">Kind</span><span class="o">::</span><span class="no">Break</span><span class="p">:</span><span class="w">    </span><span class="k">throw</span><span class="w"> </span><span class="n">BreakSignal</span><span class="p">{};</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">case</span><span class="w"> </span><span class="no">Stmt</span><span class="o">::</span><span class="no">Kind</span><span class="o">::</span><span class="no">Continue</span><span class="p">:</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="n">ContinueSignal</span><span class="p">{};</span>
 </span></code></pre></div>
-<p>caught by every loop (<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L772"><code>:772</code></a>,
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L788"><code>:788</code></a>,
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L806"><code>:806</code></a>) and by <code>callFunction</code>
-(<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1755"><code>:1755</code></a>).</p>
+<p>caught by every loop (<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L772"><code>:772</code></a>,
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L788"><code>:788</code></a>,
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L806"><code>:806</code></a>) and by <code>callFunction</code>
+(<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1755"><code>:1755</code></a>).</p>
 <p>C++ exceptions are "zero-cost" only when <em>not</em> thrown. Each throw walks the
 unwind tables, calls <code>_Unwind_RaiseException</code>, runs the personality routine, and
 does an RTTI type match - measured at <strong>2.4-3.8 µs</strong>. These are not exceptional
@@ -2210,46 +2210,46 @@ of the loop that uses it.</p>
 A condition in a loop is usually there to <code>continue</code> or <code>break</code>, and every helper
 function called from that loop <code>return</code>s.</p>
 <h3 id="2-a-heap-environment-per-scope-entry">2. A heap <code>Environment</code> per scope entry</h3>
-<p><a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L753"><code>:753</code></a> (block),
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L783"><code>:783</code></a> (for),
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L800"><code>:800</code></a> (for-in),
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1733"><code>:1733</code></a> (call frame) all do:</p>
+<p><a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L753"><code>:753</code></a> (block),
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L783"><code>:783</code></a> (for),
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L800"><code>:800</code></a> (for-in),
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1733"><code>:1733</code></a> (call frame) all do:</p>
 <div class="language-cpp highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">auto</span><span class="w"> </span><span class="n">child</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_shared</span><span class="o">&lt;</span><span class="n">Environment</span><span class="o">&gt;</span><span class="p">(</span><span class="n">env</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">slotCount</span><span class="p">);</span>
 </span></code></pre></div>
 <p>That is two allocations - the shared control block and the <code>slots</code> vector - on
 every block entry and every call, plus a <code>std::map&lt;std::string, Value&gt; values</code>
-member (<a href="https://github.com/beelang-project/bee/blob/main/src/environment.hpp#L28"><code>environment.hpp:28</code></a>) that a function frame
+member (<a href="https://github.com/playatanu/bee/blob/main/src/environment.hpp#L28"><code>environment.hpp:28</code></a>) that a function frame
 never uses. Hence the 62 ns cost of a single <code>let</code> in a loop body.</p>
 <h3 id="3-value-representation">3. Value representation</h3>
-<p><code>Value</code> (<a href="https://github.com/beelang-project/bee/blob/main/src/value.hpp#L116"><code>value.hpp:116</code></a>) is a 24-byte <code>std::variant</code>
+<p><code>Value</code> (<a href="https://github.com/playatanu/bee/blob/main/src/value.hpp#L116"><code>value.hpp:116</code></a>) is a 24-byte <code>std::variant</code>
 over eight <code>shared_ptr</code> alternatives. Consequences on every operation:</p>
 <ul>
 <li><code>evaluate()</code> returns <code>Value</code> <strong>by value</strong>; the variant copy constructor is a
   switch over the active index, not a memcpy.</li>
 <li><code>asList()</code> / <code>asDict()</code> / <code>asString()</code> return the <code>shared_ptr</code> <strong>by value</strong>
-  (<a href="https://github.com/beelang-project/bee/blob/main/src/value.hpp#L167-L174"><code>value.hpp:167-174</code></a>), so a single <code>xs[i]</code> does
+  (<a href="https://github.com/playatanu/bee/blob/main/src/value.hpp#L167-L174"><code>value.hpp:167-174</code></a>), so a single <code>xs[i]</code> does
   roughly four atomic refcount read-modify-writes.</li>
 <li>The refcounts are atomic even though Bee has a GIL
-  (<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.hpp#L115"><code>interpreter.hpp:115</code></a>) - the synchronisation is
+  (<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.hpp#L115"><code>interpreter.hpp:115</code></a>) - the synchronisation is
   paid for and never used.</li>
 </ul>
 <h3 id="4-per-call-and-per-property-overhead">4. Per-call and per-property overhead</h3>
 <ul>
-<li><a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1684"><code>callFunction:1684</code></a> builds a <code>std::string name</code>
+<li><a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1684"><code>callFunction:1684</code></a> builds a <code>std::string name</code>
   and copies it into a <code>CallFrame</code> on <strong>every</strong> call, for a stack trace that is
   only read if an error occurs.</li>
 <li><code>callFunction</code> takes <code>std::shared_ptr&lt;Function&gt;</code> <strong>by value</strong> - an atomic
   refcount pair per call.</li>
-<li><code>evalCall</code> (<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1629"><code>:1629</code></a>) heap-allocates a
+<li><code>evalCall</code> (<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1629"><code>:1629</code></a>) heap-allocates a
   <code>std::vector&lt;Value&gt; args</code> per call.</li>
-<li><code>getProperty</code> (<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1779"><code>:1779</code></a>) dispatches type methods
+<li><code>getProperty</code> (<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1779"><code>:1779</code></a>) dispatches type methods
   through a chain of 26 <code>name == "…"</code> string comparisons.</li>
 </ul>
 <hr />
 <h2 id="improvement-plan">Improvement plan</h2>
 <h3 id="priority-1-replace-exception-based-control-flow-with-status-returns-done">Priority 1 - Replace exception-based control flow with status returns (done)</h3>
 <p><strong>Measured: 14.6× on <code>continue</code>-heavy loops, 10.7× on call-heavy code, 2.1× on a
-plain loop. Contained to <a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp"><code>interpreter.cpp</code></a>. No
+plain loop. Contained to <a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp"><code>interpreter.cpp</code></a>. No
 language-visible change.</strong></p>
 <p><code>execute()</code> returns a signal instead of throwing one:</p>
 <div class="language-cpp highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">Flow</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Normal</span><span class="p">,</span><span class="w"> </span><span class="n">Break</span><span class="p">,</span><span class="w"> </span><span class="n">Continue</span><span class="p">,</span><span class="w"> </span><span class="n">Return</span><span class="w"> </span><span class="p">};</span>
@@ -2319,8 +2319,8 @@ callback - are covered by the new cases described in "Results so far".</p>
 <h3 id="priority-2-stop-allocating-a-scope-per-block-and-per-call-done">Priority 2 - Stop allocating a scope per block and per call (done)</h3>
 <p><strong>Measured: 6.4× on a loop whose body declares a local, 11.3× on a loop calling
 a function with locals.</strong></p>
-<p>Two changes, both in <a href="https://github.com/beelang-project/bee/blob/main/src/resolver.cpp"><code>resolver.cpp</code></a> and
-<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp"><code>interpreter.cpp</code></a>:</p>
+<p>Two changes, both in <a href="https://github.com/playatanu/bee/blob/main/src/resolver.cpp"><code>resolver.cpp</code></a> and
+<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp"><code>interpreter.cpp</code></a>:</p>
 <ul>
 <li><strong>Scope merging.</strong> A block or loop that declares names used to allocate an
   <code>Environment</code> on entry - once per <em>iteration</em> for a loop body. <code>Resolver::canMerge()</code>
@@ -2350,13 +2350,13 @@ of it.</strong></p>
 resolver's frame slots, so the register allocation was already done - the
 compiler only allocates temporaries above the locals, on a stack discipline.</p>
 <ul>
-<li><a href="https://github.com/beelang-project/bee/blob/main/src/chunk.hpp"><code>chunk.hpp</code></a> - 8-byte three-operand instructions, and the
+<li><a href="https://github.com/playatanu/bee/blob/main/src/chunk.hpp"><code>chunk.hpp</code></a> - 8-byte three-operand instructions, and the
   opcode list as an X-macro so the enum and the VM's jump table are generated
   from one source and cannot drift.</li>
-<li><a href="https://github.com/beelang-project/bee/blob/main/src/compiler.cpp"><code>compiler.cpp</code></a> - AST to bytecode. Declines a function it
+<li><a href="https://github.com/playatanu/bee/blob/main/src/compiler.cpp"><code>compiler.cpp</code></a> - AST to bytecode. Declines a function it
   cannot fully compile (nested function or class, <code>try</code>, <code>import</code>,
   destructuring, spread), which then runs on the tree-walker as before.</li>
-<li><a href="https://github.com/beelang-project/bee/blob/main/src/vm.cpp"><code>vm.cpp</code></a> - computed-goto dispatch (<code>&amp;&amp;label</code> / <code>goto *</code>), so
+<li><a href="https://github.com/playatanu/bee/blob/main/src/vm.cpp"><code>vm.cpp</code></a> - computed-goto dispatch (<code>&amp;&amp;label</code> / <code>goto *</code>), so
   each opcode ends with its own indirect branch and its own branch-prediction
   history rather than every opcode sharing the one at the top of a switch.</li>
 </ul>
@@ -2421,7 +2421,7 @@ opcode, the <code>Value</code> copy is a visible share of what is left: <code>st
 copy constructor is a jump table, and every list, dict or string copy is a pair
 of atomic refcount operations that the GIL already makes unnecessary.</p>
 <p>The catch, and the reason this is its own piece of work: <code>Value</code> is part of the
-<strong>public native-module ABI</strong> (<a href="https://github.com/beelang-project/bee/blob/main/src/bee_native.hpp"><code>bee_native.hpp</code></a>). Changing
+<strong>public native-module ABI</strong> (<a href="https://github.com/playatanu/bee/blob/main/src/bee_native.hpp"><code>bee_native.hpp</code></a>). Changing
 its layout breaks every module compiled against 0.3.1, so it needs a
 <code>BEE_NATIVE_ABI</code> bump and a rebuild of anything that ships a <code>.so</code>. Plan for
 that explicitly rather than discovering it.</p>
@@ -2672,16 +2672,16 @@ Priority 4:</p>
       back a reference instead of a <code>shared_ptr</code> copy, and <code>xs[i]</code> and
       <code>xs[i] = v</code> use them - removing two atomic refcount operations per index.</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Method dispatch:</strong> replace the <code>name == "…"</code> chain in <code>getProperty</code>
-      (<a href="https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1779"><code>:1779</code></a>) with a per-type hash table, and
+      (<a href="https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1779"><code>:1779</code></a>) with a per-type hash table, and
       cache the resolved method on the <code>GetExpr</code> AST node (an inline cache, like
-      the one already used for globals in <a href="https://github.com/beelang-project/bee/blob/main/src/ast.hpp#L51"><code>ast.hpp:51</code></a>).</li>
+      the one already used for globals in <a href="https://github.com/playatanu/bee/blob/main/src/ast.hpp#L51"><code>ast.hpp:51</code></a>).</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong><code>evalCall</code>:</strong> use a small-buffer argument vector, or push arguments
       straight onto the value stack from Priority 2, instead of a fresh
       <code>std::vector</code> per call.</li>
 <li><strong><code>ForIn</code> over a list</strong> copies each element into the loop slot; for large lists
   this is a <code>Value</code> copy (and a refcount pair) per element that a reference could
   avoid.</li>
-<li><strong>Dicts</strong> are <code>std::map</code> (<a href="https://github.com/beelang-project/bee/blob/main/src/value.hpp#L20"><code>value.hpp:20</code></a>) - a red-black
+<li><strong>Dicts</strong> are <code>std::map</code> (<a href="https://github.com/playatanu/bee/blob/main/src/value.hpp#L20"><code>value.hpp:20</code></a>) - a red-black
   tree with a node allocation per entry and <code>std::string</code> comparisons per lookup.
   An open-addressing hash map with interned keys is both faster and smaller.</li>
 </ul>
@@ -2869,7 +2869,7 @@ indexing written inline:</p>
     
     
     
-    <a href="https://github.com/beelang-project/bee" target="_blank" rel="noopener" title="Bee on GitHub" class="md-social__link">
+    <a href="https://github.com/playatanu/bee" target="_blank" rel="noopener" title="Bee on GitHub" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
     </a>
   
