@@ -6,33 +6,33 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The complete Bee language reference.">
+        <meta name="description" content="The Bee programming language: a small, friendly, dynamically-typed language with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings, and first-class VS Code support.">
       
       
         <meta name="author" content="Atanu Debnath">
       
       
-        <link rel="canonical" href="https://playatanu.github.io/bee/language/">
+        <link rel="canonical" href="https://playatanu.github.io/bee/language/numeric-types/">
       
       
-        <link rel="prev" href="../download/">
+        <link rel="prev" href="../type-annotations/">
       
       
-        <link rel="next" href="comments/">
+        <link rel="next" href="../classes/">
       
       
         
       
       
-      <link rel="icon" href="../assets/bee.png">
+      <link rel="icon" href="../../assets/bee.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
-    <title>Overview - Bee</title>
+    <title>Sized numeric types - Bee</title>
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -61,13 +61,13 @@
     <meta name="keywords" content="Bee, beelang, bee language, scripting language, programming language, LLVM JIT, hive package manager, VS Code">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bee">
-  <meta property="og:title" content="Overview - Bee">
-  <meta property="og:description" content="The complete Bee language reference.">
+  <meta property="og:title" content="Sized numeric types - Bee">
+  <meta property="og:description" content="The Bee programming language: a small, friendly, dynamically-typed language with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings, and first-class VS Code support.">
   <meta property="og:image" content="https://playatanu.github.io/bee/assets/bee.png">
-  <meta property="og:url" content="https://playatanu.github.io/bee/language/">
+  <meta property="og:url" content="https://playatanu.github.io/bee/language/numeric-types/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Overview - Bee">
-  <meta name="twitter:description" content="The complete Bee language reference.">
+  <meta name="twitter:title" content="Sized numeric types - Bee">
+  <meta name="twitter:description" content="The Bee programming language: a small, friendly, dynamically-typed language with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings, and first-class VS Code support.">
   <meta name="twitter:image" content="https://playatanu.github.io/bee/assets/bee.png">
 
   </head>
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#language-guide" class="md-skip">
+        <a href="#sized-numeric-types" class="md-skip">
           Skip to content
         </a>
       
@@ -105,9 +105,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Bee" class="md-header__button md-logo" aria-label="Bee" data-md-component="logo">
+    <a href="../.." title="Bee" class="md-header__button md-logo" aria-label="Bee" data-md-component="logo">
       
-  <img src="../assets/bee.png" alt="logo">
+  <img src="../../assets/bee.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -124,7 +124,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Sized numeric types
             
           </span>
         </div>
@@ -236,7 +236,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -255,7 +255,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../getting-started/" class="md-tabs__link">
+      <a href="../../getting-started/" class="md-tabs__link">
         
   
   
@@ -274,7 +274,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../download/" class="md-tabs__link">
+      <a href="../../download/" class="md-tabs__link">
         
   
   
@@ -297,7 +297,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -315,7 +315,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../compile/" class="md-tabs__link">
+      <a href="../../compile/" class="md-tabs__link">
         
   
   
@@ -336,7 +336,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../hive/" class="md-tabs__link">
+        <a href="../../hive/" class="md-tabs__link">
           
   
   
@@ -354,7 +354,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../editor/" class="md-tabs__link">
+      <a href="../../editor/" class="md-tabs__link">
         
   
   
@@ -375,7 +375,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../performance/" class="md-tabs__link">
+        <a href="../../performance/" class="md-tabs__link">
           
   
   
@@ -415,9 +415,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Bee" class="md-nav__button md-logo" aria-label="Bee" data-md-component="logo">
+    <a href="../.." title="Bee" class="md-nav__button md-logo" aria-label="Bee" data-md-component="logo">
       
-  <img src="../assets/bee.png" alt="logo">
+  <img src="../../assets/bee.png" alt="logo">
 
     </a>
     Bee
@@ -444,7 +444,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -471,7 +471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         
   
   
@@ -498,7 +498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../download/" class="md-nav__link">
+      <a href="../../download/" class="md-nav__link">
         
   
   
@@ -579,19 +579,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -607,7 +598,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -620,7 +610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="comments/" class="md-nav__link">
+      <a href="../comments/" class="md-nav__link">
         
   
   
@@ -648,7 +638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="values/" class="md-nav__link">
+      <a href="../values/" class="md-nav__link">
         
   
   
@@ -676,7 +666,7 @@
   
   
     <li class="md-nav__item">
-      <a href="variables/" class="md-nav__link">
+      <a href="../variables/" class="md-nav__link">
         
   
   
@@ -704,7 +694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="operators/" class="md-nav__link">
+      <a href="../operators/" class="md-nav__link">
         
   
   
@@ -732,7 +722,7 @@
   
   
     <li class="md-nav__item">
-      <a href="truthiness/" class="md-nav__link">
+      <a href="../truthiness/" class="md-nav__link">
         
   
   
@@ -760,7 +750,7 @@
   
   
     <li class="md-nav__item">
-      <a href="strings/" class="md-nav__link">
+      <a href="../strings/" class="md-nav__link">
         
   
   
@@ -788,7 +778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="lists/" class="md-nav__link">
+      <a href="../lists/" class="md-nav__link">
         
   
   
@@ -816,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="dicts/" class="md-nav__link">
+      <a href="../dicts/" class="md-nav__link">
         
   
   
@@ -844,7 +834,7 @@
   
   
     <li class="md-nav__item">
-      <a href="control-flow/" class="md-nav__link">
+      <a href="../control-flow/" class="md-nav__link">
         
   
   
@@ -872,7 +862,7 @@
   
   
     <li class="md-nav__item">
-      <a href="functions/" class="md-nav__link">
+      <a href="../functions/" class="md-nav__link">
         
   
   
@@ -900,7 +890,7 @@
   
   
     <li class="md-nav__item">
-      <a href="type-annotations/" class="md-nav__link">
+      <a href="../type-annotations/" class="md-nav__link">
         
   
   
@@ -925,10 +915,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="numeric-types/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sized numeric types
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -944,6 +961,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-an-annotation-applies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where an annotation applies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identical-everywhere-and-fast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identical everywhere, and fast
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-and-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes and limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -956,7 +1037,7 @@
   
   
     <li class="md-nav__item">
-      <a href="classes/" class="md-nav__link">
+      <a href="../classes/" class="md-nav__link">
         
   
   
@@ -984,7 +1065,7 @@
   
   
     <li class="md-nav__item">
-      <a href="modules/" class="md-nav__link">
+      <a href="../modules/" class="md-nav__link">
         
   
   
@@ -1012,7 +1093,7 @@
   
   
     <li class="md-nav__item">
-      <a href="error-handling/" class="md-nav__link">
+      <a href="../error-handling/" class="md-nav__link">
         
   
   
@@ -1040,7 +1121,7 @@
   
   
     <li class="md-nav__item">
-      <a href="builtin-functions/" class="md-nav__link">
+      <a href="../builtin-functions/" class="md-nav__link">
         
   
   
@@ -1068,7 +1149,7 @@
   
   
     <li class="md-nav__item">
-      <a href="system-library/" class="md-nav__link">
+      <a href="../system-library/" class="md-nav__link">
         
   
   
@@ -1096,7 +1177,7 @@
   
   
     <li class="md-nav__item">
-      <a href="threads/" class="md-nav__link">
+      <a href="../threads/" class="md-nav__link">
         
   
   
@@ -1124,7 +1205,7 @@
   
   
     <li class="md-nav__item">
-      <a href="buffers/" class="md-nav__link">
+      <a href="../buffers/" class="md-nav__link">
         
   
   
@@ -1152,7 +1233,7 @@
   
   
     <li class="md-nav__item">
-      <a href="type-methods/" class="md-nav__link">
+      <a href="../type-methods/" class="md-nav__link">
         
   
   
@@ -1180,7 +1261,7 @@
   
   
     <li class="md-nav__item">
-      <a href="repl/" class="md-nav__link">
+      <a href="../repl/" class="md-nav__link">
         
   
   
@@ -1208,7 +1289,7 @@
   
   
     <li class="md-nav__item">
-      <a href="runtime-errors/" class="md-nav__link">
+      <a href="../runtime-errors/" class="md-nav__link">
         
   
   
@@ -1236,7 +1317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="editor-support/" class="md-nav__link">
+      <a href="../editor-support/" class="md-nav__link">
         
   
   
@@ -1264,7 +1345,7 @@
   
   
     <li class="md-nav__item">
-      <a href="complete-example/" class="md-nav__link">
+      <a href="../complete-example/" class="md-nav__link">
         
   
   
@@ -1299,7 +1380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../compile/" class="md-nav__link">
+      <a href="../../compile/" class="md-nav__link">
         
   
   
@@ -1378,7 +1459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hive/" class="md-nav__link">
+      <a href="../../hive/" class="md-nav__link">
         
   
   
@@ -1406,7 +1487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bindings/" class="md-nav__link">
+      <a href="../../bindings/" class="md-nav__link">
         
   
   
@@ -1441,7 +1522,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../editor/" class="md-nav__link">
+      <a href="../../editor/" class="md-nav__link">
         
   
   
@@ -1520,7 +1601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../performance/" class="md-nav__link">
         
   
   
@@ -1548,7 +1629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -1596,6 +1677,58 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The types
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-an-annotation-applies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where an annotation applies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identical-everywhere-and-fast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identical everywhere, and fast
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-and-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes and limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1614,19 +1747,91 @@
   
 
 
-<h1 id="language-guide">Language guide</h1>
-<p>The complete reference for <strong>Bee</strong>, one topic per page. New to the
-language? Start with <a href="../getting-started/">Get started</a>.</p>
-<p>Use the navigation to jump to a topic.</p>
+<h1 id="sized-numeric-types">Sized numeric types</h1>
+<p>Bee's numbers are dynamic — every number is a 64-bit float, and <code>type(x)</code> always
+reports <code>number</code>. On top of that, a binding can carry a <strong>sized numeric type</strong>:
+a promise about its width and how it wraps or rounds. Annotations are optional;
+a program with none behaves exactly as before.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>let a: u8 = 300        # -&gt; 44   (wraps into 0..255)
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>let b: i8 = 127 + 1    # -&gt; -128 (two&#39;s-complement overflow)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>let f: f32 = 1.0 / 3.0 # -&gt; 0.333333343267441 (single precision)
+</span></code></pre></div>
+<h2 id="the-types">The types</h2>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Types</th>
+<th>Range / precision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Signed</td>
+<td><code>i8</code> <code>i16</code> <code>i32</code> <code>i64</code></td>
+<td>two's-complement, e.g. <code>i8</code> is −128…127</td>
+</tr>
+<tr>
+<td>Unsigned</td>
+<td><code>u8</code> <code>u16</code> <code>u32</code> <code>u64</code></td>
+<td>e.g. <code>u8</code> is 0…255</td>
+</tr>
+<tr>
+<td>Float</td>
+<td><code>f16</code> <code>f32</code> <code>f64</code></td>
+<td>half / single / double precision</td>
+</tr>
+</tbody>
+</table>
+<p><code>num</code> remains the plain dynamic number. These names match the element types a
+<a href="../buffers/">buffer</a> can hold.</p>
+<h2 id="where-an-annotation-applies">Where an annotation applies</h2>
+<p>An annotation is a <a href="../type-annotations/">type annotation</a>, so the width is
+enforced wherever a value <strong>enters</strong> the binding — a <code>let</code>, an assignment, a
+parameter, or a return — and only there:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>let x: i16 = 0             # a typed variable
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>fn scale(n: u8) -&gt; u8 {    # a typed parameter and return
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    return n * 2           # coerced to u8 on return
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>}
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>x = 40000                  # coerced on every assignment, not just the first
+</span></code></pre></div>
+<p>At each of those points the value is <strong>coerced</strong> into the type:</p>
+<ul>
+<li><strong>Integers</strong> truncate toward zero, then wrap two's-complement into range:
+  <code>u8(300)</code> → <code>44</code>, <code>i8(128)</code> → <code>-128</code>, <code>u8(-1)</code> → <code>255</code>, <code>i32(9.9)</code> → <code>9</code>.</li>
+<li><strong>Floats</strong> round to the type's precision. <code>f32</code>/<code>f16</code> drop the extra bits a
+  double carries; <code>f64</code> is unchanged.</li>
+</ul>
+<p>Everything between those points is ordinary double arithmetic — only the value
+that lands in the typed binding is coerced:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>let acc: u8 = 250
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>for i in range(10) { acc = acc + 1 }   # each store wraps
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>print(acc)                             # -&gt; 4
+</span></code></pre></div>
+<h2 id="identical-everywhere-and-fast">Identical everywhere, and fast</h2>
+<p>The interpreter, the register VM, and the <code>beec</code> AOT compiler produce the same
+result for a typed program. The annotation is also a compilation hint: when
+<code>beec</code> compiles a program, a sized local that isn't captured by a closure
+becomes a native machine value (<code>int32_t</code>, <code>double</code>, …) with native arithmetic
+and no boxing, so a typed hot loop runs as fast as the untyped version and
+integer wrapping is free.</p>
+<h2 id="notes-and-limits">Notes and limits</h2>
+<ul>
+<li>Values are still doubles, so <code>type(x)</code> is <code>number</code> and a typed value passed to
+  an unannotated function is just a number.</li>
+<li><code>i64</code>/<code>u64</code> carry only the ~53 bits a double represents exactly, and a single
+  expression whose intermediate integer result exceeds 2⁶³ falls back to a
+  defined modular reduction rather than native wrapping. Neither affects
+  ordinary code.</li>
+<li>A non-number assigned to a sized binding is a type error, reported like any
+  other annotation mismatch.</li>
+</ul>
 
 
 
 
 
 
-
-  
-  
 
 
 
@@ -1658,7 +1863,7 @@ language? Start with <a href="../getting-started/">Get started</a>.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../download/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Download">
+          <a href="../type-annotations/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Type annotations">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1668,20 +1873,20 @@ language? Start with <a href="../getting-started/">Get started</a>.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Download
+                Type annotations
               </div>
             </div>
           </a>
         
         
           
-          <a href="comments/" class="md-footer__link md-footer__link--next" aria-label="Next: Comments">
+          <a href="../classes/" class="md-footer__link md-footer__link--next" aria-label="Next: Classes &amp; inheritance">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Comments
+                Classes & inheritance
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1732,10 +1937,10 @@ language? Start with <a href="../getting-started/">Get started</a>.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

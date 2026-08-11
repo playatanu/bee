@@ -6,33 +6,33 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The complete Bee language reference.">
+        <meta name="description" content="The Bee programming language: a small, friendly, dynamically-typed language with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings, and first-class VS Code support.">
       
       
         <meta name="author" content="Atanu Debnath">
       
       
-        <link rel="canonical" href="https://playatanu.github.io/bee/language/">
+        <link rel="canonical" href="https://playatanu.github.io/bee/language/operators/">
       
       
-        <link rel="prev" href="../download/">
+        <link rel="prev" href="../variables/">
       
       
-        <link rel="next" href="comments/">
+        <link rel="next" href="../truthiness/">
       
       
         
       
       
-      <link rel="icon" href="../assets/bee.png">
+      <link rel="icon" href="../../assets/bee.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
-    <title>Overview - Bee</title>
+    <title>Operators - Bee</title>
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -61,13 +61,13 @@
     <meta name="keywords" content="Bee, beelang, bee language, scripting language, programming language, LLVM JIT, hive package manager, VS Code">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bee">
-  <meta property="og:title" content="Overview - Bee">
-  <meta property="og:description" content="The complete Bee language reference.">
+  <meta property="og:title" content="Operators - Bee">
+  <meta property="og:description" content="The Bee programming language: a small, friendly, dynamically-typed language with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings, and first-class VS Code support.">
   <meta property="og:image" content="https://playatanu.github.io/bee/assets/bee.png">
-  <meta property="og:url" content="https://playatanu.github.io/bee/language/">
+  <meta property="og:url" content="https://playatanu.github.io/bee/language/operators/">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Overview - Bee">
-  <meta name="twitter:description" content="The complete Bee language reference.">
+  <meta name="twitter:title" content="Operators - Bee">
+  <meta name="twitter:description" content="The Bee programming language: a small, friendly, dynamically-typed language with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings, and first-class VS Code support.">
   <meta name="twitter:image" content="https://playatanu.github.io/bee/assets/bee.png">
 
   </head>
@@ -89,7 +89,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#language-guide" class="md-skip">
+        <a href="#operators" class="md-skip">
           Skip to content
         </a>
       
@@ -105,9 +105,9 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Bee" class="md-header__button md-logo" aria-label="Bee" data-md-component="logo">
+    <a href="../.." title="Bee" class="md-header__button md-logo" aria-label="Bee" data-md-component="logo">
       
-  <img src="../assets/bee.png" alt="logo">
+  <img src="../../assets/bee.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -124,7 +124,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Operators
             
           </span>
         </div>
@@ -236,7 +236,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         
   
   
@@ -255,7 +255,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../getting-started/" class="md-tabs__link">
+      <a href="../../getting-started/" class="md-tabs__link">
         
   
   
@@ -274,7 +274,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../download/" class="md-tabs__link">
+      <a href="../../download/" class="md-tabs__link">
         
   
   
@@ -297,7 +297,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -315,7 +315,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../compile/" class="md-tabs__link">
+      <a href="../../compile/" class="md-tabs__link">
         
   
   
@@ -336,7 +336,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../hive/" class="md-tabs__link">
+        <a href="../../hive/" class="md-tabs__link">
           
   
   
@@ -354,7 +354,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../editor/" class="md-tabs__link">
+      <a href="../../editor/" class="md-tabs__link">
         
   
   
@@ -375,7 +375,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../performance/" class="md-tabs__link">
+        <a href="../../performance/" class="md-tabs__link">
           
   
   
@@ -415,9 +415,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Bee" class="md-nav__button md-logo" aria-label="Bee" data-md-component="logo">
+    <a href="../.." title="Bee" class="md-nav__button md-logo" aria-label="Bee" data-md-component="logo">
       
-  <img src="../assets/bee.png" alt="logo">
+  <img src="../../assets/bee.png" alt="logo">
 
     </a>
     Bee
@@ -444,7 +444,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -471,7 +471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         
   
   
@@ -498,7 +498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../download/" class="md-nav__link">
+      <a href="../../download/" class="md-nav__link">
         
   
   
@@ -579,19 +579,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -607,7 +598,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -620,7 +610,7 @@
   
   
     <li class="md-nav__item">
-      <a href="comments/" class="md-nav__link">
+      <a href="../comments/" class="md-nav__link">
         
   
   
@@ -648,7 +638,7 @@
   
   
     <li class="md-nav__item">
-      <a href="values/" class="md-nav__link">
+      <a href="../values/" class="md-nav__link">
         
   
   
@@ -676,7 +666,7 @@
   
   
     <li class="md-nav__item">
-      <a href="variables/" class="md-nav__link">
+      <a href="../variables/" class="md-nav__link">
         
   
   
@@ -701,10 +691,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="operators/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -720,6 +719,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -732,7 +732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="truthiness/" class="md-nav__link">
+      <a href="../truthiness/" class="md-nav__link">
         
   
   
@@ -760,7 +760,7 @@
   
   
     <li class="md-nav__item">
-      <a href="strings/" class="md-nav__link">
+      <a href="../strings/" class="md-nav__link">
         
   
   
@@ -788,7 +788,7 @@
   
   
     <li class="md-nav__item">
-      <a href="lists/" class="md-nav__link">
+      <a href="../lists/" class="md-nav__link">
         
   
   
@@ -816,7 +816,7 @@
   
   
     <li class="md-nav__item">
-      <a href="dicts/" class="md-nav__link">
+      <a href="../dicts/" class="md-nav__link">
         
   
   
@@ -844,7 +844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="control-flow/" class="md-nav__link">
+      <a href="../control-flow/" class="md-nav__link">
         
   
   
@@ -872,7 +872,7 @@
   
   
     <li class="md-nav__item">
-      <a href="functions/" class="md-nav__link">
+      <a href="../functions/" class="md-nav__link">
         
   
   
@@ -900,7 +900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="type-annotations/" class="md-nav__link">
+      <a href="../type-annotations/" class="md-nav__link">
         
   
   
@@ -928,7 +928,7 @@
   
   
     <li class="md-nav__item">
-      <a href="numeric-types/" class="md-nav__link">
+      <a href="../numeric-types/" class="md-nav__link">
         
   
   
@@ -956,7 +956,7 @@
   
   
     <li class="md-nav__item">
-      <a href="classes/" class="md-nav__link">
+      <a href="../classes/" class="md-nav__link">
         
   
   
@@ -984,7 +984,7 @@
   
   
     <li class="md-nav__item">
-      <a href="modules/" class="md-nav__link">
+      <a href="../modules/" class="md-nav__link">
         
   
   
@@ -1012,7 +1012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="error-handling/" class="md-nav__link">
+      <a href="../error-handling/" class="md-nav__link">
         
   
   
@@ -1040,7 +1040,7 @@
   
   
     <li class="md-nav__item">
-      <a href="builtin-functions/" class="md-nav__link">
+      <a href="../builtin-functions/" class="md-nav__link">
         
   
   
@@ -1068,7 +1068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="system-library/" class="md-nav__link">
+      <a href="../system-library/" class="md-nav__link">
         
   
   
@@ -1096,7 +1096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="threads/" class="md-nav__link">
+      <a href="../threads/" class="md-nav__link">
         
   
   
@@ -1124,7 +1124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="buffers/" class="md-nav__link">
+      <a href="../buffers/" class="md-nav__link">
         
   
   
@@ -1152,7 +1152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="type-methods/" class="md-nav__link">
+      <a href="../type-methods/" class="md-nav__link">
         
   
   
@@ -1180,7 +1180,7 @@
   
   
     <li class="md-nav__item">
-      <a href="repl/" class="md-nav__link">
+      <a href="../repl/" class="md-nav__link">
         
   
   
@@ -1208,7 +1208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="runtime-errors/" class="md-nav__link">
+      <a href="../runtime-errors/" class="md-nav__link">
         
   
   
@@ -1236,7 +1236,7 @@
   
   
     <li class="md-nav__item">
-      <a href="editor-support/" class="md-nav__link">
+      <a href="../editor-support/" class="md-nav__link">
         
   
   
@@ -1264,7 +1264,7 @@
   
   
     <li class="md-nav__item">
-      <a href="complete-example/" class="md-nav__link">
+      <a href="../complete-example/" class="md-nav__link">
         
   
   
@@ -1299,7 +1299,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../compile/" class="md-nav__link">
+      <a href="../../compile/" class="md-nav__link">
         
   
   
@@ -1378,7 +1378,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hive/" class="md-nav__link">
+      <a href="../../hive/" class="md-nav__link">
         
   
   
@@ -1406,7 +1406,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bindings/" class="md-nav__link">
+      <a href="../../bindings/" class="md-nav__link">
         
   
   
@@ -1441,7 +1441,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../editor/" class="md-nav__link">
+      <a href="../../editor/" class="md-nav__link">
         
   
   
@@ -1520,7 +1520,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../performance/" class="md-nav__link">
+      <a href="../../performance/" class="md-nav__link">
         
   
   
@@ -1548,7 +1548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         
   
   
@@ -1614,19 +1614,58 @@
   
 
 
-<h1 id="language-guide">Language guide</h1>
-<p>The complete reference for <strong>Bee</strong>, one topic per page. New to the
-language? Start with <a href="../getting-started/">Get started</a>.</p>
-<p>Use the navigation to jump to a topic.</p>
+<h1 id="operators">Operators</h1>
+<p><strong>Arithmetic:</strong> <code>+  -  *  /  %</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>print(7 + 2)       # 9
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>print(7 / 2)       # 3.5
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>print(7 % 3)       # 1
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>print(2 * 3)       # 6
+</span></code></pre></div>
+<p><code>+</code> is overloaded:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>print(1 + 2)              # 3          (numbers add)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>print(&quot;foo&quot; + &quot;bar&quot;)      # foobar     (strings concatenate)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>print(&quot;n=&quot; + 5)           # n=5        (if either side is a string, the other is stringified)
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>print([1, 2] + [3, 4])    # [1, 2, 3, 4]   (lists concatenate)
+</span></code></pre></div>
+<p><code>*</code> also repeats strings and lists:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>print(&quot;ab&quot; * 3)           # ababab
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>print([0] * 4)            # [0, 0, 0, 0]
+</span></code></pre></div>
+<p>Dividing or taking modulo by zero is a runtime error.</p>
+<p><strong>Comparison:</strong> <code>==  !=  &lt;  &gt;  &lt;=  &gt;=</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>print(3 &lt; 5)              # true
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>print(&quot;abc&quot; &lt; &quot;abd&quot;)      # true   (lexicographic; both operands must be strings)
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>print([1, 2] == [1, 2])   # true   (lists/dicts compare by value, deeply)
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>print(1 == &quot;1&quot;)           # false  (different types are never equal)
+</span></code></pre></div>
+<p><code>&lt;  &gt;  &lt;=  &gt;=</code> require both operands to be numbers, or both to be strings.</p>
+<p><strong>Logical:</strong> <code>and</code> / <code>&amp;&amp;</code>, <code>or</code> / <code>||</code>, <code>not</code> / <code>!</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>print(true and false)     # false
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>print(true or false)      # true
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>print(not true)           # false
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>print(a &amp;&amp; b || c)        # &amp;&amp; and || are aliases for and / or
+</span></code></pre></div>
+<p><code>and</code> / <code>or</code> short-circuit and return one of their operands (not a coerced bool):</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>let name = user_name or &quot;anonymous&quot;
+</span></code></pre></div>
+<p><strong>Assignment:</strong> <code>=</code>, and compound <code>+=  -=  *=  /=</code></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>let n = 10
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>n += 5      # 15
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>n -= 2      # 13
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>n *= 2      # 26
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>n /= 2      # 13
+</span></code></pre></div>
+<blockquote>
+<p>Compound assignment works on <strong>variables</strong> and is desugared to <code>x = x &lt;op&gt; y</code>.
+It is <strong>not</strong> supported on properties or index targets - write those out in
+full: <code>obj.count = obj.count + 1</code>, <code>a[i] = a[i] + 1</code>.</p>
+</blockquote>
 
 
 
 
 
 
-
-  
-  
 
 
 
@@ -1658,7 +1697,7 @@ language? Start with <a href="../getting-started/">Get started</a>.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../download/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Download">
+          <a href="../variables/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Variables">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1668,20 +1707,20 @@ language? Start with <a href="../getting-started/">Get started</a>.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Download
+                Variables
               </div>
             </div>
           </a>
         
         
           
-          <a href="comments/" class="md-footer__link md-footer__link--next" aria-label="Next: Comments">
+          <a href="../truthiness/" class="md-footer__link md-footer__link--next" aria-label="Next: Truthiness">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Comments
+                Truthiness
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1732,10 +1771,10 @@ language? Start with <a href="../getting-started/">Get started</a>.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

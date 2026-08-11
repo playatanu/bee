@@ -33,11 +33,107 @@
          <lastmod>2026-08-11</lastmod>
     </url>
     <url>
+         <loc>https://playatanu.github.io/bee/performance/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
          <loc>https://playatanu.github.io/bee/language/</loc>
          <lastmod>2026-08-11</lastmod>
     </url>
     <url>
-         <loc>https://playatanu.github.io/bee/performance/</loc>
+         <loc>https://playatanu.github.io/bee/language/buffers/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/builtin-functions/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/classes/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/comments/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/complete-example/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/control-flow/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/dicts/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/editor-support/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/error-handling/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/functions/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/lists/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/modules/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/numeric-types/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/operators/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/repl/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/runtime-errors/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/strings/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/system-library/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/threads/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/truthiness/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/type-annotations/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/type-methods/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/values/</loc>
+         <lastmod>2026-08-11</lastmod>
+    </url>
+    <url>
+         <loc>https://playatanu.github.io/bee/language/variables/</loc>
          <lastmod>2026-08-11</lastmod>
     </url>
 </urlset>
