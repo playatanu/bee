@@ -294,10 +294,15 @@ Value Vm::run(Interpreter& I, Chunk& ch, const std::shared_ptr<Function>& fn,
 
     BEE_BIN(SUB, TokenType::MINUS, x.asNumber() - y.asNumber())
     BEE_BIN(MUL, TokenType::STAR,  x.asNumber() * y.asNumber())
-    BEE_BIN(LT,  TokenType::LT,    x.asNumber() <  y.asNumber())
-    BEE_BIN(LE,  TokenType::LE,    x.asNumber() <= y.asNumber())
-    BEE_BIN(GT,  TokenType::GT,    x.asNumber() >  y.asNumber())
-    BEE_BIN(GE,  TokenType::GE,    x.asNumber() >= y.asNumber())
+    // <= and >= are written as negated strict comparisons so that an unordered
+    // pair (either side NaN) yields true, which is what the tree-walker's
+    // three-way compare produces -- `a <= b` in C++ would say false and put the
+    // two engines out of step. < and > need no such care: strict comparisons are
+    // already false on unordered.
+    BEE_BIN(LT,  TokenType::LT,      x.asNumber() <  y.asNumber())
+    BEE_BIN(LE,  TokenType::LE,    !(x.asNumber() >  y.asNumber()))
+    BEE_BIN(GT,  TokenType::GT,      x.asNumber() >  y.asNumber())
+    BEE_BIN(GE,  TokenType::GE,    !(x.asNumber() <  y.asNumber()))
 #undef BEE_BIN
 
     // Division and modulo carry a zero check, so they get their own pair.
@@ -341,10 +346,10 @@ Value Vm::run(Interpreter& I, Chunk& ch, const std::shared_ptr<Function>& fn,
     BEE_BIN_NUM(ADD, a + b)
     BEE_BIN_NUM(SUB, a - b)
     BEE_BIN_NUM(MUL, a * b)
-    BEE_BIN_NUM(LT,  a <  b)
-    BEE_BIN_NUM(LE,  a <= b)
-    BEE_BIN_NUM(GT,  a >  b)
-    BEE_BIN_NUM(GE,  a >= b)
+    BEE_BIN_NUM(LT,    a <  b)
+    BEE_BIN_NUM(LE,  !(a >  b))   // unordered => true; see BEE_BIN above
+    BEE_BIN_NUM(GT,    a >  b)
+    BEE_BIN_NUM(GE,  !(a <  b))
     BEE_BIN_NUM(EQ,  a == b)
     BEE_BIN_NUM(NE,  a != b)
 #undef BEE_BIN_NUM
@@ -627,6 +632,16 @@ Value Vm::run(Interpreter& I, Chunk& ch, const std::shared_ptr<Function>& fn,
     VM_CASE(CHECK_TYPE) {
         const TypeCheck& tc = ch.typeChecks[in.b];
         I.checkDeclared(*tc.type, tc.name, R[in.a], tc.line);
+        VM_NEXT();
+    }
+
+    // Wrap a register into the sized numeric type its name was declared with.
+    // Emitted after the CHECK_TYPE that guarantees the value is a number, so
+    // this is the same coerceToType the tree-walker applies at the same store --
+    // one shared function, so the two engines cannot drift.
+    VM_CASE(COERCE) {
+        const TypeCheck& tc = ch.typeChecks[in.b];
+        R[in.a] = Interpreter::coerceToType(*tc.type, R[in.a]);
         VM_NEXT();
     }
 

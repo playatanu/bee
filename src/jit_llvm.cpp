@@ -44,6 +44,13 @@ struct TVal {
     llvm::Value* v = nullptr;      // the double, the i1, or the double* base
     Ty ty = Ty::NUMBER;
     llvm::Value* len = nullptr;    // element count, for BUFFER
+    // True when this NUMBER is known to hold an exact integer -- a literal like
+    // 3, a read of an integer-typed name (every store into one wraps, so it can
+    // hold nothing else), or a sum/difference/product of two such values. It
+    // says nothing about magnitude: a double that overflows 2^53 is rounded but
+    // is still an integer. That is exactly the fact emitCoerce needs to drop the
+    // round-trip through the integer domain on an i64/u64 store.
+    bool intish = false;
 };
 
 // Thrown internally to abort compilation of a function that leaves the subset.
@@ -89,8 +96,10 @@ struct Scope {
     std::vector<AllocaInst*> allocas;        // per slot (null until declared)
     std::vector<AllocaInst*> lenAllocas;     // per slot, for BUFFER slots
     std::vector<Ty> types;                   // per slot
+    std::vector<char> intish;                // per slot: declared with an integer width
     Scope(const void* o, int n)
-        : owner(o), allocas(n, nullptr), lenAllocas(n, nullptr), types(n, Ty::NUMBER) {}
+        : owner(o), allocas(n, nullptr), lenAllocas(n, nullptr), types(n, Ty::NUMBER),
+          intish(n, 0) {}
 };
 
 // Owns one LLVM module into which a whole numeric call graph is compiled.
@@ -178,9 +187,17 @@ public:
             }
             AllocaInst* a = mkAlloca(dbl);
             llvm::Value* gep = b_.CreateGEP(dbl, argsArg_, b_.getInt32((uint32_t)i));
-            b_.CreateStore(b_.CreateLoad(dbl, gep), a);
+            // A sized parameter wraps on entry, the same as any other store into
+            // it -- the caller hands over a raw double and the annotation is
+            // what says how much of it the name can hold.
+            llvm::Value* in = b_.CreateLoad(dbl, gep);
+            if (i < fn_->paramTypes.size() && fn_->paramTypes[i].isSizedNum())
+                in = emitCoerce(in, fn_->paramTypes[i].num);
+            b_.CreateStore(in, a);
             scopes_.back().allocas[slot] = a;
             scopes_.back().types[slot] = Ty::NUMBER;
+            scopes_.back().intish[slot] =
+                i < fn_->paramTypes.size() && isIntWidth(fn_->paramTypes[i]);
         }
 
         for (auto& s : fn_->body) {
@@ -202,8 +219,10 @@ public:
     // Compile a top-level while/for loop. ABI: double f(double* vars, i32 nvars,
     // i8* interp, i32* bail). The numeric globals in `globals` are loaded from
     // vars[] on entry and written back on clean completion.
-    void emitLoop(const Stmt* loop, const std::vector<std::string>& globals) {
+    void emitLoop(const Stmt* loop, const std::vector<std::string>& globals,
+                  std::set<std::string> intishGlobals = {}) {
         loopRegion_ = true;
+        loopGlobalIntish_ = std::move(intishGlobals);
         Type* dbl = b_.getDoubleTy();
         argsArg_ = func_->getArg(0);   // double* vars (in/out)
         interpArg_ = func_->getArg(2);
@@ -255,6 +274,9 @@ private:
     // touches, each backed by an alloca mirroring a slot of the in/out vars[].
     bool loopRegion_ = false;
     std::map<std::string, AllocaInst*> loopGlobalAllocas_;
+    // Loop globals declared with an integer width. Learned from the assignments
+    // in the loop body, which each carry the name's declared type.
+    std::set<std::string> loopGlobalIntish_;
 
     std::vector<Scope> scopes_;
     struct Loop { BasicBlock* brk; BasicBlock* cont; };
@@ -319,6 +341,88 @@ private:
     llvm::Value* d2i(llvm::Value* d) { return b_.CreateFPToSI(d, b_.getInt64Ty()); }
     llvm::Value* i2d(llvm::Value* i) { return b_.CreateSIToFP(i, b_.getDoubleTy()); }
 
+    // Wrap a double into a sized numeric type, matching TypeAnn::coerce bit for
+    // bit -- the whole reason a sized annotation can now reach native code at
+    // all. Only the fast path is compiled: |x| < 2^63 truncates toward zero and
+    // the narrowing cast does the two's-complement wrap. The slow path (NaN,
+    // inf, |x| >= 2^63) bails to the interpreter, which owns it; that costs one
+    // predictable compare per store and keeps the two engines in agreement
+    // without mirroring libm here.
+    llvm::Value* emitCoerce(llvm::Value* x, TypeAnn::NumTy t, bool srcIntish = false) {
+        Type* dbl = b_.getDoubleTy();
+        unsigned bits;
+        bool sign;
+        switch (t) {
+            case TypeAnn::NumTy::Dyn: case TypeAnn::NumTy::F64: return x;
+            case TypeAnn::NumTy::F32:
+                return b_.CreateFPExt(b_.CreateFPTrunc(x, b_.getFloatTy()), dbl);
+            // f16round is a hand-rolled bit-twiddling routine (subnormals,
+            // overflow-to-inf, NaN payloads); mirroring it in IR would be a
+            // second implementation to keep in step, so f16 stays interpreted.
+            case TypeAnn::NumTy::F16: throw JitBail{};
+            case TypeAnn::NumTy::I8:  bits = 8;  sign = true;  break;
+            case TypeAnn::NumTy::U8:  bits = 8;  sign = false; break;
+            case TypeAnn::NumTy::I16: bits = 16; sign = true;  break;
+            case TypeAnn::NumTy::U16: bits = 16; sign = false; break;
+            case TypeAnn::NumTy::I32: bits = 32; sign = true;  break;
+            case TypeAnn::NumTy::U32: bits = 32; sign = false; break;
+            case TypeAnn::NumTy::I64: bits = 64; sign = true;  break;
+            case TypeAnn::NumTy::U64: bits = 64; sign = false; break;
+            default: throw JitBail{};
+        }
+        // fptosi is poison outside the destination's range, so the range test
+        // has to be a real branch -- a select would still evaluate it.
+        llvm::Value* lo = b_.CreateFCmpOGE(x, ConstantFP::get(dbl, -9223372036854775808.0));
+        llvm::Value* hi = b_.CreateFCmpOLT(x, ConstantFP::get(dbl, 9223372036854775808.0));
+        llvm::Value* bad = b_.CreateNot(b_.CreateAnd(lo, hi));
+
+        // 64-bit widths are the whole int64 range, so once the value is known to
+        // be an exact integer inside it, the wrap has nothing left to do:
+        // (double)(int64_t)x == x. Emitting only the range test keeps the
+        // fptosi/sitofp pair off the loop-carried dependency chain, which is
+        // what a `sum += i * j` accumulator actually costs. u64 additionally
+        // needs x >= 0, since a negative would reinterpret rather than wrap.
+        if (srcIntish && bits == 64) {
+            if (!sign)
+                bad = b_.CreateOr(bad, b_.CreateFCmpOLT(x, ConstantFP::get(dbl, 0.0)));
+            BasicBlock* inRangeBB = BasicBlock::Create(ctx_, "inrange", func_);
+            emitBailOn(bad, inRangeBB);
+            b_.SetInsertPoint(inRangeBB);
+            return x;
+        }
+
+        BasicBlock* okBB = BasicBlock::Create(ctx_, "wrap", func_);
+        emitBailOn(bad, okBB);
+        b_.SetInsertPoint(okBB);
+
+        llvm::Value* i = b_.CreateFPToSI(x, b_.getInt64Ty());
+        if (bits < 64) {
+            llvm::Value* n = b_.CreateTrunc(i, b_.getIntNTy(bits));
+            i = sign ? b_.CreateSExt(n, b_.getInt64Ty()) : b_.CreateZExt(n, b_.getInt64Ty());
+        }
+        return sign ? b_.CreateSIToFP(i, dbl) : b_.CreateUIToFP(i, dbl);
+    }
+
+    // A store into a name declared with a sized type wraps, exactly as it does
+    // in the tree-walker. Anything non-numeric reaching such a store is a type
+    // error the interpreter reports, so it bails rather than guessing.
+    TVal coerceTo(const TypeAnn& t, TVal v) {
+        if (!t.isSizedNum()) return v;
+        if (v.ty != Ty::NUMBER) throw JitBail{};
+        return {emitCoerce(v.v, t.num, v.intish), Ty::NUMBER, nullptr, isIntWidth(t)};
+    }
+
+    // Integer widths only: f16/f32/f64 hold fractions, so a store into one says
+    // nothing about the value being integral.
+    static bool isIntWidth(const TypeAnn& t) {
+        if (!t.isSizedNum()) return false;
+        switch (t.num) {
+            case TypeAnn::NumTy::F16: case TypeAnn::NumTy::F32:
+            case TypeAnn::NumTy::F64: case TypeAnn::NumTy::Dyn: return false;
+            default: return true;
+        }
+    }
+
     // ---- statements ----
     void stmt(Stmt* s) {
         switch (s->kind) {
@@ -346,12 +450,16 @@ private:
     void sLet(LetStmt* s) {
         if (s->global || s->isDestructure || s->slot < 0) throw JitBail{};
         if (!s->initializer) throw JitBail{}; // `let x` => nil, not numeric
-        TVal init = expr(s->initializer.get());
+        TVal init = coerceTo(s->type, expr(s->initializer.get()));
         AllocaInst* a = mkAlloca(init.ty == Ty::BOOL ? (Type*)b_.getInt1Ty()
                                                      : (Type*)b_.getDoubleTy());
         b_.CreateStore(init.v, a);
         scopes_.back().allocas[s->slot] = a;
         scopes_.back().types[s->slot] = init.ty;
+        // Every store into an integer-typed name is wrapped, so a later read of
+        // it is always an exact integer -- the declaration, not this initialiser,
+        // is what makes that true for the variable's whole life.
+        scopes_.back().intish[s->slot] = isIntWidth(s->type);
     }
 
     void sBlock(BlockStmt* s) {
@@ -436,7 +544,7 @@ private:
         // not just the loop, and would skip the global write-back. Bail.
         if (loopRegion_) throw JitBail{};
         if (!s->value) { emitNilReturn(); return; }   // `return` with no value => nil
-        TVal v = expr(s->value.get());
+        TVal v = coerceTo(fn_->returnType, expr(s->value.get()));   // `-> i8` wraps
         b_.CreateRet(toNum(v));                  // ABI returns a double
     }
 
@@ -458,8 +566,11 @@ private:
     }
 
     TVal eLiteral(LiteralExpr* e) {
-        if (e->value.isNumber())
-            return {ConstantFP::get(b_.getDoubleTy(), e->value.asNumber()), Ty::NUMBER};
+        if (e->value.isNumber()) {
+            double d = e->value.asNumber();
+            return {ConstantFP::get(b_.getDoubleTy(), d), Ty::NUMBER, nullptr,
+                    std::isfinite(d) && d == std::trunc(d)};
+        }
         if (e->value.isBool())
             return {b_.getInt1(e->value.asBool()), Ty::BOOL};
         throw JitBail{}; // nil / string
@@ -471,7 +582,8 @@ private:
             // loaded from the in/out vars[] array. Anything else bails.
             auto it = loopGlobalAllocas_.find(e->name);
             if (it == loopGlobalAllocas_.end()) throw JitBail{};
-            return {b_.CreateLoad(b_.getDoubleTy(), it->second), Ty::NUMBER};
+            return {b_.CreateLoad(b_.getDoubleTy(), it->second), Ty::NUMBER, nullptr,
+                    loopGlobalIntish_.count(e->name) != 0};
         }
         if (e->slot < 0) throw JitBail{};
         Scope& sc = scopeAt(e->depth);
@@ -484,7 +596,7 @@ private:
                     b_.CreateLoad(b_.getInt64Ty(), sc.lenAllocas[e->slot])};
         }
         Type* lt = (ty == Ty::BOOL) ? (Type*)b_.getInt1Ty() : (Type*)b_.getDoubleTy();
-        return {b_.CreateLoad(lt, a), ty};
+        return {b_.CreateLoad(lt, a), ty, nullptr, sc.intish[e->slot] != 0};
     }
 
     // buf[i] on an f64 buffer: a bounds check and a load. Out of range bails to
@@ -514,12 +626,12 @@ private:
         if (e->global) {
             auto it = loopGlobalAllocas_.find(e->name);
             if (it == loopGlobalAllocas_.end()) throw JitBail{};
-            TVal v = expr(e->value.get());
+            TVal v = coerceTo(e->declaredType, expr(e->value.get()));
             b_.CreateStore(toNum(v), it->second); // loop globals are numeric
             return v;
         }
         if (e->slot < 0) throw JitBail{};
-        TVal v = expr(e->value.get());
+        TVal v = coerceTo(e->declaredType, expr(e->value.get()));
         Scope& sc = scopeAt(e->depth);
         AllocaInst* a = sc.allocas[e->slot];
         if (!a || sc.types[e->slot] != v.ty) throw JitBail{}; // type must be stable
@@ -635,9 +747,18 @@ private:
         TVal l = expr(e->left.get());
         TVal r = expr(e->right.get());
         switch (e->op) {
-            case TokenType::PLUS:  return {b_.CreateFAdd(toNum(l), toNum(r)), Ty::NUMBER};
-            case TokenType::MINUS: return {b_.CreateFSub(toNum(l), toNum(r)), Ty::NUMBER};
-            case TokenType::STAR:  return {b_.CreateFMul(toNum(l), toNum(r)), Ty::NUMBER};
+            // +, - and * over exact integers stay exact integers. Rounding past
+            // 2^53 does not break that: the rounded result is a different
+            // integer, not a fraction, which is all `intish` claims.
+            case TokenType::PLUS:
+                return {b_.CreateFAdd(toNum(l), toNum(r)), Ty::NUMBER, nullptr,
+                        l.intish && r.intish};
+            case TokenType::MINUS:
+                return {b_.CreateFSub(toNum(l), toNum(r)), Ty::NUMBER, nullptr,
+                        l.intish && r.intish};
+            case TokenType::STAR:
+                return {b_.CreateFMul(toNum(l), toNum(r)), Ty::NUMBER, nullptr,
+                        l.intish && r.intish};
             case TokenType::SLASH: {
                 llvm::Value* rv = toNum(r);
                 guardNonZero(rv);
@@ -660,8 +781,11 @@ private:
             }
             case TokenType::LT: return {b_.CreateFCmpOLT(toNum(l), toNum(r)), Ty::BOOL};
             case TokenType::GT: return {b_.CreateFCmpOGT(toNum(l), toNum(r)), Ty::BOOL};
-            case TokenType::LE: return {b_.CreateFCmpOLE(toNum(l), toNum(r)), Ty::BOOL};
-            case TokenType::GE: return {b_.CreateFCmpOGE(toNum(l), toNum(r)), Ty::BOOL};
+            // Unordered forms: NaN on either side makes <= and >= true, which is
+            // what the tree-walker's three-way compare gives. < and > stay
+            // ordered, so they are false on unordered as they should be.
+            case TokenType::LE: return {b_.CreateFCmpULE(toNum(l), toNum(r)), Ty::BOOL};
+            case TokenType::GE: return {b_.CreateFCmpUGE(toNum(l), toNum(r)), Ty::BOOL};
             case TokenType::EQ:
             case TokenType::NEQ: {
                 if (l.ty != r.ty) throw JitBail{};
@@ -700,6 +824,9 @@ private:
 struct GlobalCollector {
     std::vector<std::string> out;
     std::set<std::string> seen;
+    // Globals declared with an integer width, learned from the assignments in
+    // the loop -- an AssignExpr carries the declared type of the name it writes.
+    std::set<std::string> intish;
 
     void add(const std::string& n) { if (seen.insert(n).second) out.push_back(n); }
 
@@ -713,7 +840,16 @@ struct GlobalCollector {
             }
             case Expr::Kind::Assign: {
                 auto* a = static_cast<const AssignExpr*>(e);
-                if (a->global) add(a->name);
+                if (a->global) {
+                    add(a->name);
+                    if (a->declaredType.isSizedNum()) {
+                        switch (a->declaredType.num) {
+                            case TypeAnn::NumTy::F16: case TypeAnn::NumTy::F32:
+                            case TypeAnn::NumTy::F64: case TypeAnn::NumTy::Dyn: break;
+                            default: intish.insert(a->name); break;
+                        }
+                    }
+                }
                 expr(a->value.get());
                 break;
             }
@@ -769,9 +905,10 @@ struct GlobalCollector {
     }
 };
 
-std::vector<std::string> collectLoopGlobals(const Stmt* loop) {
+std::vector<std::string> collectLoopGlobals(const Stmt* loop, std::set<std::string>* intish = nullptr) {
     GlobalCollector gc;
     gc.stmt(loop);
+    if (intish) *intish = std::move(gc.intish);
     return gc.out;
 }
 
@@ -844,7 +981,8 @@ void LlvmJitBackend::compileLoop(const Stmt* loop, Interpreter& interp, Compiled
     bool isLoop = loop->kind == Stmt::Kind::While || loop->kind == Stmt::Kind::For;
     if (!isLoop || !engine()) return;   // out.fn stays nullptr == "cannot compile"
 
-    std::vector<std::string> globals = collectLoopGlobals(loop);
+    std::set<std::string> intishGlobals;
+    std::vector<std::string> globals = collectLoopGlobals(loop, &intishGlobals);
     try {
         auto ctx = std::make_unique<LLVMContext>();
         auto mod = std::make_unique<llvm::Module>("bee_loop", *ctx);
@@ -866,7 +1004,7 @@ void LlvmJitBackend::compileLoop(const Stmt* loop, Interpreter& interp, Compiled
                                               entryName, *mod);
 
         Codegen cg(mc, /*fn*/nullptr, entryF);
-        cg.emitLoop(loop, globals);   // may enqueue called functions into mc
+        cg.emitLoop(loop, globals, intishGlobals);   // may enqueue called functions into mc
 
         // Drain: compile any functions the loop calls (cross-calls).
         for (size_t i = 0; i < mc.worklist.size(); ++i) {

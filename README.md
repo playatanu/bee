@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-4c9a2a.svg?style=flat-square)](LICENSE)
 [![Language: C++17](https://img.shields.io/badge/C%2B%2B-17-00599c.svg?style=flat-square)](Makefile)
 [![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg?style=flat-square)](#-installation)
-[![Version](https://img.shields.io/badge/version-0.3.7-f5b51e.svg?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/version-0.3.8-f5b51e.svg?style=flat-square)](#)
 
 [Install](#-installation) · [Quick start](#-quick-start) · [Language tour](#-language-tour) · [Packages](#-packages) · [Bindings](#-c-bindings) · [Docs](docs/LANGUAGE.md) · [Examples](examples/)
 

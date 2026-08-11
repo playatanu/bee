@@ -6,6 +6,53 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.8] — 2026-08-12
+
+### Added
+
+- **Return types are written with `:`.** `fn add(a: i64, b: i64): i64` — the same
+  annotation syntax as parameters and `let`, so there is one way to say "this
+  name has this type". The previous `-> i64` form still parses, so existing code
+  keeps running; it is no longer the documented spelling.
+
+### Changed
+
+- **Sized numeric types no longer disable the JIT and the register VM.** A
+  function mentioning `i8`…`u64` or `f32`/`f64` was handed straight to the
+  tree-walker, because only the tree-walker modelled wrapping — so an annotation
+  that reads as "make this fast" made it 20–60× slower instead. The JIT now
+  inlines the wrap as a truncating native cast (`Codegen::emitCoerce`) and the VM
+  emits a `COERCE` for the same stores, both calling the same `TypeAnn::coerce`
+  semantics the tree-walker uses. `f16` is the one width still handed back to
+  the tree-walker.
+- **An `i64`/`u64` store no longer round-trips through the integer domain.** The
+  JIT tracks which values are known to be exact integers — a whole literal, a
+  read of an integer-typed name (every store into one wraps, so it can hold
+  nothing else), or a sum/difference/product of two such values. For the 64-bit
+  widths, wrapping such a value is the identity, so only the range test remains
+  and the `fptosi`/`sitofp` pair comes off the loop-carried dependency chain.
+  That chain is what an accumulator costs: a flat 2×10⁷-iteration typed loop
+  went 2.5s → 0.11s → **0.04s**, which is parity with the same loop untyped, and
+  a nested `i64` loop of 10¹⁰ iterations went ~17 minutes → 45s → **13s**.
+  Narrower widths still need the real modular reduction and keep the full path.
+
+### Fixed
+
+- **A top-level loop over a sized global produced wrong results under the JIT.**
+  The loop JIT compiled such a loop into plain `double` arithmetic with no wrap,
+  because the "uses sized types" flag is set per function and top-level code has
+  no enclosing function. `for (let i = 0; i < 100000; i += 1) { x += 1 }` with
+  `let x: i8 = 0` printed `100000` instead of `-96`; every other engine was
+  correct. The JIT now emits the wrap, so all four agree.
+- **`<=` and `>=` disagreed about NaN between engines.** The tree-walker resolves
+  comparisons through a three-way compare, which makes an unordered `<=`/`>=`
+  **true**; the register VM and the JIT used the machine's ordered compare and
+  said **false**. Both now use the unordered forms and match the tree-walker.
+  This affected ordinary untyped code, not just sized types.
+- The differential test suite now compares all three interpreter tiers (pure
+  tree-walker, VM, JIT) against the tree-walker as the reference, rather than
+  comparing two tiers that could share a bug.
+
 ## [0.3.7] — 2026-08-11
 
 ### Changed

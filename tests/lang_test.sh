@@ -363,6 +363,36 @@ else
     echo "  skip repl checks (no 'script' command for a pty)"
 fi
 
+echo "syntax: return type annotations"
+
+want "return type with ':'" '5 hi 49' <<'EOF'
+fn add(a: i64, b: i64): i64 { return a + b }
+fn who(): str { return "hi" }
+let sq = fn(x: i64): i64 { return x * x }
+print(add(2, 3), who(), sq(7))
+EOF
+
+# '->' was the spelling before 0.3.8 and still parses, so code written against
+# an earlier release keeps running.
+want "return type with legacy '->'" '5 hi 49' <<'EOF'
+fn add(a: i64, b: i64) -> i64 { return a + b }
+fn who() -> str { return "hi" }
+let sq = fn(x: i64) -> i64 { return x * x }
+print(add(2, 3), who(), sq(7))
+EOF
+
+# A ':' after ')' only introduces a return type where a function body follows,
+# so a lambda in a ternary branch is still read as a ternary.
+want "':' does not swallow a ternary branch" 'ok 7' <<'EOF'
+let pick = true ? fn(x) { return x } : 0
+print("ok", pick(7))
+EOF
+
+want "a violated ':' return type is reported" "is declared to return num but returned nil" <<'EOF'
+fn broken(): num { let x = 1 }
+broken()
+EOF
+
 echo "diagnostics: exit codes"
 "$BEE" missing-file.bee >/dev/null 2>&1
 [ $? -eq 70 ] && ok "a missing script exits 70" || bad "a missing script exits 70"

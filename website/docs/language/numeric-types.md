@@ -30,7 +30,7 @@ parameter, or a return — and only there:
 
 ```
 let x: i16 = 0             # a typed variable
-fn scale(n: u8) -> u8 {    # a typed parameter and return
+fn scale(n: u8): u8 {    # a typed parameter and return
     return n * 2           # coerced to u8 on return
 }
 x = 40000                  # coerced on every assignment, not just the first
@@ -54,8 +54,10 @@ print(acc)                             # -> 4
 
 ## Identical everywhere, and fast
 
-The interpreter, the register VM, and the `beec` AOT compiler produce the same
-result for a typed program. The annotation is also a compilation hint: when
+The interpreter, the register VM, the LLVM JIT, and the `beec` AOT compiler
+produce the same result for a typed program - each models the wrapping itself
+rather than handing typed code back to a slower tier, so a sized annotation
+never costs you a tier of speed. The annotation is also a compilation hint: when
 `beec` compiles a program, a sized local that isn't captured by a closure
 becomes a native machine value (`int32_t`, `double`, …) with native arithmetic
 and no boxing, so a typed hot loop runs as fast as the untyped version and

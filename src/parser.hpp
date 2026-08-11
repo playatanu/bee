@@ -46,7 +46,7 @@ private:
     StmtPtr declaration();
     StmtPtr letStatement(bool isConst = false);
     void parseParams(FunctionStmt* fn);
-    TypeAnn typeAnnotation();   // after the ':' or '->' that introduces it
+    TypeAnn typeAnnotation();   // after the ':' (or legacy '->') that introduces it
     std::unique_ptr<FunctionStmt> functionDecl(const std::string& kind);
     StmtPtr classDeclaration();
     StmtPtr importStatement();

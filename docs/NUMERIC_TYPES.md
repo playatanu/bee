@@ -28,7 +28,7 @@ The width is enforced wherever a value **enters** the binding — and only there
 
 ```bee
 let x: i16 = 0             # a typed variable
-fn scale(n: u8) -> u8 {    # a typed parameter and return
+fn scale(n: u8): u8 {    # a typed parameter and return
     return n * 2           # the result is coerced to u8 on return
 }
 x = 40000                  # coerced on every assignment, not just the first
@@ -55,8 +55,10 @@ print(acc)                             # -> 4
 The interpreter, the register VM, and the `beec` AOT compiler agree on wrapping
 and rounding for every value that fits the ~53 bits a `double` represents
 exactly — which is the entire range of `i8`…`i32`/`u8`…`u32` and the working
-range of ordinary code. A typed function runs on the tree-walker under the
-VM/JIT (which don't model wrapping); the AOT compiler implements it directly.
+range of ordinary code. Every engine models the wrapping: the tree-walker
+coerces at each store, the register VM emits a `COERCE` for the same stores,
+the JIT inlines the wrap as a truncating cast, and the AOT compiler uses native
+fixed-width types. A sized annotation costs no tier of speed.
 
 One deliberate difference: a **compiled binary computes sized-integer arithmetic
 as true fixed-width two's-complement integers** — that is what the type promises.

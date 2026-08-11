@@ -429,28 +429,32 @@ always has, and an unannotated parameter accepts anything. What an annotation
 buys is a guarantee: it is checked where the value enters, so from then on the
 type is known rather than assumed.
 
-Annotate a parameter or a variable with `:`, and a return type with `->`:
+Annotate a parameter, a variable, or a return type with `:`:
 
 ```
-fn add(a: num, b: num) -> num {
+fn add(a: num, b: num): num {
     return a + b
 }
 
-fn greet(name: str, times: num = 2) -> str {
+fn greet(name: str, times: num = 2): str {
     let out: str = ""
     for (let i = 0; i < times; i = i + 1) { out = out + name + "!" }
     return out
 }
 ```
 
+> Earlier releases wrote the return type as `fn add(a: num, b: num) -> num`.
+> That form still parses, so existing code keeps running, but `:` is the
+> documented spelling: one way to say "this name has this type", everywhere.
+
 The type names are `num`, `str`, `bool`, `list`, `dict`, `buffer`, `nil`, `fn`,
 and `any` — plus any class name:
 
 ```
-class Animal { fn init(n: str) { this.n = n } fn name() -> str { return this.n } }
+class Animal { fn init(n: str) { this.n = n } fn name(): str { return this.n } }
 class Dog extends Animal { }
 
-fn describe(a: Animal) -> str { return a.name() }
+fn describe(a: Animal): str { return a.name() }
 print(describe(new Dog("rex")))    # rex -- a Dog is an Animal
 ```
 
@@ -462,7 +466,7 @@ A violated annotation is a runtime error, reported where the bad value came
 from, with the usual stack trace:
 
 ```
-fn f(a: num) -> num { return a }
+fn f(a: num): num { return a }
 f("hi")
 # Runtime error: parameter 'a' of 'f' is declared num but got str
 #   at f()      demo.bee:2
@@ -470,11 +474,11 @@ f("hi")
 ```
 
 Return types are checked on every path out, including falling off the end —
-a function declared `-> num` that never returns anything yields `nil`, and that
+a function declared `: num` that never returns anything yields `nil`, and that
 is an error:
 
 ```
-fn broken() -> num { let x = 1 }
+fn broken(): num { let x = 1 }
 # Runtime error: 'broken' is declared to return num but returned nil
 ```
 

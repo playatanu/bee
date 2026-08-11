@@ -104,22 +104,22 @@ check sized_wrap_u8  $'let a: u8 = 300\nlet b: u8 = 255 + 1\nprint(a, b)'
 check sized_wrap_i8  $'let a: i8 = 200\nlet b: i8 = 127 + 1\nprint(a, b)'
 check sized_assign   $'let x: i32 = 0\nx = 4294967296 + 5\nprint(x)'
 check sized_trunc    $'let s: i8 = 5.9\nlet t: i8 = -5.9\nlet u: u8 = -1\nprint(s, t, u)'
-check sized_param    $'fn w(n: u8) -> u8 { return n }\nprint(w(258), w(-1))'
-check sized_return   $'fn f() -> i16 { return 100000 }\nprint(f())'
+check sized_param    $'fn w(n: u8): u8 { return n }\nprint(w(258), w(-1))'
+check sized_return   $'fn f(): i16 { return 100000 }\nprint(f())'
 check sized_float    $'let f: f32 = 1.0 / 3.0\nprint(f)'
 check sized_half     $'let h: f16 = 1.0 / 3.0\nlet k: f16 = 65504.0\nprint(h, k)'
 check sized_loop     $'let acc: u8 = 0\nfor i in range(1000) { acc = acc + 1 }\nprint(acc)'
 # Native-local storage (Phase 2b) must stay behaviour-identical, including the
 # escape case: a sized local captured by a closure must keep shared mutation.
-check sized_native   $'fn r() -> i32 {\n  let acc: i32 = 0\n  for i in range(100000) { acc = acc + 1 }\n  return acc\n}\nprint(r())'
+check sized_native   $'fn r(): i32 {\n  let acc: i32 = 0\n  for i in range(100000) { acc = acc + 1 }\n  return acc\n}\nprint(r())'
 check sized_capture  $'fn r() {\n  let acc: i32 = 10\n  let get = fn() { return acc }\n  acc = acc + 5\n  return get()\n}\nprint(r())'
-check sized_native_f $'fn r() -> f32 {\n  let s: f32 = 0.0\n  for i in range(10) { s = s + 0.1 }\n  return s\n}\nprint(r())'
+check sized_native_f $'fn r(): f32 {\n  let s: f32 = 0.0\n  for i in range(10) { s = s + 0.1 }\n  return s\n}\nprint(r())'
 check sized_native_dyn $'fn dbl(x) { return x * 2 }\nfn r() {\n  let a: u8 = 200\n  a = a + 100\n  return dbl(a)\n}\nprint(r())'
 # Native comparison path (conditions over sized-numeric locals compile to native
 # C++ comparisons). The nested loop with an == guard exercises for/if conditions.
-check native_cmp     $'fn r() -> i64 {\n  let sum: i64 = 0\n  for (let i: i64 = 0; i < 300; i += 1) {\n    for (let j: i64 = 0; j < 300; j += 1) {\n      if i == j { sum += i * j }\n    }\n  }\n  return sum\n}\nprint(r())'
+check native_cmp     $'fn r(): i64 {\n  let sum: i64 = 0\n  for (let i: i64 = 0; i < 300; i += 1) {\n    for (let j: i64 = 0; j < 300; j += 1) {\n      if i == j { sum += i * j }\n    }\n  }\n  return sum\n}\nprint(r())'
 # &&/||/! over native comparisons, plus <=/>= boundaries, must match the runtime.
-check native_cmp_bool $'fn r() -> i32 {\n  let n: i32 = 0\n  for (let i: i32 = 0; i <= 20; i += 1) {\n    if i >= 5 and i <= 15 and not (i == 10) { n += 1 }\n  }\n  return n\n}\nprint(r())'
+check native_cmp_bool $'fn r(): i32 {\n  let n: i32 = 0\n  for (let i: i32 = 0; i <= 20; i += 1) {\n    if i >= 5 and i <= 15 and not (i == 10) { n += 1 }\n  }\n  return n\n}\nprint(r())'
 # NaN edge: Bee treats unordered <=/>= as true (unlike native C++), and the AOT
 # comparison path must preserve that. inf-inf builds a NaN through native floats.
 check native_cmp_nan $'fn r() {\n  let a: f64 = 1.0\n  for (let k = 0; k < 400; k += 1) { a = a * 10.0 }\n  let nan: f64 = a - a\n  let x: f64 = 5.0\n  print(nan < x, nan > x, nan <= x, nan >= x, nan == nan, nan != nan)\n}\nr()'
@@ -130,8 +130,8 @@ echo "      the interpreter's double arithmetic would round past 2^53"
 # i32/u32 products whose exact result exceeds 2^53: the compiled binary wraps the
 # exact integer product; the interpreter rounds through double first, so these are
 # pinned to the exact value rather than compared against the interpreter.
-check_exact int_exact_i32 $'fn r() -> i32 {\n  let a: i32 = 2000000000\n  return a * a\n}\nprint(r())' '-1651507200'
-check_exact int_exact_u32 $'fn r() -> u32 {\n  let a: u32 = 4000000000\n  return a * a\n}\nprint(r())' '1983905792'
+check_exact int_exact_i32 $'fn r(): i32 {\n  let a: i32 = 2000000000\n  return a * a\n}\nprint(r())' '-1651507200'
+check_exact int_exact_u32 $'fn r(): u32 {\n  let a: u32 = 4000000000\n  return a * a\n}\nprint(r())' '1983905792'
 echo "beec: unresolvable / unsupported imports are refused, not miscompiled"
 check_unsupported missing_module 'import definitely_not_a_real_module_xyz'
 

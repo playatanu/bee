@@ -97,9 +97,10 @@ struct CompiledLoop {
 // happens inside codegen, which bails on any unsupported construct. Inline so
 // both the front end (jit.cpp) and the backend (jit_llvm.cpp) share one copy.
 inline bool jitCandidate(const FunctionStmt* fn) {
-    // Sized numeric types (i8..u64, f16/f32/f64) carry wrapping/rounding the
-    // JIT doesn't model, so it declines them and the tree-walker runs them.
-    return fn->restParam < 0 && fn->paramStart == 0 && !fn->usesSized;
+    // Sized numeric types are no longer disqualifying: codegen emits the wrap at
+    // every store into a sized name (see Codegen::emitCoerce), so i8..u64 and
+    // f32/f64 compile. f16 is the one exception and codegen bails on it.
+    return fn->restParam < 0 && fn->paramStart == 0;
 }
 
 // One function compiled into a module, handed back for the front end to cache:

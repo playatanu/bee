@@ -34,7 +34,7 @@ print("f16 1/3     ->", g)
 
 print("== typed functions ==")
 # A checksum that stays within a byte, wrapping as it accumulates.
-fn checksum(bytes) -> u8 {
+fn checksum(bytes): u8 {
     let sum: u8 = 0
     for b in bytes { sum = sum + b }
     return sum

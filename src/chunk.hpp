@@ -81,7 +81,7 @@ namespace bee {
     X(JUMP) X(JUMP_IF_FALSE) X(JUMP_IF_TRUE)                                  \
     X(NEW_LIST) X(NEW_DICT) X(LIST_PUSH)                                      \
     X(INDEX) X(INDEX_SET) X(GET_PROP) X(SET_PROP) X(SUPER) X(SLICE)           \
-    X(CALL) X(CALL_METHOD) X(RETURN) X(RETURN_NIL) X(CHECK_TYPE)              \
+    X(CALL) X(CALL_METHOD) X(RETURN) X(RETURN_NIL) X(CHECK_TYPE) X(COERCE)    \
     X(ITER_PREP) X(ITER_NEXT)                                                 \
     X(HALT)
 

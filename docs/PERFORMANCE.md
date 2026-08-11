@@ -533,7 +533,7 @@ than an extension of this one.
 A function whose parameters and return are all declared numeric is *guaranteed*
 numeric at the boundary, so the LLVM JIT needs no entry guard. More importantly
 `buffer` parameters give it something it currently refuses outright: contiguous
-unboxed memory it can index directly. `fn dot(a: buffer, b: buffer, n: num) ->
+unboxed memory it can index directly. `fn dot(a: buffer, b: buffer, n: num):
 num` is the shape that should reach Go — it is 22× off today, against 2× for the
 numeric recursion the JIT already takes.
 

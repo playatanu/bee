@@ -9,19 +9,29 @@ BEE=./bee
 pass=0; fail=0
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 
+# The pure tree-walker is the reference: it is the engine the language is
+# defined by. Every faster tier has to reproduce it exactly, so each program is
+# run on all three and compared against that one baseline -- comparing only two
+# tiers would let a bug that both share go unnoticed.
 check() {                                  # check <name> <file>
     local name=$1 file=$2
-    BEE_NO_VM=1 $BEE "$file" >"$tmp/a.out" 2>"$tmp/a.err"; local ra=$?
-    $BEE "$file" >"$tmp/b.out" 2>"$tmp/b.err"; local rb=$?
-    if [ "$ra" != "$rb" ]; then
-        echo "  FAIL $name: exit $ra (tree-walker) vs $rb (vm)"; fail=$((fail+1)); return
-    fi
-    if ! diff -q "$tmp/a.out" "$tmp/b.out" >/dev/null; then
-        echo "  FAIL $name: stdout differs"; diff "$tmp/a.out" "$tmp/b.out" | head -6; fail=$((fail+1)); return
-    fi
-    if ! diff -q "$tmp/a.err" "$tmp/b.err" >/dev/null; then
-        echo "  FAIL $name: stderr differs"; diff "$tmp/a.err" "$tmp/b.err" | head -6; fail=$((fail+1)); return
-    fi
+    BEE_NO_VM=1 BEE_NO_JIT=1 $BEE "$file" >"$tmp/a.out" 2>"$tmp/a.err"; local ra=$?
+    local tier
+    for tier in "BEE_NO_JIT=1:vm" "BEE_NO_VM=1:jit" ":vm+jit"; do
+        local env=${tier%:*} label=${tier#*:}
+        env $env $BEE "$file" >"$tmp/b.out" 2>"$tmp/b.err"; local rb=$?
+        if [ "$ra" != "$rb" ]; then
+            echo "  FAIL $name: exit $ra (tree-walker) vs $rb ($label)"; fail=$((fail+1)); return
+        fi
+        if ! diff -q "$tmp/a.out" "$tmp/b.out" >/dev/null; then
+            echo "  FAIL $name: stdout differs on $label"
+            diff "$tmp/a.out" "$tmp/b.out" | head -6; fail=$((fail+1)); return
+        fi
+        if ! diff -q "$tmp/a.err" "$tmp/b.err" >/dev/null; then
+            echo "  FAIL $name: stderr differs on $label"
+            diff "$tmp/a.err" "$tmp/b.err" | head -6; fail=$((fail+1)); return
+        fi
+    done
     echo "  ok   $name"; pass=$((pass+1))
 }
 
@@ -175,17 +185,17 @@ print([d.v, d.extra, d.get()])
 EOF
 
 prog "type annotations" <<'EOF'
-fn add(a: num, b: num) -> num { return a + b }
-fn greet(name: str, times: num = 2) -> str {
+fn add(a: num, b: num): num { return a + b }
+fn greet(name: str, times: num = 2): str {
   let out: str = ""
   for (let i = 0; i < times; i = i + 1) { out = out + name + "!" }
   return out
 }
-fn total(xs: list) -> num { let s: num = 0 for x in xs { s = s + x } return s }
-fn pick(d: dict, k: str) -> num { return d[k] }
-fn flag(b: bool) -> bool { return not b }
-fn apply(f: fn, v: num) -> num { return f(v) }
-fn dbl(x: num) -> num { return x * 2 }
+fn total(xs: list): num { let s: num = 0 for x in xs { s = s + x } return s }
+fn pick(d: dict, k: str): num { return d[k] }
+fn flag(b: bool): bool { return not b }
+fn apply(f: fn, v: num): num { return f(v) }
+fn dbl(x: num): num { return x * 2 }
 print(add(2, 3))
 print(greet("bee"))
 print(greet("bee", 3))
@@ -194,14 +204,14 @@ print(pick({"a": 7}, "a"))
 print(flag(false))
 print(apply(dbl, 21))
 
-class Animal { fn init(n: str) { this.n = n } fn name() -> str { return this.n } }
-class Dog extends Animal { fn speak() -> str { return super.name() + " barks" } }
-fn describe(a: Animal) -> str { return a.name() }
+class Animal { fn init(n: str) { this.n = n } fn name(): str { return this.n } }
+class Dog extends Animal { fn speak(): str { return super.name() + " barks" } }
+fn describe(a: Animal): str { return a.name() }
 let d = new Dog("rex")
 print(describe(d))
 print(d.speak())
 
-fn scale(b: buffer, k: num) -> buffer {
+fn scale(b: buffer, k: num): buffer {
   for (let i = 0; i < 4; i = i + 1) { b[i] = b[i] * k }
   return b
 }
@@ -220,7 +230,7 @@ EOF
 prog "typed opcodes stay honest" <<'EOF'
 # A slot reused by a for-in variable after an annotated let had it: inheriting
 # the `num` marking would run unchecked arithmetic on a string.
-fn reuse(xs: list) -> str {
+fn reuse(xs: list): str {
   { let a: num = 1  }
   let out: str = ""
   for x in xs { out = out + x }
@@ -229,7 +239,7 @@ fn reuse(xs: list) -> str {
 print(reuse(["a", "b", "c"]))
 
 # The same shape via a list comprehension.
-fn reuse2(xs: list) -> num {
+fn reuse2(xs: list): num {
   { let a: num = 5  }
   let n: num = 0
   for y in [len(s) for s in xs] { n = n + y }
@@ -238,7 +248,7 @@ fn reuse2(xs: list) -> num {
 print(reuse2(["a", "bb", "ccc"]))
 
 # Assignment must keep the annotation true, in a loop as well as once.
-fn mutate(n: num) -> num {
+fn mutate(n: num): num {
   let acc: num = 0
   for (let i: num = 0; i < n; i = i + 1) { acc = acc + i * 2 }
   return acc
@@ -247,12 +257,12 @@ print(mutate(10))
 try { print(mutate(3) + mutate("x")) } catch (e) { print("caught: " + e) }
 
 # A default value has to satisfy the annotation too.
-fn withDefault(a: num, b: num = 7) -> num { return a + b }
+fn withDefault(a: num, b: num = 7): num { return a + b }
 print(withDefault(1))
 print(withDefault(1, 2))
 
 # Typed arithmetic and buffer indexing against the same computation untyped.
-fn tdot(a: buffer, b: buffer, n: num) -> num {
+fn tdot(a: buffer, b: buffer, n: num): num {
   let s: num = 0
   for (let i: num = 0; i < n; i = i + 1) { s = s + a[i] * b[i] }
   return s
@@ -271,8 +281,8 @@ try { print(tdot(ba, bb, 99)) } catch (e) { print("caught: " + e) }
 try { print(udot(ba, bb, 99)) } catch (e) { print("caught: " + e) }
 
 # Typed division and modulo keep their zero checks.
-fn divs(a: num, b: num) -> num { return a / b }
-fn mods(a: num, b: num) -> num { return a % b }
+fn divs(a: num, b: num): num { return a / b }
+fn mods(a: num, b: num): num { return a % b }
 print([divs(9, 2), mods(9, 2)])
 try { print(divs(1, 0)) } catch (e) { print("caught: " + e) }
 try { print(mods(1, 0)) } catch (e) { print("caught: " + e) }
@@ -331,12 +341,12 @@ print(poly(4, 2))
 EOF
 
 prog "type violations" <<'EOF'
-fn f(a: num) -> num { return a }
-fn g() -> num { return "hi" }
-fn h() -> num { let x = 1 }
+fn f(a: num): num { return a }
+fn g(): num { return "hi" }
+fn h(): num { let x = 1 }
 fn i() { let x: num = "s" return x }
 class A {} class B {}
-fn j(a: A) -> num { return 1 }
+fn j(a: A): num { return 1 }
 try { print(f("hi")) }   catch (e) { print("1: " + e) }
 try { print(f(nil)) }    catch (e) { print("2: " + e) }
 try { print(f(true)) }   catch (e) { print("3: " + e) }
@@ -520,15 +530,113 @@ for (let i = 1; i < 60000; i = i + 1) { s = s + 100 / (i - 30000) }
 print(s)
 EOF
 
-# Sized numeric types: the VM/JIT decline these functions (usesSized), so both
-# engines run them on the tree-walker and must still agree on the wrapping.
+# Sized numeric types now compile on every tier -- the VM wraps with COERCE and
+# the JIT inlines the same wrap -- so these are real three-way comparisons, not
+# three runs of the tree-walker.
 prog "sized numeric types wrap identically" <<'EOF'
-fn hot(n: i32) -> u8 {
+fn hot(n: i32): u8 {
     let acc: u8 = 0
     for i in range(n) { acc = acc + 1 }
     return acc
 }
 print(hot(1000), hot(300), hot(256))
+EOF
+
+# Every width, wrapped by a loop hot enough to be compiled, with the wrap on a
+# local, a parameter and the return value. A tier that skipped any one of those
+# stores would disagree here.
+prog "every sized width wraps identically when hot" <<'EOF'
+fn go(step: i16): i64 {
+    let acc: i64 = 0
+    let narrow: i8 = 0
+    let mid: u16 = 0
+    let wide: u32 = 0
+    for (let i = 0; i < 50000; i += 1) {
+        acc += i * step
+        narrow += 3
+        mid += 1000
+        wide += 100000
+    }
+    return acc + narrow + mid + wide
+}
+print(go(7), go(40000), go(-5))
+EOF
+
+# A sized global driven by a top-level loop: the loop JIT compiles this one, and
+# it has to apply the same wrap the tree-walker does rather than run the loop in
+# plain doubles.
+prog "sized global wraps in a top-level loop" <<'EOF'
+let small: i8 = 0
+let un: u8 = 0
+let mid: i16 = 0
+for (let i = 0; i < 100000; i += 1) { small += 1  un += 3  mid += 7 }
+print(small, un, mid)
+EOF
+
+# The JIT skips the integer round-trip on an i64/u64 store when the value is
+# already known to be an exact integer. That reasoning holds only inside the
+# int64 range, so these push hot loops across 2^53 and 2^63, through negative
+# values into u64, and through a product too big to be exact in a double.
+prog "integer-valued stores wrap at the range edges" <<'EOF'
+fn at_2p53(): i64 {
+    let a: i64 = 9007199254740992
+    let b: i64 = 0
+    for (let k: i64 = 0; k < 100000; k += 1) { b = a + k }
+    return b
+}
+fn past_2p63(): i64 {
+    let a: i64 = 4611686018427387904
+    let b: i64 = 0
+    for (let k: i64 = 0; k < 100000; k += 1) { b = a * 4 + k }
+    return b
+}
+fn negative(): i64 {
+    let a: i64 = -9007199254740993
+    let s: i64 = 0
+    for (let k: i64 = 0; k < 100000; k += 1) { s = a - k * 1000000000 }
+    return s
+}
+fn unsigned_negative(): u64 {
+    let u: u64 = 0
+    for (let k: i64 = 0; k < 100000; k += 1) { u = 5 - k * 3 }
+    return u
+}
+fn unsigned_top(): u64 {
+    let u: u64 = 0
+    for (let k: u64 = 0; k < 100000; k += 1) { u = 18446744073709551615 - k }
+    return u
+}
+fn not_integral(): i64 {
+    let f = 2.5
+    let s: i64 = 0
+    for (let k: i64 = 0; k < 100000; k += 1) { s = f * 3.0 + k }
+    return s
+}
+fn narrow_product(): i32 {
+    let a: i32 = 2000000000
+    let r: i32 = 0
+    for (let k: i32 = 0; k < 100000; k += 1) { r = a * a + k }
+    return r
+}
+print(at_2p53(), past_2p63(), negative())
+print(unsigned_negative(), unsigned_top(), not_integral(), narrow_product())
+EOF
+
+# NaN is unordered, and Bee resolves that through a three-way compare: < and >
+# are false, but <= and >= are true. A tier using the machine's ordered compare
+# would say false for all four.
+prog "unordered comparisons agree across tiers" <<'EOF'
+fn nan_cmp() {
+    let a = 1.0
+    for (let k = 0; k < 400; k += 1) { a = a * 10.0 }
+    let nan = a - a
+    let x = 5.0
+    print(nan < x, nan > x, nan <= x, nan >= x, nan == nan, nan != nan)
+    let hot = 0
+    for (let i = 0; i < 60000; i += 1) { if nan <= x { hot += 1 } }
+    print(hot)
+}
+nan_cmp()
 EOF
 
 echo

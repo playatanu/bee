@@ -1952,8 +1952,7 @@ Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector
     // native code hit something it can't handle (e.g. division by zero); we
     // then fall through to the interpreter, which is safe because the JIT
     // subset has no side effects.
-    if (!fn->boundThis && !fn->definingClass && rest < 0 && provided == np && np <= kMaxJitArgs &&
-        !decl->usesSized) {   // sized types need wrapping the JIT doesn't do
+    if (!fn->boundThis && !fn->definingClass && rest < 0 && provided == np && np <= kMaxJitArgs) {
         // The argument types *are* the guard. Each call classifies what it is
         // actually passing; native code exists per signature, so a call with
         // different types simply finds none and runs interpreted. Numbers pass
@@ -2011,7 +2010,7 @@ Value Interpreter::callFunction(const std::shared_ptr<Function>& fn, std::vector
     // Second fast path: a body the register VM could compile runs as bytecode,
     // with its frame in registers rather than an Environment. Exact arity only --
     // defaults and rest parameters stay on the tree-walker.
-    if (rest < 0 && provided == np && !decl->usesSized) {
+    if (rest < 0 && provided == np) {
         if (Chunk* ch = vm.chunkFor(decl)) {
             Value r = vm.run(*this, *ch, fn, args, line);
             if (fn->isInitializer && fn->boundThis) return Value(fn->boundThis);

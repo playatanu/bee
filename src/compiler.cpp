@@ -18,20 +18,24 @@ public:
 
     void compile(const FunctionStmt* fn) {
         // Locals occupy registers 0 .. frameSlots-1; temporaries live above.
+        fn_ = fn;
         nextReg_ = fn->frameSlots;
         maxReg_ = nextReg_;
         if (nextReg_ > kMaxOperand) throw CompileBail{};
         line_ = fn->line;
 
-        // A sized-numeric return type needs wrapping the VM doesn't do; the
-        // tree-walker coerces at return, so hand the whole function to it.
-        // (Sized param/let/assign types bail via fromAnnotation below.)
-        if (fn->returnType.isSizedNum()) throw CompileBail{};
-
         // Declared parameters seed the register types. They are checked on
         // entry and on every assignment, so the annotation holds throughout.
         for (size_t i = 0; i < fn->paramTypes.size(); ++i)
             setType((uint16_t)(fn->paramStart + (int)i), fromAnnotation(fn->paramTypes[i]));
+
+        // A sized parameter wraps on entry: the caller passes an arbitrary
+        // number and the annotation says how much of it the name can hold. The
+        // tree-walker does this in its argument loop, so the VM has to as well.
+        for (size_t i = 0; i < fn->paramTypes.size(); ++i)
+            if (fn->paramTypes[i].isSizedNum())
+                emit(Op::COERCE, (uint16_t)(fn->paramStart + (int)i),
+                     typeCheckSite(fn->paramTypes[i], fn->params[i], fn->line));
 
         for (auto& s : fn->body) stmt(s.get());
         emit(Op::RETURN_NIL);
@@ -45,6 +49,7 @@ public:
 
 private:
     Chunk& ch_;
+    const FunctionStmt* fn_ = nullptr;   // the function being compiled, for its return type
     int nextReg_ = 0, maxReg_ = 0;
     int line_ = 0;
     std::map<std::string, uint16_t> nameIndex_;
@@ -72,10 +77,9 @@ private:
         regType_[r] = t;
     }
     static RT fromAnnotation(const TypeAnn& t) {
-        // Sized numeric types (i8..u64, f16/f32/f64) carry wrapping/rounding
-        // semantics the register VM doesn't implement yet, so abandon the
-        // function and let the tree-walker (which does) run it.
-        if (t.isSizedNum()) throw CompileBail{};
+        // A sized numeric type is still a number as far as register typing is
+        // concerned -- the width only decides what COERCE does at each store,
+        // which is emitted separately (see coerceSite).
         switch (t.kind) {
             case TypeAnn::Kind::Num:    return RT::Num;
             case TypeAnn::Kind::Bool:   return RT::Bool;
@@ -175,6 +179,11 @@ private:
                         !l->initializer)
                         emit(Op::CHECK_TYPE, (uint16_t)l->slot,
                              typeCheckSite(l->type, l->name, l->line));
+                    // The wrap can never be elided the way the check can: the
+                    // initialiser being a number says nothing about it fitting.
+                    if (l->type.isSizedNum())
+                        emit(Op::COERCE, (uint16_t)l->slot,
+                             typeCheckSite(l->type, l->name, l->line));
                     setType((uint16_t)l->slot, want);
                 } else {
                     setType((uint16_t)l->slot, RT::Unknown);   // see regType_
@@ -200,6 +209,8 @@ private:
                 if (!r->value) { emit(Op::RETURN_NIL); break; }
                 int m = mark();
                 uint16_t v = expr(r->value.get());
+                if (fn_ && fn_->returnType.isSizedNum())   // `: i8` wraps the result
+                    emit(Op::COERCE, v, typeCheckSite(fn_->returnType, "return", r->line));
                 emit(Op::RETURN, v);
                 release(m);
                 break;
@@ -401,10 +412,18 @@ private:
                         (want == RT::Unknown || typeAt((uint16_t)a->slot) != want))
                         emit(Op::CHECK_TYPE, (uint16_t)a->slot,
                              typeCheckSite(a->declaredType, a->name, a->line));
+                    if (a->declaredType.isSizedNum())
+                        emit(Op::COERCE, (uint16_t)a->slot,
+                             typeCheckSite(a->declaredType, a->name, a->line));
                     setType((uint16_t)a->slot, want);   // Unknown when undeclared
                     return (uint16_t)a->slot;
                 }
                 uint16_t v = expr(a->value.get());
+                // Wrap before the store, not after: what lands in the variable
+                // has to be the wrapped value. COERCE is the identity on a
+                // non-number, so the CHECK_TYPE below still reports the error.
+                if (a->declaredType.isSizedNum())
+                    emit(Op::COERCE, v, typeCheckSite(a->declaredType, a->name, a->line));
                 if (a->global) emit(Op::SET_GLOBAL, v, nameSlot(a->name), cacheSlot());
                 else emit(Op::SET_ENV, v, (uint16_t)a->depth, (uint16_t)a->slot);
                 if (a->declaredType.declared())

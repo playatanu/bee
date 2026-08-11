@@ -150,7 +150,7 @@ StmtPtr Parser::letStatement(bool isConst) {
     return stmt;
 }
 
-// A type annotation, after the ':' or '->' that introduces it. Any identifier
+// A type annotation, after the ':' (or legacy '->') that introduces it. Any identifier
 // is accepted: the built-in type names are recognised, and anything else is
 // taken to name a class, which is checked when a value actually arrives.
 TypeAnn Parser::typeAnnotation() {
@@ -187,7 +187,14 @@ void Parser::parseParams(FunctionStmt* fn) {
         } while (match(TokenType::COMMA));
     }
     consume(TokenType::RPAREN, "expected ')' after parameters");
-    if (match(TokenType::ARROW)) fn->returnType = typeAnnotation();
+    // `fn f(): i64` -- the return type is annotated exactly like a parameter or
+    // a `let`, so one spelling of "this name has this type" covers the language.
+    // `->` remains accepted for code written against earlier releases; it is no
+    // longer the documented form. Neither is ambiguous here: a function body
+    // must open with `{`, so a signature is the only place a `)` can be
+    // followed by a type.
+    if (match(TokenType::COLON) || match(TokenType::ARROW))
+        fn->returnType = typeAnnotation();
 
     fn->typed = fn->returnType.declared();
     for (auto& t : fn->paramTypes) if (t.declared()) fn->typed = true;
