@@ -21,14 +21,33 @@ namespace bee {
 //
 struct TypeAnn {
     enum class Kind : uint8_t { Any, Num, Str, Bool, List, Dict, Buffer, Nil, Fn, Class };
+    // Sized numeric sub-type. `Dyn` is the plain dynamic `num` (a double); the
+    // others are fixed-width integers (two's-complement, wrapping on overflow)
+    // and floats. All of them have kind == Num, so everything that already
+    // treats a numeric annotation as "a number" keeps working unchanged; the
+    // width only steers native storage/arithmetic in the compilers.
+    enum class NumTy : uint8_t { Dyn, I8, U8, I16, U16, I32, U32, I64, U64, F16, F32, F64 };
     Kind kind = Kind::Any;
-    std::string className;   // when kind == Class
+    NumTy num = NumTy::Dyn;   // meaningful only when kind == Num
+    std::string className;    // when kind == Class
     int line = 0;
 
     bool declared() const { return kind != Kind::Any; }
+    bool isSizedNum() const { return kind == Kind::Num && num != NumTy::Dyn; }
+    static const char* numName(NumTy n) {
+        switch (n) {
+            case NumTy::I8:  return "i8";   case NumTy::U8:  return "u8";
+            case NumTy::I16: return "i16";  case NumTy::U16: return "u16";
+            case NumTy::I32: return "i32";  case NumTy::U32: return "u32";
+            case NumTy::I64: return "i64";  case NumTy::U64: return "u64";
+            case NumTy::F16: return "f16";  case NumTy::F32: return "f32";
+            case NumTy::F64: return "f64";  case NumTy::Dyn: break;
+        }
+        return "num";
+    }
     std::string name() const {
         switch (kind) {
-            case Kind::Num:    return "num";
+            case Kind::Num:    return numName(num);
             case Kind::Str:    return "str";
             case Kind::Bool:   return "bool";
             case Kind::List:   return "list";
@@ -41,10 +60,21 @@ struct TypeAnn {
         }
         return "any";
     }
+    // Map a sized-numeric type name to its NumTy, or Dyn if not one.
+    static NumTy numTyNamed(const std::string& s) {
+        if (s == "i8")  return NumTy::I8;   if (s == "u8")  return NumTy::U8;
+        if (s == "i16") return NumTy::I16;  if (s == "u16") return NumTy::U16;
+        if (s == "i32") return NumTy::I32;  if (s == "u32") return NumTy::U32;
+        if (s == "i64") return NumTy::I64;  if (s == "u64") return NumTy::U64;
+        if (s == "f16") return NumTy::F16;  if (s == "f32") return NumTy::F32;
+        if (s == "f64") return NumTy::F64;
+        return NumTy::Dyn;
+    }
     // The annotation a name spells, or Any if it is not a built-in type name --
     // in which case it is taken to be a class.
     static Kind builtinNamed(const std::string& s) {
         if (s == "num")    return Kind::Num;
+        if (numTyNamed(s) != NumTy::Dyn) return Kind::Num;   // i8/u8/.../f32/f64
         if (s == "str")    return Kind::Str;
         if (s == "bool")   return Kind::Bool;
         if (s == "list")   return Kind::List;

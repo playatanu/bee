@@ -158,6 +158,7 @@ TypeAnn Parser::typeAnnotation() {
     Token name = consume(TokenType::IDENTIFIER, "expected a type name");
     t.line = name.line;
     t.kind = TypeAnn::builtinNamed(name.lexeme);
+    if (t.kind == TypeAnn::Kind::Num) t.num = TypeAnn::numTyNamed(name.lexeme);  // Dyn for `num`
     if (t.kind == TypeAnn::Kind::Any && name.lexeme != "any") {
         t.kind = TypeAnn::Kind::Class;
         t.className = name.lexeme;
