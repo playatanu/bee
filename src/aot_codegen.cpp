@@ -310,8 +310,17 @@ private:
     int indent_ = 0;
     int uid_ = 0;
 
-    struct Scope { bool global; std::map<std::string, std::string> vars; };
+    // A local binding. Normally a reference-counted cell (shared_ptr<Value>);
+    // for a non-escaping sized-numeric `let` it is instead a plain C++ `double`
+    // holding the coerced value, which skips the cell/Value indirection in hot
+    // loops. `native` selects which; `nty` is the sized type for coercion.
+    struct VarInfo { std::string cvar; bool native = false; TypeAnn::NumTy nty = TypeAnn::NumTy::Dyn; };
+    struct Scope { bool global; std::map<std::string, VarInfo> vars; };
     std::vector<Scope> scopes_;
+    // True while emitting a function whose body defines no closures, so a native
+    // local can't be captured by-value and lose shared mutation. Conservative:
+    // any closure anywhere in the function disables native locals for all of it.
+    bool nativeLocalsOk_ = false;
 
     std::string curThisCell_;    // the current method's `this` cell, or "" outside a method
     std::string curSuperName_;   // the current class's superclass name, or "" if none
@@ -328,26 +337,86 @@ private:
         Scope& s = scopes_.back();
         if (s.global) return "";
         std::string c = fresh("v");
-        s.vars[name] = c;
+        s.vars[name] = VarInfo{c, false, TypeAnn::NumTy::Dyn};
         return c;
     }
-    std::string resolve(const std::string& name) {
+    // Declare a native (unboxed `double`) sized-numeric local; returns its C var.
+    std::string declareNative(const std::string& name, TypeAnn::NumTy nty) {
+        Scope& s = scopes_.back();
+        std::string c = fresh("n");
+        s.vars[name] = VarInfo{c, true, nty};
+        return c;
+    }
+    const VarInfo* resolveInfo(const std::string& name) {
         for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it)
             if (!it->global) {
                 auto f = it->vars.find(name);
-                if (f != it->vars.end()) return f->second;
+                if (f != it->vars.end()) return &f->second;
             }
-        return "";
+        return nullptr;
+    }
+    std::string resolve(const std::string& name) {
+        const VarInfo* v = resolveInfo(name);
+        return v ? v->cvar : std::string();
     }
     // The C++ expression yielding the Value bound to `name` (a local cell load,
     // or a global/built-in lookup). A global reference caches its stable slot in
     // a per-site static Value*, so after the first hit it costs a pointer load
     // rather than a std::map string lookup -- the dominant cost in hot loops.
     std::string nameValue(const std::string& name, int line) {
-        std::string c = resolve(name);
-        if (!c.empty()) return "bee::aot::load(" + c + ")";
+        if (const VarInfo* v = resolveInfo(name)) {
+            if (v->native) return "bee::Value(" + v->cvar + ")";   // box the double
+            return "bee::aot::load(" + v->cvar + ")";
+        }
         return "([&]()->bee::Value&{ static bee::Value* _s=nullptr; return bee::aot::slotRef(I, " +
                genv_ + ", " + cstr(name) + ", " + std::to_string(line) + ", _s); }())";
+    }
+
+    // Try to emit `e` as a native C++ `double` expression (no Value boxing),
+    // returning "" if it can't. Covers what a numeric hot loop needs: native
+    // locals, number literals, and +/-/* over them (which match Bee's double
+    // arithmetic exactly). Division and % are excluded -- they carry Bee's
+    // divide-by-zero error and modulo semantics -- as are comparisons (they
+    // yield booleans), so those fall back to the boxed path.
+    std::string nativeNum(Expr* e) {
+        if (!e) return "";
+        switch (e->kind) {
+            case Expr::Kind::Literal: {
+                auto* l = static_cast<LiteralExpr*>(e);
+                return l->value.isNumber() ? "(" + numLit(l->value.asNumber()) + ")" : std::string();
+            }
+            case Expr::Kind::Variable: {
+                const VarInfo* v = resolveInfo(static_cast<VariableExpr*>(e)->name);
+                return (v && v->native) ? v->cvar : std::string();
+            }
+            case Expr::Kind::Grouping:
+                return nativeNum(static_cast<GroupingExpr*>(e)->inner.get());
+            case Expr::Kind::Unary: {
+                auto* u = static_cast<UnaryExpr*>(e);
+                if (u->op != TokenType::MINUS) return "";
+                std::string r = nativeNum(u->right.get());
+                return r.empty() ? "" : "(-" + r + ")";
+            }
+            case Expr::Kind::Binary: {
+                auto* b = static_cast<BinaryExpr*>(e);
+                const char* op = b->op == TokenType::PLUS ? "+" :
+                                 b->op == TokenType::MINUS ? "-" :
+                                 b->op == TokenType::STAR ? "*" : nullptr;
+                if (!op) return "";
+                std::string l = nativeNum(b->left.get());
+                if (l.empty()) return "";
+                std::string r = nativeNum(b->right.get());
+                if (r.empty()) return "";
+                return "(" + l + " " + op + " " + r + ")";
+            }
+            default: return "";
+        }
+    }
+    // A native `double` for `e`, falling back to unboxing a boxed Value when it
+    // isn't natively expressible. Used to feed a native (sized) store.
+    std::string asNativeNum(Expr* e) {
+        std::string n = nativeNum(e);
+        return !n.empty() ? n : "(" + emitExpr(e) + ").asNumber()";
     }
 
     void raw(const std::string& s) { (*active_) << s; }
@@ -436,6 +505,11 @@ private:
     }
 
     std::string assignExpr(AssignExpr* e) {
+        // Native (unboxed) sized local: coerce a native double and store it,
+        // yielding the boxed value so `x = ...` still works as an expression.
+        if (const VarInfo* v = resolveInfo(e->name); v && v->native)
+            return "([&]{ " + v->cvar + " = bee::TypeAnn::coerce((" + asNativeNum(e->value.get()) +
+                   "), " + numTyEnum(v->nty) + "); return bee::Value(" + v->cvar + "); }())";
         std::string val = coerceIfSized(e->declaredType, emitExpr(e->value.get()));
         std::string c = resolve(e->name);
         if (!c.empty()) return "bee::aot::store(" + c + ", (" + val + "))";
@@ -622,6 +696,9 @@ private:
         std::string savedThis = curThisCell_;
         TypeAnn savedRet = curReturnType_;
         curReturnType_ = fn->returnType;
+        bool savedNative = nativeLocalsOk_;
+        // Native locals are safe only when nothing here can capture them by value.
+        nativeLocalsOk_ = !fn->hasNestedFn;
         pushScope();   // function scope: params + locals are cells
 
         int off = isMethod ? 1 : 0;
@@ -674,6 +751,7 @@ private:
         indent_ = savedIndent;
         curThisCell_ = savedThis;
         curReturnType_ = savedRet;
+        nativeLocalsOk_ = savedNative;
         std::string body = popOut(prev);
         return "bee::aot::makeFn(" + cstr(fn->name) +
                ", [=](bee::Interpreter& I, std::vector<bee::Value>& args) -> bee::Value {\n" +
@@ -704,6 +782,14 @@ private:
 
     void letStmt(LetStmt* s) {
         if (s->isDestructure) { destructureLet(s); return; }
+        // A non-escaping sized-numeric local becomes a native `double` (coerced
+        // to its type on write): no cell/Value indirection in the hot path.
+        if (!scopes_.back().global && nativeLocalsOk_ && s->type.isSizedNum()) {
+            std::string initD = s->initializer ? asNativeNum(s->initializer.get()) : std::string("0.0");
+            std::string c = declareNative(s->name, s->type.num);   // after initD (no self-ref)
+            emit("double " + c + " = bee::TypeAnn::coerce((" + initD + "), " + numTyEnum(s->type.num) + ");");
+            return;
+        }
         std::string init = s->initializer ? emitExpr(s->initializer.get()) : std::string("bee::Value()");
         init = coerceIfSized(s->type, init);   // `let x: i8 = ...` wraps into range
         if (scopes_.back().global) {

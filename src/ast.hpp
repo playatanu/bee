@@ -445,6 +445,10 @@ struct FunctionStmt : Stmt {
     // tree-walker implements, so the register VM and the LLVM JIT decline it
     // (see the resolver, which sets this). Keeps the three engines in agreement.
     bool usesSized = false;
+    // True when this function contains a nested function/lambda/class-method (a
+    // closure). The AOT compiler only promotes sized locals to native C++ vars
+    // when false, since a by-value closure capture would break shared mutation.
+    bool hasNestedFn = false;
     int restParam = -1;             // index of a `...rest` param, or -1
     std::vector<StmtPtr> body;
     // Resolver-filled frame layout: total slots, and where params begin (after

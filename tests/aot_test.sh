@@ -90,6 +90,12 @@ check sized_return   $'fn f() -> i16 { return 100000 }\nprint(f())'
 check sized_float    $'let f: f32 = 1.0 / 3.0\nprint(f)'
 check sized_half     $'let h: f16 = 1.0 / 3.0\nlet k: f16 = 65504.0\nprint(h, k)'
 check sized_loop     $'let acc: u8 = 0\nfor i in range(1000) { acc = acc + 1 }\nprint(acc)'
+# Native-local storage (Phase 2b) must stay behaviour-identical, including the
+# escape case: a sized local captured by a closure must keep shared mutation.
+check sized_native   $'fn r() -> i32 {\n  let acc: i32 = 0\n  for i in range(100000) { acc = acc + 1 }\n  return acc\n}\nprint(r())'
+check sized_capture  $'fn r() {\n  let acc: i32 = 10\n  let get = fn() { return acc }\n  acc = acc + 5\n  return get()\n}\nprint(r())'
+check sized_native_f $'fn r() -> f32 {\n  let s: f32 = 0.0\n  for i in range(10) { s = s + 0.1 }\n  return s\n}\nprint(r())'
+check sized_native_dyn $'fn dbl(x) { return x * 2 }\nfn r() {\n  let a: u8 = 200\n  a = a + 100\n  return dbl(a)\n}\nprint(r())'
 
 echo
 echo "beec: unresolvable / unsupported imports are refused, not miscompiled"

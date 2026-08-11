@@ -406,6 +406,7 @@ void Resolver::resolveStmt(Stmt* s) {
 }
 
 void Resolver::resolveFunction(FunctionStmt* fn, bool isMethod, bool hasSuper) {
+    if (curFn_) curFn_->hasNestedFn = true;   // fn is a closure nested in curFn_
     FunctionStmt* savedFn = curFn_;
     curFn_ = fn;
     // A sized numeric type anywhere in the signature (or, via the body handlers
