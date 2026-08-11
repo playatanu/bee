@@ -6,6 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **AOT compiler (`beec`) loop performance.** Compiled programs ran hot loops
+  much slower than they should have — often slower than the JIT interpreter.
+  Three codegen changes, all behaviour-identical to the interpreter (verified
+  against it across the example suite and a battery of edge cases):
+
+  - **Global reads/writes cache their slot.** A top-level `let` lives in the
+    globals map, and every access re-hashed the name string. Each reference now
+    resolves its stable slot once (via `Environment::findNameSlot`) and reuses
+    the pointer, turning a per-iteration hash lookup into a pointer load.
+  - **`for x in range(...)` compiles to a native counting loop.** The built-in
+    `range` no longer materialises an N-element list per loop entry; the
+    induction variable is a native `double`. Applied only when `range` is
+    provably the built-in (never shadowed or rebound), with argument evaluation,
+    coercion order, and every error matching the built-in exactly.
+  - **Number arithmetic and comparison inline.** `a + b` on two numbers no
+    longer calls out to the runtime's `applyBinary`; the common numeric path is
+    inlined (with identical division/modulo-by-zero errors and NaN ordering),
+    falling back to the shared runtime for strings, lists, equality, and
+    bitwise/shift.
+
+  Net effect on a 100M-iteration nested `range` loop with a global accumulator:
+  **~7.5s → ~0.6s (~12×)**, from well behind the JIT interpreter to well ahead.
+
 ## [0.3.5] — 2026-08-11
 
 ### Fixed

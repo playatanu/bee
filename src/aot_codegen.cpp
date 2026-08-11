@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -75,6 +76,173 @@ const char* opName(TokenType t) {
     }
 }
 
+// ---- Bound-name collection ------------------------------------------------
+// To specialise a built-in like `range`, the codegen must be sure the name
+// still refers to the built-in. These walkers collect every identifier the
+// program binds or assigns -- at any scope, in any module. If `range` never
+// appears among them, the global `range` is guaranteed the built-in. This is
+// deliberately conservative: any use of the identifier as a target (even a
+// local param in an unrelated function) disables the optimisation, which is
+// safe -- it never specialises a user-controlled name.
+void collectBound(Expr* e, std::set<std::string>& out);
+void collectBoundStmt(Stmt* s, std::set<std::string>& out);
+
+void collectBound(Expr* e, std::set<std::string>& out) {
+    if (!e) return;
+    switch (e->kind) {
+        case Expr::Kind::Assign: {
+            auto* a = static_cast<AssignExpr*>(e);
+            out.insert(a->name);
+            collectBound(a->value.get(), out);
+            break;
+        }
+        case Expr::Kind::Binary: {
+            auto* b = static_cast<BinaryExpr*>(e);
+            collectBound(b->left.get(), out); collectBound(b->right.get(), out); break;
+        }
+        case Expr::Kind::Logical: {
+            auto* b = static_cast<LogicalExpr*>(e);
+            collectBound(b->left.get(), out); collectBound(b->right.get(), out); break;
+        }
+        case Expr::Kind::Unary:   collectBound(static_cast<UnaryExpr*>(e)->right.get(), out); break;
+        case Expr::Kind::Grouping:collectBound(static_cast<GroupingExpr*>(e)->inner.get(), out); break;
+        case Expr::Kind::Call: {
+            auto* c = static_cast<CallExpr*>(e);
+            collectBound(c->callee.get(), out);
+            for (auto& a : c->args) collectBound(a.get(), out);
+            break;
+        }
+        case Expr::Kind::Get:     collectBound(static_cast<GetExpr*>(e)->object.get(), out); break;
+        case Expr::Kind::Set: {
+            auto* st = static_cast<SetExpr*>(e);
+            collectBound(st->object.get(), out); collectBound(st->value.get(), out); break;
+        }
+        case Expr::Kind::Index: {
+            auto* i = static_cast<IndexExpr*>(e);
+            collectBound(i->object.get(), out); collectBound(i->index.get(), out); break;
+        }
+        case Expr::Kind::IndexSet: {
+            auto* i = static_cast<IndexSetExpr*>(e);
+            collectBound(i->object.get(), out); collectBound(i->index.get(), out);
+            collectBound(i->value.get(), out); break;
+        }
+        case Expr::Kind::Slice: {
+            auto* sl = static_cast<SliceExpr*>(e);
+            collectBound(sl->object.get(), out); collectBound(sl->start.get(), out);
+            collectBound(sl->end.get(), out); break;
+        }
+        case Expr::Kind::ListLit:
+            for (auto& x : static_cast<ListLitExpr*>(e)->elements) collectBound(x.get(), out);
+            break;
+        case Expr::Kind::DictLit:
+            for (auto& kv : static_cast<DictLitExpr*>(e)->entries) {
+                collectBound(kv.first.get(), out); collectBound(kv.second.get(), out);
+            }
+            break;
+        case Expr::Kind::Ternary: {
+            auto* t = static_cast<TernaryExpr*>(e);
+            collectBound(t->cond.get(), out); collectBound(t->thenBranch.get(), out);
+            collectBound(t->elseBranch.get(), out); break;
+        }
+        case Expr::Kind::Function: {
+            auto* fn = static_cast<FunctionExpr*>(e)->fn.get();
+            for (auto& p : fn->params) out.insert(p);
+            for (auto& d : fn->defaults) if (d) collectBound(d.get(), out);
+            for (auto& st : fn->body) collectBoundStmt(st.get(), out);
+            break;
+        }
+        case Expr::Kind::ListComp: {
+            auto* lc = static_cast<ListCompExpr*>(e);
+            out.insert(lc->name);
+            collectBound(lc->elem.get(), out); collectBound(lc->iterable.get(), out);
+            collectBound(lc->cond.get(), out); break;
+        }
+        default: break;   // Literal, Variable, This, Super: nothing bound
+    }
+}
+
+void collectBoundStmt(Stmt* s, std::set<std::string>& out) {
+    if (!s) return;
+    switch (s->kind) {
+        case Stmt::Kind::Expression: collectBound(static_cast<ExprStmt*>(s)->expr.get(), out); break;
+        case Stmt::Kind::Let: {
+            auto* l = static_cast<LetStmt*>(s);
+            if (l->isDestructure) for (auto& n : l->names) out.insert(n);
+            else out.insert(l->name);
+            collectBound(l->initializer.get(), out);
+            break;
+        }
+        case Stmt::Kind::Block:
+            for (auto& st : static_cast<BlockStmt*>(s)->statements) collectBoundStmt(st.get(), out);
+            break;
+        case Stmt::Kind::If: {
+            auto* i = static_cast<IfStmt*>(s);
+            collectBound(i->condition.get(), out);
+            collectBoundStmt(i->thenBranch.get(), out); collectBoundStmt(i->elseBranch.get(), out);
+            break;
+        }
+        case Stmt::Kind::While: {
+            auto* w = static_cast<WhileStmt*>(s);
+            collectBound(w->condition.get(), out); collectBoundStmt(w->body.get(), out); break;
+        }
+        case Stmt::Kind::For: {
+            auto* f = static_cast<ForStmt*>(s);
+            collectBoundStmt(f->init.get(), out); collectBound(f->condition.get(), out);
+            collectBound(f->increment.get(), out); collectBoundStmt(f->body.get(), out); break;
+        }
+        case Stmt::Kind::ForIn: {
+            auto* f = static_cast<ForInStmt*>(s);
+            out.insert(f->name);
+            collectBound(f->iterable.get(), out); collectBoundStmt(f->body.get(), out); break;
+        }
+        case Stmt::Kind::Function: {
+            auto* fn = static_cast<FunctionStmt*>(s);
+            out.insert(fn->name);
+            for (auto& p : fn->params) out.insert(p);
+            for (auto& d : fn->defaults) if (d) collectBound(d.get(), out);
+            for (auto& st : fn->body) collectBoundStmt(st.get(), out);
+            break;
+        }
+        case Stmt::Kind::Return: collectBound(static_cast<ReturnStmt*>(s)->value.get(), out); break;
+        case Stmt::Kind::Throw:  collectBound(static_cast<ThrowStmt*>(s)->value.get(), out); break;
+        case Stmt::Kind::Try: {
+            auto* t = static_cast<TryStmt*>(s);
+            collectBoundStmt(t->body.get(), out);
+            if (!t->catchName.empty()) out.insert(t->catchName);
+            collectBoundStmt(t->catchBody.get(), out); collectBoundStmt(t->finallyBody.get(), out);
+            break;
+        }
+        case Stmt::Kind::Class: {
+            auto* c = static_cast<ClassStmt*>(s);
+            out.insert(c->name);
+            for (auto& m : c->methods) {
+                for (auto& p : m->params) out.insert(p);
+                for (auto& d : m->defaults) if (d) collectBound(d.get(), out);
+                for (auto& st : m->body) collectBoundStmt(st.get(), out);
+            }
+            break;
+        }
+        case Stmt::Kind::Import: {
+            auto* im = static_cast<ImportStmt*>(s);
+            if (!im->bindName.empty()) out.insert(im->bindName);
+            if (!im->alias.empty()) out.insert(im->alias);
+            for (auto& pr : im->names) out.insert(pr.second.empty() ? pr.first : pr.second);
+            break;
+        }
+        case Stmt::Kind::Match: {
+            auto* m = static_cast<MatchStmt*>(s);
+            collectBound(m->subject.get(), out);
+            for (auto& c : m->cases) {
+                for (auto& v : c.values) collectBound(v.get(), out);
+                collectBoundStmt(c.body.get(), out);
+            }
+            collectBoundStmt(m->defaultBody.get(), out);
+            break;
+        }
+        default: break;   // Break, Continue
+    }
+}
+
 class Codegen {
 public:
     std::vector<AotError>& errors;
@@ -85,6 +253,13 @@ public:
         active_ = &out_;
         raw("// Generated by beec from " + sourceName + ". Do not edit.\n");
         raw("#include \"bee_aot.hpp\"\n\n");
+
+        // Decide once whether built-ins we specialise are still the built-ins:
+        // if the program (or any module) never binds/assigns the name, it is.
+        std::set<std::string> bound;
+        for (auto& s : program) collectBoundStmt(s.get(), bound);
+        for (const auto& m : modules) for (auto& s : *m.program) collectBoundStmt(s.get(), bound);
+        rangeIsBuiltin_ = !bound.count("range");
 
         for (const auto& m : modules) modByName_[m.name] = &m;
 
@@ -142,6 +317,7 @@ private:
     std::string curSuperName_;   // the current class's superclass name, or "" if none
     std::string genv_ = "(*I.globals)";   // the named env the current top-level scope binds into
     std::map<std::string, const AotModule*> modByName_;
+    bool rangeIsBuiltin_ = true;   // is `range` still the built-in (never user-bound)?
 
     void pushScope(bool global = false) { scopes_.push_back({global, {}}); }
     void popScope() { scopes_.pop_back(); }
@@ -163,11 +339,14 @@ private:
         return "";
     }
     // The C++ expression yielding the Value bound to `name` (a local cell load,
-    // or a global/built-in lookup).
+    // or a global/built-in lookup). A global reference caches its stable slot in
+    // a per-site static Value*, so after the first hit it costs a pointer load
+    // rather than a std::map string lookup -- the dominant cost in hot loops.
     std::string nameValue(const std::string& name, int line) {
         std::string c = resolve(name);
         if (!c.empty()) return "bee::aot::load(" + c + ")";
-        return "bee::aot::getIn(I, " + genv_ + ", " + cstr(name) + ", " + std::to_string(line) + ")";
+        return "([&]()->bee::Value&{ static bee::Value* _s=nullptr; return bee::aot::slotRef(I, " +
+               genv_ + ", " + cstr(name) + ", " + std::to_string(line) + ", _s); }())";
     }
 
     void raw(const std::string& s) { (*active_) << s; }
@@ -239,8 +418,11 @@ private:
         std::string val = emitExpr(e->value.get());
         std::string c = resolve(e->name);
         if (!c.empty()) return "bee::aot::store(" + c + ", (" + val + "))";
-        return "bee::aot::assignIn(I, " + genv_ + ", " + cstr(e->name) + ", (" + val + "), " +
-               std::to_string(e->line) + ")";
+        // Assign through the cached global slot (see nameValue). The assignment
+        // yields the stored Value, matching assignIn's return.
+        return "([&]()->bee::Value{ static bee::Value* _s=nullptr; return (bee::aot::slotRef(I, " +
+               genv_ + ", " + cstr(e->name) + ", " + std::to_string(e->line) + ", _s) = (" + val +
+               ")); }())";
     }
 
     std::string binaryExpr(BinaryExpr* e) {
@@ -547,7 +729,68 @@ private:
         emit("}");
     }
 
+    // `for x in range(a[,b[,step]])` with the built-in range, if any: return the
+    // call, else nullptr. A local `range` in scope, a user-bound `range`, spread
+    // args, or the wrong arity all decline.
+    CallExpr* rangeCall(Expr* e) {
+        if (!rangeIsBuiltin_ || e->kind != Expr::Kind::Call) return nullptr;
+        auto* c = static_cast<CallExpr*>(e);
+        if (c->callee->kind != Expr::Kind::Variable) return nullptr;
+        if (static_cast<VariableExpr*>(c->callee.get())->name != "range") return nullptr;
+        if (!resolve("range").empty()) return nullptr;              // shadowed by a local here
+        if (c->args.empty() || c->args.size() > 3) return nullptr;
+        for (bool sp : c->spread) if (sp) return nullptr;
+        return c;
+    }
+
+    // A native counting loop for `for x in range(...)`: no N-element Value list
+    // is materialised, and the induction variable is a native double. Argument
+    // evaluation and coercion order, and every error, match the range built-in.
+    void emitRangeLoop(ForInStmt* s, CallExpr* call) {
+        emit("{");
+        indent_++;
+        pushScope();
+        size_t n = call->args.size();
+        std::string cl = std::to_string(call->line);   // the range() call site, for errors
+        // Evaluate all args first (as the call would), then coerce in order.
+        std::vector<std::string> a(n);
+        for (size_t i = 0; i < n; ++i) {
+            a[i] = fresh("ra");
+            emit("bee::Value " + a[i] + " = (" + emitExpr(call->args[i].get()) + ");");
+        }
+        auto num = [&](const std::string& v) { return "bee::aot::rangeNum(I, " + v + ", " + cl + ")"; };
+        std::string lo = fresh("lo"), hi = fresh("hi"), st = fresh("st");
+        if (n == 1) {
+            emit("double " + hi + " = " + num(a[0]) + ";");
+            emit("double " + lo + " = 0, " + st + " = 1;");
+        } else if (n == 2) {
+            emit("double " + lo + " = " + num(a[0]) + ";");
+            emit("double " + hi + " = " + num(a[1]) + "; double " + st + " = 1;");
+        } else {
+            emit("double " + lo + " = " + num(a[0]) + ";");
+            emit("double " + hi + " = " + num(a[1]) + ";");
+            emit("double " + st + " = " + num(a[2]) + ";");
+        }
+        emit("if (" + st + " == 0) I.error(\"range: step cannot be zero\", " + cl + ");");
+        std::string c = declare(s->name);
+        std::string x = fresh("x");
+        emit("auto " + c + " = bee::aot::cell();");
+        emit("for (double " + x + " = " + lo + "; " + st + " > 0 ? " + x + " < " + hi + " : " + x +
+             " > " + hi + "; " + x + " += " + st + ") {");
+        indent_++;
+        emit("*" + c + " = bee::Value(" + x + ");");
+        pushScope();
+        emitStmt(s->body.get());
+        popScope();
+        indent_--;
+        emit("}");
+        popScope();
+        indent_--;
+        emit("}");
+    }
+
     void forInStmt(ForInStmt* s) {
+        if (CallExpr* call = rangeCall(s->iterable.get())) { emitRangeLoop(s, call); return; }
         emit("{");
         indent_++;
         pushScope();

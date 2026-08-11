@@ -99,11 +99,67 @@ inline Value assignIn(Interpreter& I, Environment& env, const char* name, Value 
     return v;
 }
 
+// ---- Cached global/module slots -------------------------------------------
+// A free name resolving to a global (or module top-level) binding lives in a
+// std::map whose node address is stable for the whole run -- globals are never
+// erased. slotIn resolves it once; generated code caches the Value* in a
+// function-local static and then reads/writes it directly, skipping the
+// per-access string hash lookup that getIn/assignIn do on the hot path.
+inline Value* slotIn(Interpreter& I, Environment& env, const char* name, int line) {
+    Value* p = env.findNameSlot(name);
+    if (!p) I.error(std::string("undefined variable '") + name + "'", line);  // [[noreturn]]
+    return p;
+}
+inline Value& slotRef(Interpreter& I, Environment& env, const char* name, int line, Value*& cache) {
+    if (!cache) cache = slotIn(I, env, name, line);
+    return *cache;
+}
+
+// Coerce a range() bound to a double, reporting exactly what the range built-in
+// does when called: the interpreter attaches the call line to a built-in's
+// RuntimeError via I.error(), so the native counting-loop specialisation of
+// `for x in range()` does the same for byte-for-byte identical diagnostics.
+inline double rangeNum(Interpreter& I, const Value& v, int line) {
+    if (!v.isNumber()) I.error("range: expected a number", line);   // [[noreturn]]
+    return v.asNumber();
+}
+
 // Create a fresh module namespace whose parent is the interpreter's globals.
 Value makeModule(Interpreter& I, const char* name, std::shared_ptr<Environment>& envOut);
 
-// ---- Operators (delegated to the shared runtime) --------------------------
+// ---- Operators ------------------------------------------------------------
+// Bee's numbers are all doubles, so number-on-number arithmetic and comparison
+// have no dynamic dispatch to do -- yet routing every `a + b` through the
+// out-of-line applyBinary (in the runtime archive) blocks inlining and dominates
+// hot numeric loops. This inline fast path handles two-number operands directly,
+// mirroring applyBinary's semantics *exactly* (division/modulo-by-zero errors
+// via the same I.error, and the cmp-based comparison so NaN orders identically),
+// and falls back to the shared runtime for every other case -- strings, lists,
+// equality, bitwise/shift, and any non-number operand. It is a pure speed path:
+// no new behaviour, and the optimiser often folds the number check away when an
+// operand is a known-numeric value (e.g. a specialised range() induction var).
 inline Value binary(Interpreter& I, TokenType op, const Value& l, const Value& r, int line) {
+    if (l.isNumber() && r.isNumber()) {
+        double a = l.asNumber(), b = r.asNumber();
+        switch (op) {
+            case TokenType::PLUS:  return Value(a + b);
+            case TokenType::MINUS: return Value(a - b);
+            case TokenType::STAR:  return Value(a * b);
+            case TokenType::SLASH: if (b == 0) I.error("division by zero", line); return Value(a / b);
+            case TokenType::PERCENT: if (b == 0) I.error("modulo by zero", line); return Value(beeMod(a, b));
+            case TokenType::LT: case TokenType::GT:
+            case TokenType::LE: case TokenType::GE: {
+                int cmp = (a < b) ? -1 : (a > b) ? 1 : 0;   // NaN -> 0, matching applyBinary
+                switch (op) {
+                    case TokenType::LT: return Value(cmp < 0);
+                    case TokenType::GT: return Value(cmp > 0);
+                    case TokenType::LE: return Value(cmp <= 0);
+                    default:            return Value(cmp >= 0);   // GE
+                }
+            }
+            default: break;   // EQ/NEQ, bitwise, shifts -> the exact shared path
+        }
+    }
     return I.applyBinary(op, l, r, line);
 }
 inline Value lnot(const Value& v) { return Value(!v.truthy()); }

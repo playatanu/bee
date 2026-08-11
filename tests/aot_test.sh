@@ -65,6 +65,20 @@ check classes      $'class Animal {\n  init(n) { this.name = n }\n  speak() { re
 check match        $'fn f(n) {\n  match n {\n    case 0 { return "zero" }\n    case 1, 2, 3 { return "small" }\n    default { return "big" }\n  }\n}\nprint(f(0), f(2), f(99))'
 check destructure  $'let [a, b, c] = [1, 2, 3]\nlet {x, y} = {"x": 10, "y": 20}\nprint(a, b, c, x, y)'
 
+# Optimisations: cached global slots, native range() loops, inline numeric ops.
+# These must stay behaviour-identical to the interpreter on the tricky cases.
+check globals_hot  $'let total = 0\nfor i in range(1000) { for j in range(1000) { total = total + 1 } }\nprint(total)'
+check range_desc   'for i in range(10, 0, -2) { write(str(i) + " ") } print("")'
+check range_float  'for i in range(0.0, 1.0, 0.25) { write(str(i) + " ") } print("")'
+check range_empty  $'for i in range(5, 2) { print("no") }\nprint("empty ok")'
+check range_stepzero 'for i in range(1, 5, 0) { print(i) }'   # errors identically
+check range_nonnum 'for i in range("a") { print(i) }'         # errors identically
+check range_shadow $'fn range(n) { return [7, 8] }\nfor i in range(3) { print(i) }'
+check range_closure $'let fns = []\nfor i in range(3) { push(fns, fn() { return i }) }\nfor f in fns { print(f()) }'
+check num_ops      'print(7 / 2, 7 % 3, 2 < 3, 3 <= 3, 5 & 3, 1 << 4)'
+check div_zero     'print(1 / 0)'                             # errors identically
+check mixed_ops    'print("a" + "b", [1] + [2], "hi" * 2)'    # non-numeric fall back
+
 echo
 echo "beec: unresolvable / unsupported imports are refused, not miscompiled"
 check_unsupported missing_module 'import definitely_not_a_real_module_xyz'
