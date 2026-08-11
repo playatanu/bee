@@ -4,11 +4,11 @@ site_description: >-
   with a built-in native (LLVM) JIT, the Hive package manager, C++ bindings,
   and first-class VS Code support.
 site_author: Atanu Debnath
-site_url: https://beelang-project.github.io/bee/
+site_url: https://playatanu.github.io/bee/
 copyright: Copyright &copy; 2026 Atanu Debnath - released under the MIT License
 
-repo_name: beelang-project/bee
-repo_url: https://github.com/beelang-project/bee
+repo_name: playatanu/bee
+repo_url: https://github.com/playatanu/bee
 edit_uri: edit/main/docs/
 
 theme:
@@ -95,7 +95,7 @@ plugins:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/beelang-project/bee
+      link: https://github.com/playatanu/bee
       name: Bee on GitHub
   generator: false
 

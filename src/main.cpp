@@ -35,7 +35,7 @@ const char kStackOverflowMessage[] =
     "  depth limit. Check that your recursion has a base case.\n"
     "  If the depth is intentional, raise the stack: ulimit -s 65536\n"
     "  If neither fits, this is a bug -- please report it:\n"
-    "  https://github.com/beelang-project/bee/issues\n";
+    "  https://github.com/playatanu/bee/issues\n";
 
 void onSegv(int) {
     ssize_t ignored = ::write(STDERR_FILENO, kStackOverflowMessage,

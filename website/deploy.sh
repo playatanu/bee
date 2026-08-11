@@ -3,7 +3,7 @@
 # Publish the Bee documentation to GitHub Pages.
 #
 # It builds the site and force-pushes the result to the `gh-pages` branch of
-# `origin` (https://github.com/beelang-project/bee). Your normal source on
+# `origin` (https://github.com/playatanu/bee). Your normal source on
 # `main` is untouched - only the generated `gh-pages` branch is updated.
 #
 # Usage:
@@ -13,7 +13,7 @@
 #   Settings -> Pages -> Build and deployment -> Source: "Deploy from a branch"
 #   Branch: gh-pages   Folder: / (root)
 #
-# The site then goes live at:  https://beelang-project.github.io/bee/
+# The site then goes live at:  https://playatanu.github.io/bee/
 
 set -euo pipefail
 
@@ -38,4 +38,4 @@ fi
 
 echo
 echo "Done. If Pages is configured for the gh-pages branch, your docs are live at:"
-echo "  https://beelang-project.github.io/bee/"
+echo "  https://playatanu.github.io/bee/"

@@ -9,12 +9,12 @@ Bee is free and open source. Pick your platform below - each installer sets up
 both `bee` (the language) and `hive` (its package manager).
 
 <div class="bee-downloads">
-  <a class="bee-dl" href="https://github.com/beelang-project/bee/releases/latest">
+  <a class="bee-dl" href="https://github.com/playatanu/bee/releases/latest">
     <span class="bee-dl__os">Windows</span>
     <span class="bee-dl__file">bee-&lt;version&gt;-amd64.exe</span>
     <span class="bee-dl__hint">Run the installer. You can then double-click any .be / .bee file to run it.</span>
   </a>
-  <a class="bee-dl" href="https://github.com/beelang-project/bee/releases/latest">
+  <a class="bee-dl" href="https://github.com/playatanu/bee/releases/latest">
     <span class="bee-dl__os">Debian / Ubuntu</span>
     <span class="bee-dl__file">bee-&lt;version&gt;-amd64.deb</span>
     <span class="bee-dl__hint">Double-click to open your software centre, or install it from a terminal.</span>

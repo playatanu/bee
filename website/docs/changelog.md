@@ -229,7 +229,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The receiver is now passed directly, with the method resolved once per class
   at each call site. Instance method dispatch is **28.7× faster** than 0.3.1.
 
-- **A benchmark suite**, in [`bench/`](https://github.com/beelang-project/bee/tree/main/bench/): 17 programs covering loops,
+- **A benchmark suite**, in [`bench/`](https://github.com/playatanu/bee/tree/main/bench/): 17 programs covering loops,
   calls, methods, classes, dicts, strings, closures, sorting and error handling,
   with equivalents in Python and Go. `make bench` times the current build;
   `bench/run.sh --vs <other-bee> --all` compares against another build, CPython
@@ -411,7 +411,7 @@ up from 100.
   ```cpp
   extern "C" const char* bee_native_abi() { return BEE_NATIVE_ABI; }
   extern "C" int bee_module_init(bee::NativeModule* m) {
-      m->def("add", 2, [](https://github.com/beelang-project/bee/blob/main/bee::Interpreter&, std::vector<bee::Value>& a) {
+      m->def("add", 2, [](https://github.com/playatanu/bee/blob/main/bee::Interpreter&, std::vector<bee::Value>& a) {
           return bee::Value(bee::native::num(a[0], "add", 0) +
                             bee::native::num(a[1], "add", 1));
       });
@@ -421,7 +421,7 @@ up from 100.
 
   `import demo` finds `demo.so` (`.dll`, `.dylib`) through the same lookup as a
   `.bee` file, including inside an installed package - so a hive package can ship
-  a compiled module. [`src/bee_native.hpp`](https://github.com/beelang-project/bee/blob/main/src/bee_native.hpp) is the API, with
+  a compiled module. [`src/bee_native.hpp`](https://github.com/playatanu/bee/blob/main/src/bee_native.hpp) is the API, with
   conversion helpers that report a bad argument as a normal Bee error, with a
   stack trace.
 
@@ -458,7 +458,7 @@ up from 100.
   print with a preview rather than a million elements.
 
 - **Zero-copy buffers across the native boundary.** A shim declares a parameter
-  as `BeeBuffer` - a plain C struct in the new [`bee_buffer.h`](https://github.com/beelang-project/bee/blob/main/src/bee_buffer.h)
+  as `BeeBuffer` - a plain C struct in the new [`bee_buffer.h`](https://github.com/playatanu/bee/blob/main/src/bee_buffer.h)
   that needs no Bee header - and `beegen` hands the buffer's own memory over
   by pointer. This is what makes binding an image or tensor library practical
   rather than merely possible.
@@ -631,7 +631,7 @@ A new test suite covers all of it: 100 checks, plus the 15 examples.
   packing, plus the usual descriptive fields. Unknown keys are preserved when
   Hive rewrites the file.
 
-- **A worked example** in [`examples/hive-demo/`](https://github.com/beelang-project/bee/tree/main/examples/hive-demo/): pack a
+- **A worked example** in [`examples/hive-demo/`](https://github.com/playatanu/bee/tree/main/examples/hive-demo/): pack a
   package, install it, import it - no registry and no network needed.
 
 ### Tooling & tests
@@ -776,9 +776,9 @@ a built-in native (LLVM) JIT. 🐝
 
 - `Makefile` build with automatic LLVM JIT detection and an overridable
   `VERSION`.
-- **Debian/Ubuntu `.deb`** package ([`packaging/build-deb.sh`](https://github.com/beelang-project/bee/blob/main/packaging/build-deb.sh))
+- **Debian/Ubuntu `.deb`** package ([`packaging/build-deb.sh`](https://github.com/playatanu/bee/blob/main/packaging/build-deb.sh))
   built with the JIT; dependencies are auto-detected.
-- **Windows installer** ([`packaging/windows/`](https://github.com/beelang-project/bee/tree/main/packaging/windows/)) via Inno
+- **Windows installer** ([`packaging/windows/`](https://github.com/playatanu/bee/tree/main/packaging/windows/)) via Inno
   Setup - adds `bee` to `PATH`, associates `.be` / `.bee` files, and registers
   an uninstaller.
 - **GitHub Actions release workflow** that builds both packages and publishes
@@ -794,7 +794,7 @@ a built-in native (LLVM) JIT. 🐝
 ### Documentation & examples
 
 - Full [language reference](language.md).
-- A topic-by-topic set of 14 runnable [examples](https://github.com/beelang-project/bee/tree/main/examples/).
+- A topic-by-topic set of 14 runnable [examples](https://github.com/playatanu/bee/tree/main/examples/).
 
 ### Known limitations
 
@@ -802,10 +802,10 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions - pass named functions (e.g. to `spawn`).
 
-[0.3.3]: https://github.com/beelang-project/bee/releases/tag/v0.3.3
-[0.3.2]: https://github.com/beelang-project/bee/releases/tag/v0.3.2
-[0.3.1]: https://github.com/beelang-project/bee/releases/tag/v0.3.1
-[0.3.0]: https://github.com/beelang-project/bee/releases/tag/v0.3.0
-[0.2.0]: https://github.com/beelang-project/bee/releases/tag/v0.2.0
-[0.1.1]: https://github.com/beelang-project/bee/releases/tag/v0.1.1
-[0.1.0]: https://github.com/beelang-project/bee/releases/tag/v0.1.0
+[0.3.3]: https://github.com/playatanu/bee/releases/tag/v0.3.3
+[0.3.2]: https://github.com/playatanu/bee/releases/tag/v0.3.2
+[0.3.1]: https://github.com/playatanu/bee/releases/tag/v0.3.1
+[0.3.0]: https://github.com/playatanu/bee/releases/tag/v0.3.0
+[0.2.0]: https://github.com/playatanu/bee/releases/tag/v0.2.0
+[0.1.1]: https://github.com/playatanu/bee/releases/tag/v0.1.1
+[0.1.0]: https://github.com/playatanu/bee/releases/tag/v0.1.0

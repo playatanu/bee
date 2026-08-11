@@ -111,12 +111,12 @@ overhead, and they are addressable.)
 `make test` runs 215 checks: 77 language, 30 differential, 5 complexity guards,
 50 hive and 53 beegen.
 
-- [`tests/vm_diff_test.sh`](https://github.com/beelang-project/bee/blob/main/tests/vm_diff_test.sh) runs every example and 16
+- [`tests/vm_diff_test.sh`](https://github.com/playatanu/bee/blob/main/tests/vm_diff_test.sh) runs every example and 16
   hand-written programs twice - once on the VM, once with `BEE_NO_VM=1` forcing
   the tree-walker - and requires identical stdout, stderr **and** exit code. So
   error messages, stack traces, `finally` ordering, per-iteration closure
   capture and uncaught-error exit codes are all covered, not just return values.
-- [`tests/perf_guard_test.sh`](https://github.com/beelang-project/bee/blob/main/tests/perf_guard_test.sh) checks *complexity*,
+- [`tests/perf_guard_test.sh`](https://github.com/playatanu/bee/blob/main/tests/perf_guard_test.sh) checks *complexity*,
   not speed, with budgets an order of magnitude loose. It exists because two
   bugs got through everything else:
   - **String building went quadratic** when function bodies moved to the VM. The
@@ -151,13 +151,13 @@ A purely numeric nested loop, top-level or inside a function, with or without an
 | same inside a function, with `continue` | 0.03 s |
 
 Note that even `continue` is free here - the JIT lowers it to a branch
-([`jit_llvm.cpp:297`](https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L297)).
+([`jit_llvm.cpp:297`](https://github.com/playatanu/bee/blob/main/src/jit_llvm.cpp#L297)).
 
 ### …but any real code leaves the subset
 
 Codegen throws `JitBail` on the first construct outside the numeric subset
-([`jit_llvm.cpp:301`](https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L301) for statements,
-[`jit_llvm.cpp:412`](https://github.com/beelang-project/bee/blob/main/src/jit_llvm.cpp#L412) for expressions). That means a
+([`jit_llvm.cpp:301`](https://github.com/playatanu/bee/blob/main/src/jit_llvm.cpp#L301) for statements,
+[`jit_llvm.cpp:412`](https://github.com/playatanu/bee/blob/main/src/jit_llvm.cpp#L412) for expressions). That means a
 single `xs[i]`, string, `print`, `for … in`, builtin call, field access, `try`,
 or `match` anywhere in the function drops the **entire** function or loop back to
 the tree-walker. Since real programs touch lists, real programs are never
@@ -199,9 +199,9 @@ static types, does the loop iteration in 1-2 ns.
 
 ### 1. Control flow is implemented with C++ exceptions
 
-[`interpreter.cpp:844`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L844),
-[`:878`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L878),
-[`:880`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L880):
+[`interpreter.cpp:844`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L844),
+[`:878`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L878),
+[`:880`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L880):
 
 ```cpp
 case Stmt::Kind::Return:   throw ReturnSignal{v};
@@ -209,10 +209,10 @@ case Stmt::Kind::Break:    throw BreakSignal{};
 case Stmt::Kind::Continue: throw ContinueSignal{};
 ```
 
-caught by every loop ([`:772`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L772),
-[`:788`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L788),
-[`:806`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L806)) and by `callFunction`
-([`:1755`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1755)).
+caught by every loop ([`:772`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L772),
+[`:788`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L788),
+[`:806`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L806)) and by `callFunction`
+([`:1755`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1755)).
 
 C++ exceptions are "zero-cost" only when *not* thrown. Each throw walks the
 unwind tables, calls `_Unwind_RaiseException`, runs the personality routine, and
@@ -226,10 +226,10 @@ function called from that loop `return`s.
 
 ### 2. A heap `Environment` per scope entry
 
-[`:753`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L753) (block),
-[`:783`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L783) (for),
-[`:800`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L800) (for-in),
-[`:1733`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1733) (call frame) all do:
+[`:753`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L753) (block),
+[`:783`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L783) (for),
+[`:800`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L800) (for-in),
+[`:1733`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1733) (call frame) all do:
 
 ```cpp
 auto child = std::make_shared<Environment>(env, s->slotCount);
@@ -237,33 +237,33 @@ auto child = std::make_shared<Environment>(env, s->slotCount);
 
 That is two allocations - the shared control block and the `slots` vector - on
 every block entry and every call, plus a `std::map<std::string, Value> values`
-member ([`environment.hpp:28`](https://github.com/beelang-project/bee/blob/main/src/environment.hpp#L28)) that a function frame
+member ([`environment.hpp:28`](https://github.com/playatanu/bee/blob/main/src/environment.hpp#L28)) that a function frame
 never uses. Hence the 62 ns cost of a single `let` in a loop body.
 
 ### 3. Value representation
 
-`Value` ([`value.hpp:116`](https://github.com/beelang-project/bee/blob/main/src/value.hpp#L116)) is a 24-byte `std::variant`
+`Value` ([`value.hpp:116`](https://github.com/playatanu/bee/blob/main/src/value.hpp#L116)) is a 24-byte `std::variant`
 over eight `shared_ptr` alternatives. Consequences on every operation:
 
 - `evaluate()` returns `Value` **by value**; the variant copy constructor is a
   switch over the active index, not a memcpy.
 - `asList()` / `asDict()` / `asString()` return the `shared_ptr` **by value**
-  ([`value.hpp:167-174`](https://github.com/beelang-project/bee/blob/main/src/value.hpp#L167-L174)), so a single `xs[i]` does
+  ([`value.hpp:167-174`](https://github.com/playatanu/bee/blob/main/src/value.hpp#L167-L174)), so a single `xs[i]` does
   roughly four atomic refcount read-modify-writes.
 - The refcounts are atomic even though Bee has a GIL
-  ([`interpreter.hpp:115`](https://github.com/beelang-project/bee/blob/main/src/interpreter.hpp#L115)) - the synchronisation is
+  ([`interpreter.hpp:115`](https://github.com/playatanu/bee/blob/main/src/interpreter.hpp#L115)) - the synchronisation is
   paid for and never used.
 
 ### 4. Per-call and per-property overhead
 
-- [`callFunction:1684`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1684) builds a `std::string name`
+- [`callFunction:1684`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1684) builds a `std::string name`
   and copies it into a `CallFrame` on **every** call, for a stack trace that is
   only read if an error occurs.
 - `callFunction` takes `std::shared_ptr<Function>` **by value** - an atomic
   refcount pair per call.
-- `evalCall` ([`:1629`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1629)) heap-allocates a
+- `evalCall` ([`:1629`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1629)) heap-allocates a
   `std::vector<Value> args` per call.
-- `getProperty` ([`:1779`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1779)) dispatches type methods
+- `getProperty` ([`:1779`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1779)) dispatches type methods
   through a chain of 26 `name == "…"` string comparisons.
 
 ---
@@ -273,7 +273,7 @@ over eight `shared_ptr` alternatives. Consequences on every operation:
 ### Priority 1 - Replace exception-based control flow with status returns (done)
 
 **Measured: 14.6× on `continue`-heavy loops, 10.7× on call-heavy code, 2.1× on a
-plain loop. Contained to [`interpreter.cpp`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp). No
+plain loop. Contained to [`interpreter.cpp`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp). No
 language-visible change.**
 
 `execute()` returns a signal instead of throwing one:
@@ -359,8 +359,8 @@ callback - are covered by the new cases described in "Results so far".
 **Measured: 6.4× on a loop whose body declares a local, 11.3× on a loop calling
 a function with locals.**
 
-Two changes, both in [`resolver.cpp`](https://github.com/beelang-project/bee/blob/main/src/resolver.cpp) and
-[`interpreter.cpp`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp):
+Two changes, both in [`resolver.cpp`](https://github.com/playatanu/bee/blob/main/src/resolver.cpp) and
+[`interpreter.cpp`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp):
 
 - **Scope merging.** A block or loop that declares names used to allocate an
   `Environment` on entry - once per *iteration* for a loop body. `Resolver::canMerge()`
@@ -393,13 +393,13 @@ A **register** VM, not a stack one: `s = s + xs[i]` is two instructions
 resolver's frame slots, so the register allocation was already done - the
 compiler only allocates temporaries above the locals, on a stack discipline.
 
-- [`chunk.hpp`](https://github.com/beelang-project/bee/blob/main/src/chunk.hpp) - 8-byte three-operand instructions, and the
+- [`chunk.hpp`](https://github.com/playatanu/bee/blob/main/src/chunk.hpp) - 8-byte three-operand instructions, and the
   opcode list as an X-macro so the enum and the VM's jump table are generated
   from one source and cannot drift.
-- [`compiler.cpp`](https://github.com/beelang-project/bee/blob/main/src/compiler.cpp) - AST to bytecode. Declines a function it
+- [`compiler.cpp`](https://github.com/playatanu/bee/blob/main/src/compiler.cpp) - AST to bytecode. Declines a function it
   cannot fully compile (nested function or class, `try`, `import`,
   destructuring, spread), which then runs on the tree-walker as before.
-- [`vm.cpp`](https://github.com/beelang-project/bee/blob/main/src/vm.cpp) - computed-goto dispatch (`&&label` / `goto *`), so
+- [`vm.cpp`](https://github.com/playatanu/bee/blob/main/src/vm.cpp) - computed-goto dispatch (`&&label` / `goto *`), so
   each opcode ends with its own indirect branch and its own branch-prediction
   history rather than every opcode sharing the one at the top of a switch.
 
@@ -464,7 +464,7 @@ copy constructor is a jump table, and every list, dict or string copy is a pair
 of atomic refcount operations that the GIL already makes unnecessary.
 
 The catch, and the reason this is its own piece of work: `Value` is part of the
-**public native-module ABI** ([`bee_native.hpp`](https://github.com/beelang-project/bee/blob/main/src/bee_native.hpp)). Changing
+**public native-module ABI** ([`bee_native.hpp`](https://github.com/playatanu/bee/blob/main/src/bee_native.hpp)). Changing
 its layout breaks every module compiled against 0.3.1, so it needs a
 `BEE_NATIVE_ABI` bump and a rebuild of anything that ships a `.so`. Plan for
 that explicitly rather than discovering it.
@@ -675,16 +675,16 @@ Priority 4:
       back a reference instead of a `shared_ptr` copy, and `xs[i]` and
       `xs[i] = v` use them - removing two atomic refcount operations per index.
 - [ ] **Method dispatch:** replace the `name == "…"` chain in `getProperty`
-      ([`:1779`](https://github.com/beelang-project/bee/blob/main/src/interpreter.cpp#L1779)) with a per-type hash table, and
+      ([`:1779`](https://github.com/playatanu/bee/blob/main/src/interpreter.cpp#L1779)) with a per-type hash table, and
       cache the resolved method on the `GetExpr` AST node (an inline cache, like
-      the one already used for globals in [`ast.hpp:51`](https://github.com/beelang-project/bee/blob/main/src/ast.hpp#L51)).
+      the one already used for globals in [`ast.hpp:51`](https://github.com/playatanu/bee/blob/main/src/ast.hpp#L51)).
 - [ ] **`evalCall`:** use a small-buffer argument vector, or push arguments
       straight onto the value stack from Priority 2, instead of a fresh
       `std::vector` per call.
 - **`ForIn` over a list** copies each element into the loop slot; for large lists
   this is a `Value` copy (and a refcount pair) per element that a reference could
   avoid.
-- **Dicts** are `std::map` ([`value.hpp:20`](https://github.com/beelang-project/bee/blob/main/src/value.hpp#L20)) - a red-black
+- **Dicts** are `std::map` ([`value.hpp:20`](https://github.com/playatanu/bee/blob/main/src/value.hpp#L20)) - a red-black
   tree with a node allocation per entry and `std::string` comparisons per lookup.
   An open-addressing hash map with interned keys is both faster and smaller.
 

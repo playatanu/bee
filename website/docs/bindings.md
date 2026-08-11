@@ -167,7 +167,7 @@ vision.to_gray(img, out)                # the library writes straight into it
 ```
 
 On the C++ side, a shim declares its parameters as `BeeBuffer` (from
-[`bee_buffer.h`](https://github.com/beelang-project/bee/blob/main/src/bee_buffer.h), a plain C struct that needs no Bee
+[`bee_buffer.h`](https://github.com/playatanu/bee/blob/main/src/bee_buffer.h), a plain C struct that needs no Bee
 header) and `beegen` maps them automatically:
 
 ```cpp
@@ -395,7 +395,7 @@ g++ -std=c++17 -O2 -fPIC -shared -I/path/to/beelang/src demo.cpp -o demo.so
 bee -e 'import demo; print(demo.add(2, 3))'
 ```
 
-[`src/bee_native.hpp`](https://github.com/beelang-project/bee/blob/main/src/bee_native.hpp) has the conversion helpers:
+[`src/bee_native.hpp`](https://github.com/playatanu/bee/blob/main/src/bee_native.hpp) has the conversion helpers:
 `num`, `integer<T>`, `str`, `boolean`, `listArg`, `toVector` / `fromVector`, and
 `makeHandle` / `handle<T>` for opaque pointers. They throw `RuntimeError` on a
 mismatch, which the interpreter reports at the call site with a full stack trace.

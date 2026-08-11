@@ -21,7 +21,7 @@ mkdocs build --strict   # output in ./site (also what CI runs)
 ## Deploy to GitHub Pages
 
 Both methods publish to the `gh-pages` branch of `origin`; the site then serves
-at <https://beelang-project.github.io/bee/>.
+at <https://playatanu.github.io/bee/>.
 
 **Manually, right now:**
 

@@ -54,7 +54,7 @@ Bee is a dynamically-typed language designed to be **easy to read and quick to p
 | **Windows** | `bee-0.3.4-amd64.exe` | Run the installer. It adds `bee` and `hive` to your `PATH` and gives `.be` / `.bee` files a bee icon so you can double-click to run them. |
 | **Debian / Ubuntu** | `bee-0.3.4-amd64.deb` | Double-click (opens your software centre) or `sudo apt install ./bee-0.3.4-amd64.deb`. Installs `bee` and `hive`. |
 
-> Grab the latest packages from the [**Releases**](https://github.com/beelang-project/bee/releases) page.
+> Grab the latest packages from the [**Releases**](https://github.com/playatanu/bee/releases) page.
 
 ### Build from source
 
