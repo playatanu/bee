@@ -1619,23 +1619,28 @@
 always has, and an unannotated parameter accepts anything. What an annotation
 buys is a guarantee: it is checked where the value enters, so from then on the
 type is known rather than assumed.</p>
-<p>Annotate a parameter or a variable with <code>:</code>, and a return type with <code>-&gt;</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fn add(a: num, b: num) -&gt; num {
+<p>Annotate a parameter, a variable, or a return type with <code>:</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>fn add(a: num, b: num): num {
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    return a + b
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>}
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>fn greet(name: str, times: num = 2) -&gt; str {
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>fn greet(name: str, times: num = 2): str {
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    let out: str = &quot;&quot;
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    for (let i = 0; i &lt; times; i = i + 1) { out = out + name + &quot;!&quot; }
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    return out
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>}
 </span></code></pre></div>
+<blockquote>
+<p>Earlier releases wrote the return type as <code>fn add(a: num, b: num) -&gt; num</code>.
+That form still parses, so existing code keeps running, but <code>:</code> is the
+documented spelling: one way to say "this name has this type", everywhere.</p>
+</blockquote>
 <p>The type names are <code>num</code>, <code>str</code>, <code>bool</code>, <code>list</code>, <code>dict</code>, <code>buffer</code>, <code>nil</code>, <code>fn</code>,
 and <code>any</code> - plus any class name:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>class Animal { fn init(n: str) { this.n = n } fn name() -&gt; str { return this.n } }
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>class Animal { fn init(n: str) { this.n = n } fn name(): str { return this.n } }
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>class Dog extends Animal { }
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>fn describe(a: Animal) -&gt; str { return a.name() }
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>fn describe(a: Animal): str { return a.name() }
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>print(describe(new Dog(&quot;rex&quot;)))    # rex -- a Dog is an Animal
 </span></code></pre></div>
 <p>A class annotation accepts instances of that class <strong>and of anything deriving
@@ -1643,16 +1648,16 @@ from it</strong>, so <code>describe</code> above takes a <code>Dog</code> withou
 same as writing nothing.</p>
 <p>A violated annotation is a runtime error, reported where the bad value came
 from, with the usual stack trace:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fn f(a: num) -&gt; num { return a }
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fn f(a: num): num { return a }
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>f(&quot;hi&quot;)
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a># Runtime error: parameter &#39;a&#39; of &#39;f&#39; is declared num but got str
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>#   at f()      demo.bee:2
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>#   at &lt;main&gt;   demo.bee:2
 </span></code></pre></div>
 <p>Return types are checked on every path out, including falling off the end -
-a function declared <code>-&gt; num</code> that never returns anything yields <code>nil</code>, and that
+a function declared <code>: num</code> that never returns anything yields <code>nil</code>, and that
 is an error:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fn broken() -&gt; num { let x = 1 }
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>fn broken(): num { let x = 1 }
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a># Runtime error: &#39;broken&#39; is declared to return num but returned nil
 </span></code></pre></div>
 <p>Annotations may be mixed freely with unannotated code. A typed function can call
