@@ -1,0 +1,33 @@
+# 05 — Lists and dicts
+# Bee's two built-in containers, plus list comprehensions and slicing.
+
+print("== lists ==")
+let xs = [1, 2, 3]
+xs.push(4)
+xs.insert(0, 99)
+print("list:       ", xs)
+print("length:     ", xs.len())
+print("first/last: ", xs[0], xs[-1])
+print("contains 3: ", xs.contains(3))
+print("index_of 4: ", xs.index_of(4))
+print("popped:     ", xs.pop(), "->", xs)
+print("slice 1..3: ", xs[1:3])
+
+# List comprehensions: [expr for x in iterable if cond]
+let evens = [n for n in range(10) if n % 2 == 0]
+print("even 0..9:  ", evens)
+print("squares:    ", [n * n for n in evens])
+
+print("== dicts ==")
+let user = {"name": "Ada", "age": 36}
+user["role"] = "engineer"
+print("dict:    ", user)
+print("keys:    ", user.keys())
+print("values:  ", user.values())
+print("has role:", user.has("role"))
+print("get city:", user.get("city", "unknown"))     # default when absent
+
+# Iterating a dict yields its keys.
+for key in user {
+    print(f"  {key} = {user[key]}")
+}

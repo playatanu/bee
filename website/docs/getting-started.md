@@ -67,7 +67,7 @@ Running it prints one greeting per line. You just used a **list** and a
 
 ## Keep learning
 
-- [Language guide](language.md) - the full tour: variables, functions,
+- [Language guide](language/index.md) - the full tour: variables, functions,
   classes, and more.
 - [Packages](hive.md) - install ready-made code with Hive.
 - [Editor](editor.md) - set up VS Code for a nicer experience.

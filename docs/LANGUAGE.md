@@ -63,6 +63,17 @@ print(type([1,2]))     # list
 print(type(nil))       # nil
 ```
 
+A binding can also be annotated with a **sized numeric type** — `i8`…`u64` for
+fixed-width, wrapping integers and `f16`/`f32`/`f64` for a chosen float
+precision. Numbers stay dynamic (`type(x)` is still `number`); the annotation
+pins how the value is stored and wrapped, and lets `beec` compile it to a native
+machine value. See the [numeric types guide](NUMERIC_TYPES.md).
+
+```
+let a: u8 = 300        # 44 — wraps into 0..255
+let f: f32 = 1.0 / 3.0 # single-precision
+```
+
 ---
 
 ## Variables

@@ -20,7 +20,7 @@
 #define MyAppName        "BeeLang"
 ; Version can be overridden from the command line: iscc /DMyAppVersion=1.2.3 ...
 #ifndef MyAppVersion
-  #define MyAppVersion   "0.3.5"
+  #define MyAppVersion   "0.3.6"
 #endif
 #define MyAppPublisher   "Atanu Debnath"
 #define MyAppExeName     "bee.exe"

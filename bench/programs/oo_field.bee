@@ -1,8 +1,0 @@
-# Instance field read/write, separated from method dispatch.
-class P { fn init() { this.x = 0 this.y = 0 } }
-fn run(n) {
-  let p = new P()
-  for (let i = 0; i < n; i = i + 1) { p.x = p.x + 1 p.y = p.y + p.x }
-  return p.y
-}
-print(run(2000000))

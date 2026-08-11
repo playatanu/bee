@@ -1,0 +1,35 @@
+# 09 — Classes
+# Single inheritance with `extends`, `init` as the constructor, `this` for the
+# receiver, `super` for the parent, and `str()` for how an instance prints.
+
+class Animal {
+    init(name) {
+        this.name = name
+    }
+    speak() {
+        return this.name + " makes a sound"
+    }
+    str() {
+        return "Animal(" + this.name + ")"
+    }
+}
+
+class Dog extends Animal {
+    speak() {
+        return super.speak() + ": woof!"
+    }
+}
+
+class Cat extends Animal {
+    speak() {
+        return this.name + " says meow"
+    }
+}
+
+let animals = [Animal("generic"), Dog("Rex"), Cat("Milo")]
+for a in animals {
+    print(a.speak())
+}
+
+# str() controls printing; the base class defines Animal(...).
+print("printed:", Dog("Rex"))

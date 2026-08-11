@@ -1,0 +1,24 @@
+# 15 — Reading input
+# `args()` returns the command-line arguments after the script path.
+# `input(prompt)` reads one line from stdin, or nil at end of input.
+# Run it interactively, or pipe input in:  echo "42" | bee examples/15_input.bee
+
+let argv = args()
+if argv.len() > 0 {
+    print("command-line args:", argv)
+}
+
+let name = input("What's your name? ")
+if name == nil {
+    print("(no input — reached end of stdin)")
+} else {
+    print("Hello, " + name + "!")
+    let raw = input("Pick a number: ")
+    if raw != nil {
+        try {
+            print(raw + " doubled is", num(raw) * 2)
+        } catch (e) {
+            print("'" + raw + "' is not a number.")
+        }
+    }
+}

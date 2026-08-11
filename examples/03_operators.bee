@@ -1,0 +1,40 @@
+# 03 — Operators
+# Arithmetic, comparison, logical, bitwise, and compound assignment.
+
+print("== arithmetic ==")
+print("7 + 2     =", 7 + 2)
+print("7 - 2     =", 7 - 2)
+print("7 * 2     =", 7 * 2)
+print("7 / 2     =", 7 / 2)          # division is floating point
+print("7 % 3     =", 7 % 3)
+print("pow(2,10) =", pow(2, 10))
+print("-7        =", -7)
+
+print("== comparison & logical ==")
+print("3 < 5           =", 3 < 5)
+print("5 == 5          =", 5 == 5)
+print("3 < 5 and 5 < 9 =", 3 < 5 and 5 < 9)
+print("false or true   =", false or true)
+print("not false       =", not false)
+
+print("== bitwise ==")
+print("5 & 3  =", 5 & 3)
+print("5 | 2  =", 5 | 2)
+print("5 ^ 1  =", 5 ^ 1)
+print("1 << 4 =", 1 << 4)
+print("32 >> 2 =", 32 >> 2)
+
+print("== ternary ==")
+let n = 7
+print("parity =", n % 2 == 0 ? "even" : "odd")
+
+print("== compound assignment ==")
+let total = 10
+total += 5
+total *= 2
+total -= 3
+print("total =", total)
+
+print("== overloaded + and * ==")
+print("strings:", "foo" + "bar", "ab" * 3)
+print("lists:  ", [1, 2] + [3, 4])

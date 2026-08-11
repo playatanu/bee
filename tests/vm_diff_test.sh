@@ -34,10 +34,10 @@ prog() {                                   # prog <name> <<'EOF' ... EOF
 echo "differential: examples"
 for f in examples/*.bee; do
     case "$f" in
-        *14_input*) continue;;               # needs stdin
-        # These print elapsed wall-clock times, which differ between any two
-        # runs of the same engine, let alone two engines.
-        *10_system*|*13_benchmark*) continue;;
+        *15_input*) continue;;               # needs stdin
+        # Touches the outside world (clock, randomness, files), so its output
+        # is not reproducible across runs, let alone across two engines.
+        *14_system*) continue;;
     esac
     check "$(basename "$f")" "$f"
 done

@@ -1,0 +1,26 @@
+# 02 — Values and variables
+# Bee has numbers, strings, booleans and nil. `let` binds a variable;
+# `const` binds one that can't be reassigned.
+
+let name = "Ada"
+let age = 36
+let pi = 3.14159
+let ready = true
+let nothing = nil
+
+const LANGUAGE = "Bee"          # reassigning a const is an error
+
+print("name    =", name)
+print("age     =", age)
+print("pi      =", pi)
+print("ready   =", ready)
+print("nothing =", nothing)
+print("const   =", LANGUAGE)
+
+# `type()` reports a value's runtime type.
+print("types   =", type(name), type(age), type(ready), type(nothing))
+
+# Variables are reassignable and dynamically typed.
+let x = 10
+x = "now a string"
+print("x       =", x, "(" + type(x) + ")")

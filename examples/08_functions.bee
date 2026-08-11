@@ -1,0 +1,36 @@
+# 08 — Functions and closures
+# Functions are first-class: pass them around, return them, and close over
+# variables. Parameters support defaults and a trailing ...rest.
+
+fn add(a, b) { return a + b }
+print("add(2, 3)          =", add(2, 3))
+
+# First-class: a function taken as an argument.
+fn apply(f, x) { return f(x) }
+fn double(x) { return x * 2 }
+print("apply(double, 21)  =", apply(double, 21))
+
+# Default parameters.
+fn greet(name, greeting = "Hello") { return greeting + ", " + name + "!" }
+print(greet("Ada"))
+print(greet("Bee", "Hi"))
+
+# Rest parameter collects the extra arguments into a list.
+fn sum(...nums) {
+    let total = 0
+    for n in nums { total += n }
+    return total
+}
+print("sum(1..5)          =", sum(1, 2, 3, 4, 5))
+
+# Closures: a returned inner function keeps its enclosing variables alive.
+fn make_counter() {
+    let count = 0
+    fn tick() {
+        count += 1
+        return count
+    }
+    return tick
+}
+let next = make_counter()
+print("counter            =", next(), next(), next())

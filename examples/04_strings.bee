@@ -1,0 +1,34 @@
+# 04 — Strings
+# String methods, interpolation, indexing and slicing.
+
+let s = "The quick brown fox"
+
+print("length:    ", s.len())
+print("upper:     ", s.upper())
+print("lower:     ", s.lower())
+print("words:     ", s.split(" "))
+print("replace:   ", s.replace("quick", "slow"))
+print("contains:  ", s.contains("fox"))
+print("starts:    ", s.starts_with("The"))
+print("substr:    ", s.substr(4, 5))       # 5 chars from index 4 -> "quick"
+print("trim:      ", "  padded  ".trim())
+
+# Indexing and slicing (negative indices count from the end).
+print("first/last:", s[0], s[-1])
+print("slice 4..9:", s[4:9])
+
+# f-strings interpolate any expression inside {}.
+let who = "Bee"
+let ver = 3
+print(f"Hello from {who}, version 0.{ver}.x — 2 + 2 = {2 + 2}")
+
+# Build a string in a loop.
+let joined = ""
+for part in ["a", "b", "c"] {
+    joined += part + "-"
+}
+print("joined:    ", joined)
+
+# Escapes and single quotes.
+print("tab\tand\tnewline below:")
+print('single quotes work too')

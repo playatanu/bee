@@ -1,0 +1,42 @@
+# 11 — Sized numeric types
+# Numbers are dynamic, but a binding can be annotated with a fixed-width type:
+#     i8 u8 i16 u16 i32 u32 i64 u64   (integers, two's-complement wrapping)
+#     f16 f32 f64                     (floats, rounded to that precision)
+# The width applies wherever a value enters the binding: a `let`, an
+# assignment, a parameter, or a return. Integers wrap on overflow; floats round.
+# The interpreter and the `beec` AOT compiler agree exactly — and the compiler
+# turns typed locals into native machine values, so typed hot loops run fast.
+
+print("== integer wrapping ==")
+let a: u8 = 300           # 300 mod 256
+print("u8  300     ->", a)
+let b: i8 = 127 + 1       # overflow wraps to the negative side
+print("i8  127+1   ->", b)
+let c: u8 = -1            # -1 -> 255
+print("u8  -1      ->", c)
+let d: i16 = 40000        # out of i16 range
+print("i16 40000   ->", d)
+
+print("== truncation toward zero ==")
+let e: i32 = 9.9
+print("i32 9.9     ->", e)
+
+print("== the width follows every write ==")
+let counter: u8 = 250
+for i in range(10) { counter = counter + 1 }
+print("u8 250 + 10 ->", counter)      # wraps past 255
+
+print("== float precision ==")
+let f: f32 = 1.0 / 3.0
+print("f32 1/3     ->", f)
+let g: f16 = 1.0 / 3.0
+print("f16 1/3     ->", g)
+
+print("== typed functions ==")
+# A checksum that stays within a byte, wrapping as it accumulates.
+fn checksum(bytes) -> u8 {
+    let sum: u8 = 0
+    for b in bytes { sum = sum + b }
+    return sum
+}
+print("checksum    ->", checksum([100, 100, 100]))   # 300 -> 44

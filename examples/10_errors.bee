@@ -1,0 +1,30 @@
+# 10 — Error handling
+# `throw` raises a value; `try`/`catch` handles it; `finally` always runs.
+
+fn safe_div(a, b) {
+    if b == 0 {
+        throw {"error": "division by zero", "a": a}
+    }
+    return a / b
+}
+
+try {
+    print("10 / 2 =", safe_div(10, 2))
+    print("10 / 0 =", safe_div(10, 0))    # throws
+    print("unreachable")
+} catch (e) {
+    print("caught:", e.error, "(a was", e.a + ")")
+} finally {
+    print("cleanup always runs")
+}
+
+# You can throw and catch plain values too.
+fn parse_or_zero(s) {
+    try {
+        return num(s)
+    } catch (e) {
+        return 0
+    }
+}
+print("parse '42'  =", parse_or_zero("42"))
+print("parse 'oops' =", parse_or_zero("oops"))

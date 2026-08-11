@@ -1,19 +1,16 @@
-# mathutil — a small library module imported by other examples.
-#
-# It is not a standalone program; see 08_modules.bee for how it is used.
+# mathutil — a small library module imported by 12_modules.bee.
+# It is not a standalone program: it only defines things for others to import.
+# A name starting with `_` is private to the module and is not exported.
 
-let PI = 3.14159265358979
+const PI = 3.14159265358979
 
-# The square of a number.
-fn square(x) {
-    return x * x
-}
+fn square(x) { return x * x }
 
-# n! computed iteratively.
 fn factorial(n) {
-    let result = 1
-    for (let i = 2; i <= n; i += 1) {
-        result *= i
-    }
-    return result
+    if n <= 1 { return 1 }
+    return n * factorial(n - 1)
 }
+
+fn circle_area(r) { return PI * square(r) }
+
+fn _internal_helper() { return "not exported" }

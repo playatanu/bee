@@ -1,0 +1,29 @@
+# 14 — Talking to the system
+# Files, time, randomness and the environment. This one touches the outside
+# world, so its output changes from run to run.
+
+print("== files ==")
+let path = "demo_output.txt"
+write_file(path, "alpha\nbeta\ngamma\n")
+append_file(path, "delta\n")
+print("lines:  ", read_lines(path))
+print("exists: ", file_exists(path))
+remove_file(path)
+print("removed:", not file_exists(path))
+
+print("== time ==")
+print("date:", format_time("%Y-%m-%d"))
+let t0 = clock()
+let sink = 0
+for i in range(100000) { sink += i }
+print("a short loop took", clock() - t0, "seconds")
+
+print("== randomness ==")
+random_seed(7)                          # seed for a reproducible sequence
+print("dice:", random_int(1, 6), random_int(1, 6), random_int(1, 6))
+print("pick:", random_choice(["north", "south", "east", "west"]))
+
+print("== environment ==")
+set_env("BEE_GREETING", "hi")
+print("env:    ", env("BEE_GREETING"))
+print("missing:", env("NOPE", "(default)"))

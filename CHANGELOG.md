@@ -6,8 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.6] — 2026-08-11
+
+### Added
+
+- **Sized numeric types.** A binding can be annotated with a fixed-width numeric
+  type — `i8`/`u8`/`i16`/`u16`/`i32`/`u32`/`i64`/`u64` for two's-complement
+  integers, and `f16`/`f32`/`f64` for floats:
+
+  ```
+  let a: u8 = 300        # -> 44   (wraps into 0..255)
+  let b: i8 = 127 + 1    # -> -128
+  let f: f32 = 1.0 / 3.0 # single precision
+  ```
+
+  Numbers stay dynamic (`type(x)` is still `number`); the annotation pins how a
+  value is stored and wrapped/rounded, enforced wherever it enters the binding
+  (a `let`, an assignment, a parameter, or a return). The interpreter, register
+  VM, and `beec` AOT compiler all agree exactly. In AOT, a sized local that
+  isn't captured by a closure compiles to a **native machine value** with native
+  arithmetic, so a typed hot loop runs as fast as the untyped one — a
+  100M-iteration `i32` accumulator matches the dynamic path. See the
+  [numeric types guide](docs/NUMERIC_TYPES.md) and
+  [`examples/11_numeric_types.bee`](examples/11_numeric_types.bee).
+
 ### Changed
 
+- **Examples rewritten** from scratch as a cleaner, sequential topic tour
+  (`01`–`17`), including a sized-numeric-types example, with an index and a note
+  on how to add more. Each program is deterministic, so it stays in step across
+  the interpreter, the register VM, and the AOT compiler.
+- **Documentation restructured.** The website language reference is now one page
+  per topic instead of a single long page, with a new sized-numeric-types page.
 - **AOT compiler (`beec`) loop performance.** Compiled programs ran hot loops
   much slower than they should have — often slower than the JIT interpreter.
   Three codegen changes, all behaviour-identical to the interpreter (verified
@@ -30,6 +60,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
   Net effect on a 100M-iteration nested `range` loop with a global accumulator:
   **~7.5s → ~0.6s (~12×)**, from well behind the JIT interpreter to well ahead.
+
+### Removed
+
+- The `bench/` micro-benchmark folder and its `make bench` target.
 
 ## [0.3.5] — 2026-08-11
 
@@ -768,7 +802,7 @@ language or API changes — existing programs run identically, only faster. All
 ## [0.1.0] — 2026-08-06
 
 The first public release of Bee — a small, friendly programming language with
-a built-in native (LLVM) JIT. 🐝
+a built-in native (LLVM) JIT.
 
 ### Language
 
@@ -843,6 +877,7 @@ a built-in native (LLVM) JIT. 🐝
 - The `.deb` requires `libllvm18`, available on Ubuntu 24.04 and newer.
 - No anonymous/lambda functions — pass named functions (e.g. to `spawn`).
 
+[0.3.6]: https://github.com/playatanu/bee/releases/tag/v0.3.6
 [0.3.5]: https://github.com/playatanu/bee/releases/tag/v0.3.5
 [0.3.4]: https://github.com/playatanu/bee/releases/tag/v0.3.4
 [0.3.3]: https://github.com/playatanu/bee/releases/tag/v0.3.3

@@ -27,7 +27,7 @@ Bee is a dynamically-typed language designed to be **easy to read and quick to p
 
 ---
 
-## ✨ Features
+## Features
 
 - **Clean, familiar syntax** — `let`, `fn`, `if`/`while`/`for`, `class`, and both `#` and `//` comments.
 - **String interpolation & slicing** — `f"{name} has {n}"`, `xs[1:3]`, `s[-5:]`.
@@ -43,9 +43,10 @@ Bee is a dynamically-typed language designed to be **easy to read and quick to p
 - **Rich standard library** — strings, lists, dicts, math, files, time, random, env, and process execution — no imports needed.
 - **Native LLVM JIT** — numeric-heavy functions are compiled to native code and run at near-native speed, transparently.
 - **Ahead-of-time compilation** — `beec` turns a program into a standalone native executable that runs without the interpreter. See the [compiling guide](docs/COMPILING.md).
+- **Sized numeric types** — annotate a binding with `i8`…`u64` or `f16`/`f32`/`f64` for fixed-width, two's-complement-wrapping integers and precision-controlled floats; the AOT compiler turns them into native machine values. See the [numeric types guide](docs/NUMERIC_TYPES.md).
 - **First-class editor support** — a VS Code extension with highlighting, completions, hovers, and snippets.
 
-## 📦 Installation
+## Installation
 
 ### Download & run — no compiler needed
 
@@ -72,7 +73,7 @@ artifacts: [`packaging/build-deb.sh`](packaging/build-deb.sh) builds the `.deb`,
 and [`packaging/windows/`](packaging/windows/) holds the Inno Setup script and a
 guide for building the Windows installer.
 
-## 🚀 Quick start
+## Quick start
 
 Save this as `hello.bee`:
 
@@ -106,7 +107,7 @@ bee                        # an interactive REPL
 bee -e 'print(1 + 1)'      # run one line
 ```
 
-## 📚 Packages
+## Packages
 
 `hive`, Bee's package manager, ships with `bee`:
 
@@ -133,7 +134,7 @@ file on any web server.
 
 **[Full guide → docs/HIVE.md](docs/HIVE.md)**
 
-## 🔗 C++ bindings
+## C++ bindings
 
 `beegen` reads a C++ header and writes the bindings for you — a native module
 plus a Bee wrapper:
@@ -159,7 +160,7 @@ be mapped is *reported* rather than silently dropped. Native modules load with
 
 **[Full guide → docs/BINDINGS.md](docs/BINDINGS.md)**
 
-## 🐝 Language tour
+## Language tour
 
 <table>
 <tr><td>
@@ -230,7 +231,7 @@ print(join(a), join(b))   # both downloads ran concurrently
 See the full [**Language Reference**](docs/LANGUAGE.md) for everything: values,
 operators, control flow, the standard library, type methods, and more.
 
-## ⚡ Performance
+## Performance
 
 Bee ships with a built-in **LLVM ORCv2 JIT**. Functions that stay within a
 numeric subset are compiled to native code operating on unboxed doubles; the
@@ -240,7 +241,7 @@ enabled by default — just make sure LLVM (17/18) is installed before you build
 ```bash
 sudo apt install llvm-18-dev   # Debian/Ubuntu — the JIT dependency
 make                           # "Building with LLVM JIT via ..."
-bee examples/13_benchmark.bee
+bee -e 'fn fib(n){ if n<2 {return n} return fib(n-1)+fib(n-2) } print(fib(32))'
 ```
 
 | Benchmark | Without JIT | With JIT |
@@ -250,7 +251,7 @@ bee examples/13_benchmark.bee
 > If LLVM isn't found at build time, `make` falls back to a JIT-less binary that
 > behaves identically, just slower — handy for minimal environments.
 
-## 🧱 Compile to a native binary
+## Compile to a native binary
 
 `beec`, Bee's ahead-of-time compiler, turns a program into a standalone native
 executable — a real binary you can ship and run with no interpreter installed:
@@ -271,7 +272,7 @@ machine needs a C++17 compiler; the output needs nothing.
 
 **[Full guide → docs/COMPILING.md](docs/COMPILING.md)**
 
-## 🧩 Editor support
+## Editor support
 
 A [VS Code extension](https://github.com/beelang-project/vscode-bee) provides
 syntax highlighting, completions (keywords, built-ins, `.`-methods, and file
@@ -279,7 +280,7 @@ symbols), hovers, and snippets — plus a bee icon for `.be` / `.bee` files. It
 lives in its own repository and is versioned independently; see its
 [README](https://github.com/beelang-project/vscode-bee#readme) to install.
 
-## 🗂️ Project layout
+## Project layout
 
 ```
 Bee/
@@ -290,7 +291,7 @@ Bee/
 └── docs/LANGUAGE.md   # full language reference
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Issues and pull requests are welcome. To hack on the interpreter:
 
@@ -304,6 +305,6 @@ Bee is plain C++17. The built-in native JIT uses LLVM (17/18) — install it
 to build the default JIT-enabled `bee`; without it the build still works, just
 without native compilation. Sources live in [`src/`](src/).
 
-## 📄 License
+## License
 
 Released under the [MIT License](LICENSE). © 2026 Atanu Debnath.

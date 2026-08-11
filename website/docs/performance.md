@@ -485,7 +485,7 @@ operation.**
 
 ### Types, and the typed backend - steps 1 and 2 done
 
-Optional type annotations landed (see [LANGUAGE.md](language.md)), and the
+Optional type annotations landed (see [LANGUAGE.md](language/index.md)), and the
 compiler now uses them.
 
 **Register typing.** Two sources are trusted: a *declared* parameter or local,

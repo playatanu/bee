@@ -103,7 +103,32 @@ nav:
   - Home: index.md
   - Get started: getting-started.md
   - Download: download.md
-  - Language guide: language.md
+  - Language guide:
+      - Overview: language/index.md
+      - Comments: language/comments.md
+      - Values & types: language/values.md
+      - Variables: language/variables.md
+      - Operators: language/operators.md
+      - Truthiness: language/truthiness.md
+      - Strings: language/strings.md
+      - Lists: language/lists.md
+      - Dicts: language/dicts.md
+      - Control flow: language/control-flow.md
+      - Functions & closures: language/functions.md
+      - Type annotations: language/type-annotations.md
+      - Sized numeric types: language/numeric-types.md
+      - Classes & inheritance: language/classes.md
+      - Modules: language/modules.md
+      - Error handling: language/error-handling.md
+      - Built-in functions: language/builtin-functions.md
+      - System library: language/system-library.md
+      - Threads: language/threads.md
+      - Buffers: language/buffers.md
+      - Type methods: language/type-methods.md
+      - The REPL: language/repl.md
+      - Runtime errors: language/runtime-errors.md
+      - Editor support: language/editor-support.md
+      - A complete example: language/complete-example.md
   - Compile: compile.md
   - Packages:
       - Using packages: hive.md

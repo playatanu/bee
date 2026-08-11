@@ -196,7 +196,7 @@ To allocate a buffer from native code, use `bee::native::makeBuffer(DType::F32,
 {rows, cols})`. The Bee-side API - `buffer`, `zeros`, `ones`, `full`,
 `buffer_from`, `to_list`, `shape`, `dtype`, `at`, `set_at`, `reshape`, `astype`,
 `copy`, `buf_add`/`sub`/`mul`/`div`, `buf_sum`/`min`/`max` - is in the
-[language reference](language.md#buffers).
+[language reference](language/buffers.md).
 
 ---
 

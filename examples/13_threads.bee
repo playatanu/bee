@@ -1,0 +1,33 @@
+# 13 — Threads
+# `spawn(fn, ...args)` runs a function on a new thread; `join(handle)` waits for
+# it and returns its result. A global interpreter lock keeps shared state safe,
+# so plain reads and writes don't corrupt each other.
+
+fn work(id, rounds) {
+    let total = 0
+    for i in range(rounds) { total += i }
+    return f"{id} summed to {total}"
+}
+
+let a = spawn(work, "job-A", 1000)
+let b = spawn(work, "job-B", 2000)
+print(join(a))
+print(join(b))
+
+# Several threads bumping a shared counter; the GIL keeps the count exact.
+let counter = [0]
+fn bump() {
+    for i in range(50000) { counter[0] = counter[0] + 1 }
+}
+let jobs = []
+for i in range(4) { jobs.push(spawn(bump)) }
+for j in jobs { join(j) }
+print("counter (4 x 50000) =", counter[0])
+
+# An exception on a worker surfaces when you join it.
+fn risky() { throw "boom" }
+try {
+    join(spawn(risky))
+} catch (e) {
+    print("caught from thread:", e)
+}

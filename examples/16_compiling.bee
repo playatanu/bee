@@ -1,0 +1,35 @@
+# 16 — Compiling to a native binary
+# Everything here runs on the interpreter, but it also compiles to a standalone
+# executable with the ahead-of-time compiler:
+#
+#     beec examples/16_compiling.bee -o wordcount
+#     ./wordcount
+#
+# The produced binary embeds the runtime and needs no `bee` on the machine.
+
+fn word_counts(text) {
+    let counts = {}
+    for word in text.lower().split(" ") {
+        let w = word.trim()
+        if w.len() == 0 { continue }
+        counts[w] = counts.get(w, 0) + 1
+    }
+    return counts
+}
+
+let text = "the quick brown fox the lazy dog the fox"
+let counts = word_counts(text)
+
+for word in counts {
+    print(f"{word}: {counts[word]}")
+}
+
+let best = ""
+let best_n = 0
+for word in counts {
+    if counts[word] > best_n {
+        best = word
+        best_n = counts[word]
+    }
+}
+print(f"most common: '{best}' ({best_n} times)")

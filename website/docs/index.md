@@ -93,6 +93,6 @@ no interpreter required. [Compile a program](compile.md)
 ## Where to next
 
 - [Get started](getting-started.md) - install Bee and run your first program.
-- [Language guide](language.md) - learn the language, one topic at a time.
+- [Language guide](language/index.md) - learn the language, one topic at a time.
 - [Packages](hive.md) - find and install ready-made code with Hive.
 - [Editor](editor.md) - syntax highlighting and hints in VS Code.

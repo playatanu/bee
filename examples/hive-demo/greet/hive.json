@@ -1,8 +1,0 @@
-{
-  "name": "greet",
-  "version": "0.1.0",
-  "description": "A tiny example package for the hive package manager",
-  "license": "MIT",
-  "main": "init.bee",
-  "dependencies": {}
-}

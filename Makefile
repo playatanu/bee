@@ -1,5 +1,5 @@
 # Build the `bee` interpreter, with an optional LLVM JIT backend.
-VERSION  ?= 0.3.5
+VERSION  ?= 0.3.6
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pthread
 CXXFLAGS += -DBEE_VERSION=\"$(VERSION)\"
@@ -174,12 +174,6 @@ test: $(BIN) $(HIVE_BIN) $(GEN_BIN) $(JIT_TARGET) $(AOT_LIB) $(BEEC_BIN)
 	bash tests/aot_test.sh
 	bash tests/hive_test.sh
 	bash tests/beegen_test.sh
-
-# Timings. `make bench REF=/path/to/other/bee` compares two builds, and
-# BENCHARGS passes anything else through (--python, -n 9, a name prefix).
-BENCHARGS ?=
-bench: $(BIN) $(JIT_TARGET)
-	bash bench/run.sh $(if $(REF),--vs $(REF)) $(BENCHARGS)
 
 clean:
 	rm -f $(OBJ) $(HIVE_OBJ) $(GEN_OBJ) $(DEP) $(BIN) $(HIVE_BIN) $(GEN_BIN) \

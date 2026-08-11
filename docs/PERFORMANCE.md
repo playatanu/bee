@@ -265,7 +265,7 @@ over eight `shared_ptr` alternatives. Consequences on every operation:
 
 ## Improvement plan
 
-### Priority 1 — Replace exception-based control flow with status returns ✅ done
+### Priority 1 — Replace exception-based control flow with status returns  done
 
 **Measured: 14.6× on `continue`-heavy loops, 10.7× on call-heavy code, 2.1× on a
 plain loop. Contained to [`interpreter.cpp`](../src/interpreter.cpp). No
@@ -349,7 +349,7 @@ edge cases most at risk — `return` out of a loop inside `try`/`finally`,
 `finally`'s own `return`, `break`/`continue` crossing a `try`, `return` through a
 callback — are covered by the new cases described in "Results so far".
 
-### Priority 2 — Stop allocating a scope per block and per call ✅ done
+### Priority 2 — Stop allocating a scope per block and per call  done
 
 **Measured: 6.4× on a loop whose body declares a local, 11.3× on a loop calling
 a function with locals.**
@@ -378,7 +378,7 @@ Two changes, both in [`resolver.cpp`](../src/resolver.cpp) and
 Scope merging is also what makes Priority 3 possible: in a closure-free function
 every local ends up at depth 0 in one frame, which is precisely a register file.
 
-### Priority 3 — Compile to bytecode ✅ done
+### Priority 3 — Compile to bytecode  done
 
 **Measured: 3.9×–54× over 0.3.1, and from ~4× behind CPython to slightly ahead
 of it.**
@@ -418,7 +418,7 @@ Things worth keeping in mind if you extend it:
   is an index rather than an allocation. Nested Bee calls recurse into `run()`,
   using the C++ stack as the frame stack.
 
-### Shapes, fused method calls and direct calls ✅ done
+### Shapes, fused method calls and direct calls  done
 
 Three changes aimed at the two rows that were worst against CPython. Measured
 first, because guessing which half of `oo_class` was expensive would have been a

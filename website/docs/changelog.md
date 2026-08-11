@@ -727,7 +727,7 @@ language or API changes - existing programs run identically, only faster. All
 ## [0.1.0] - 2026-08-06
 
 The first public release of Bee - a small, friendly programming language with
-a built-in native (LLVM) JIT. 🐝
+a built-in native (LLVM) JIT.
 
 ### Language
 
@@ -793,7 +793,7 @@ a built-in native (LLVM) JIT. 🐝
 
 ### Documentation & examples
 
-- Full [language reference](language.md).
+- Full [language reference](language/index.md).
 - A topic-by-topic set of 14 runnable [examples](https://github.com/playatanu/bee/tree/main/examples/).
 
 ### Known limitations

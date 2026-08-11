@@ -1,0 +1,16 @@
+# 12 — Modules
+# `import` loads another Bee file (here mathutil.bee, sitting next to this one).
+# There are three forms:
+
+# 1. Import the whole module and reach members through its name.
+import mathutil
+print("square(9)      =", mathutil.square(9))
+print("circle_area(2) =", mathutil.circle_area(2))
+
+# 2. Import specific names into the current scope.
+from mathutil import factorial
+print("factorial(6)   =", factorial(6))
+
+# 3. Import under an alias.
+import mathutil as m
+print("m.PI           =", m.PI)

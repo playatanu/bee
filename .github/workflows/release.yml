@@ -30,7 +30,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             export VERSION="${GITHUB_REF_NAME#v}"
           else
-            export VERSION="0.3.5"
+            export VERSION="0.3.6"
           fi
           bash packaging/build-deb.sh
 
@@ -60,7 +60,7 @@ jobs:
       - name: Compile bee.exe, hive.exe, beegen.exe and the JIT backend
         shell: msys2 {0}
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.3.5"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then ver="${GITHUB_REF_NAME#v}"; else ver="0.3.6"; fi
           # bee.exe links no LLVM. src/jit.cpp is the dlopen front end. This is
           # the interpreter's own source list -- the same set as the Makefile's
           # $(SRC). It deliberately does NOT glob src/*.cpp: that would also pull
@@ -99,7 +99,7 @@ jobs:
           if ($env:GITHUB_REF -like 'refs/tags/v*') {
             $ver = $env:GITHUB_REF_NAME -replace '^v',''
           } else {
-            $ver = '0.3.5'
+            $ver = '0.3.6'
           }
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" packaging\windows\bee-setup.iss
 

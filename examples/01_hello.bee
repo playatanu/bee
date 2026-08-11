@@ -1,6 +1,4 @@
-# 01 — Hello, world
-#
-# The smallest Bee program. Run it with:
-#     bee examples/01_hello.bee
+# 01 — Hello, Bee!
+# The smallest Bee program. Run it with:  bee examples/01_hello.bee
 
 print("Hello, Bee!")
