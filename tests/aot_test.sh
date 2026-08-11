@@ -47,6 +47,25 @@ check_unsupported() {
     fi
 }
 
+# check_exact <name> <bee-source> <expected-output>: the compiled binary must
+# print exactly <expected>. Used where AOT is deliberately more precise than the
+# interpreter -- sized integers are exact two's-complement in a native binary,
+# whereas the interpreter computes through double and rounds past 2^53.
+check_exact() {
+    local name="$1" src="$2" want="$3"
+    local f="$TMP/$name.bee"
+    printf '%s\n' "$src" > "$f"
+    if ! "$BEEC" "$f" -o "$TMP/$name" >/dev/null 2>&1; then
+        echo "  fail  $name (beec failed to compile)"; fail=$((fail+1)); return
+    fi
+    local aout; aout=$("$TMP/$name" 2>&1)
+    if [ "$aout" = "$want" ]; then
+        echo "  ok    $name"; pass=$((pass+1))
+    else
+        echo "  fail  $name (want '$want' got '$aout')"; fail=$((fail+1))
+    fi
+}
+
 echo "beec: native output matches the interpreter"
 check hello        'print("Hello, " + "world" + "!")'
 check arithmetic   'print(7 + 2 * 3, 7 % 3, -5, 2.5 * 4)'
@@ -96,8 +115,23 @@ check sized_native   $'fn r() -> i32 {\n  let acc: i32 = 0\n  for i in range(100
 check sized_capture  $'fn r() {\n  let acc: i32 = 10\n  let get = fn() { return acc }\n  acc = acc + 5\n  return get()\n}\nprint(r())'
 check sized_native_f $'fn r() -> f32 {\n  let s: f32 = 0.0\n  for i in range(10) { s = s + 0.1 }\n  return s\n}\nprint(r())'
 check sized_native_dyn $'fn dbl(x) { return x * 2 }\nfn r() {\n  let a: u8 = 200\n  a = a + 100\n  return dbl(a)\n}\nprint(r())'
+# Native comparison path (conditions over sized-numeric locals compile to native
+# C++ comparisons). The nested loop with an == guard exercises for/if conditions.
+check native_cmp     $'fn r() -> i64 {\n  let sum: i64 = 0\n  for (let i: i64 = 0; i < 300; i += 1) {\n    for (let j: i64 = 0; j < 300; j += 1) {\n      if i == j { sum += i * j }\n    }\n  }\n  return sum\n}\nprint(r())'
+# &&/||/! over native comparisons, plus <=/>= boundaries, must match the runtime.
+check native_cmp_bool $'fn r() -> i32 {\n  let n: i32 = 0\n  for (let i: i32 = 0; i <= 20; i += 1) {\n    if i >= 5 and i <= 15 and not (i == 10) { n += 1 }\n  }\n  return n\n}\nprint(r())'
+# NaN edge: Bee treats unordered <=/>= as true (unlike native C++), and the AOT
+# comparison path must preserve that. inf-inf builds a NaN through native floats.
+check native_cmp_nan $'fn r() {\n  let a: f64 = 1.0\n  for (let k = 0; k < 400; k += 1) { a = a * 10.0 }\n  let nan: f64 = a - a\n  let x: f64 = 5.0\n  print(nan < x, nan > x, nan <= x, nan >= x, nan == nan, nan != nan)\n}\nr()'
 
 echo
+echo "beec: sized integers are exact two's-complement (native binary), even where"
+echo "      the interpreter's double arithmetic would round past 2^53"
+# i32/u32 products whose exact result exceeds 2^53: the compiled binary wraps the
+# exact integer product; the interpreter rounds through double first, so these are
+# pinned to the exact value rather than compared against the interpreter.
+check_exact int_exact_i32 $'fn r() -> i32 {\n  let a: i32 = 2000000000\n  return a * a\n}\nprint(r())' '-1651507200'
+check_exact int_exact_u32 $'fn r() -> u32 {\n  let a: u32 = 4000000000\n  return a * a\n}\nprint(r())' '1983905792'
 echo "beec: unresolvable / unsupported imports are refused, not miscompiled"
 check_unsupported missing_module 'import definitely_not_a_real_module_xyz'
 

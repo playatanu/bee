@@ -314,7 +314,11 @@ private:
     // for a non-escaping sized-numeric `let` it is instead a plain C++ `double`
     // holding the coerced value, which skips the cell/Value indirection in hot
     // loops. `native` selects which; `nty` is the sized type for coercion.
-    struct VarInfo { std::string cvar; bool native = false; TypeAnn::NumTy nty = TypeAnn::NumTy::Dyn; };
+    // `native` marks an unboxed sized-numeric local; `nativeInt` further marks
+    // the integer ones (stored as int64_t, wrapped in the integer domain) apart
+    // from the float ones (stored as double, coerced via TypeAnn::coerce).
+    struct VarInfo { std::string cvar; bool native = false; bool nativeInt = false;
+                     TypeAnn::NumTy nty = TypeAnn::NumTy::Dyn; };
     struct Scope { bool global; std::map<std::string, VarInfo> vars; };
     std::vector<Scope> scopes_;
     // True while emitting a function whose body defines no closures, so a native
@@ -337,14 +341,21 @@ private:
         Scope& s = scopes_.back();
         if (s.global) return "";
         std::string c = fresh("v");
-        s.vars[name] = VarInfo{c, false, TypeAnn::NumTy::Dyn};
+        s.vars[name] = VarInfo{c, false, false, TypeAnn::NumTy::Dyn};
         return c;
     }
-    // Declare a native (unboxed `double`) sized-numeric local; returns its C var.
+    // Declare a native (unboxed `double`) sized-float local; returns its C var.
     std::string declareNative(const std::string& name, TypeAnn::NumTy nty) {
         Scope& s = scopes_.back();
         std::string c = fresh("n");
-        s.vars[name] = VarInfo{c, true, nty};
+        s.vars[name] = VarInfo{c, true, false, nty};
+        return c;
+    }
+    // Declare a native (unboxed `int64_t`) sized-integer local; returns its C var.
+    std::string declareNativeInt(const std::string& name, TypeAnn::NumTy nty) {
+        Scope& s = scopes_.back();
+        std::string c = fresh("n");
+        s.vars[name] = VarInfo{c, true, true, nty};
         return c;
     }
     const VarInfo* resolveInfo(const std::string& name) {
@@ -365,7 +376,9 @@ private:
     // rather than a std::map string lookup -- the dominant cost in hot loops.
     std::string nameValue(const std::string& name, int line) {
         if (const VarInfo* v = resolveInfo(name)) {
-            if (v->native) return "bee::Value(" + v->cvar + ")";   // box the double
+            if (v->native)   // box as a double, matching Bee's numeric Value
+                return v->nativeInt ? "bee::Value((double)" + v->cvar + ")"
+                                    : "bee::Value(" + v->cvar + ")";
             return "bee::aot::load(" + v->cvar + ")";
         }
         return "([&]()->bee::Value&{ static bee::Value* _s=nullptr; return bee::aot::slotRef(I, " +
@@ -387,7 +400,8 @@ private:
             }
             case Expr::Kind::Variable: {
                 const VarInfo* v = resolveInfo(static_cast<VariableExpr*>(e)->name);
-                return (v && v->native) ? v->cvar : std::string();
+                if (!v || !v->native) return "";
+                return v->nativeInt ? "(double)" + v->cvar : v->cvar;   // ints widen to double
             }
             case Expr::Kind::Grouping:
                 return nativeNum(static_cast<GroupingExpr*>(e)->inner.get());
@@ -417,6 +431,151 @@ private:
     std::string asNativeNum(Expr* e) {
         std::string n = nativeNum(e);
         return !n.empty() ? n : "(" + emitExpr(e) + ").asNumber()";
+    }
+
+    // Integer sized types stored as a native int64_t working value. u64 is left
+    // out (its wrap/ordering don't fit a signed working width cleanly) and keeps
+    // the double+coerce path; floats are always double-native.
+    static bool isNativeIntTy(TypeAnn::NumTy t) {
+        switch (t) {
+            case TypeAnn::NumTy::I8:  case TypeAnn::NumTy::U8:
+            case TypeAnn::NumTy::I16: case TypeAnn::NumTy::U16:
+            case TypeAnn::NumTy::I32: case TypeAnn::NumTy::U32:
+            case TypeAnn::NumTy::I64: return true;
+            default:                  return false;
+        }
+    }
+    // Wrap an int64_t expression into a sized integer type (two's-complement, via
+    // the native narrowing cast), yielding an int64_t. This is the integer-domain
+    // equivalent of TypeAnn::coerce -- same result within the ~53-bit range every
+    // engine shares, but with no double<->int round trip. I64 needs no narrowing.
+    static std::string intCoerce(const std::string& e, TypeAnn::NumTy t) {
+        switch (t) {
+            case TypeAnn::NumTy::I8:  return "(int64_t)(int8_t)("   + e + ")";
+            case TypeAnn::NumTy::U8:  return "(int64_t)(uint8_t)("  + e + ")";
+            case TypeAnn::NumTy::I16: return "(int64_t)(int16_t)("  + e + ")";
+            case TypeAnn::NumTy::U16: return "(int64_t)(uint16_t)(" + e + ")";
+            case TypeAnn::NumTy::I32: return "(int64_t)(int32_t)("  + e + ")";
+            case TypeAnn::NumTy::U32: return "(int64_t)(uint32_t)(" + e + ")";
+            default:                  return "(" + e + ")";   // I64: identity
+        }
+    }
+
+    // Try to emit `e` as a native C++ int64_t expression, "" if it can't. Covers
+    // integer-native locals, integer-valued literals, and +/-/* over them. The
+    // arithmetic is done in uint64_t (well-defined two's-complement wrap, no UB)
+    // then read back as int64_t -- bit-identical to the double path wherever a
+    // double is exact (the ~53-bit range the language promises for integers).
+    std::string nativeIntNum(Expr* e) {
+        if (!e) return "";
+        switch (e->kind) {
+            case Expr::Kind::Literal: {
+                auto* l = static_cast<LiteralExpr*>(e);
+                if (!l->value.isNumber()) return "";
+                double d = l->value.asNumber();
+                if (!(d >= -9223372036854775808.0 && d < 9223372036854775808.0)) return "";
+                if (d != (double)(int64_t)d) return "";   // fractional -> not integer
+                char buf[32];
+                std::snprintf(buf, sizeof buf, "%lldLL", (long long)(int64_t)d);
+                return "((int64_t)" + std::string(buf) + ")";
+            }
+            case Expr::Kind::Variable: {
+                const VarInfo* v = resolveInfo(static_cast<VariableExpr*>(e)->name);
+                return (v && v->native && v->nativeInt) ? v->cvar : std::string();
+            }
+            case Expr::Kind::Grouping:
+                return nativeIntNum(static_cast<GroupingExpr*>(e)->inner.get());
+            case Expr::Kind::Unary: {
+                auto* u = static_cast<UnaryExpr*>(e);
+                if (u->op != TokenType::MINUS) return "";
+                std::string r = nativeIntNum(u->right.get());
+                return r.empty() ? "" : "((int64_t)(0 - (uint64_t)(" + r + ")))";
+            }
+            case Expr::Kind::Binary: {
+                auto* b = static_cast<BinaryExpr*>(e);
+                const char* op = b->op == TokenType::PLUS ? "+" :
+                                 b->op == TokenType::MINUS ? "-" :
+                                 b->op == TokenType::STAR ? "*" : nullptr;
+                if (!op) return "";
+                std::string l = nativeIntNum(b->left.get());
+                if (l.empty()) return "";
+                std::string r = nativeIntNum(b->right.get());
+                if (r.empty()) return "";
+                return "((int64_t)((uint64_t)(" + l + ") " + op + " (uint64_t)(" + r + ")))";
+            }
+            default: return "";
+        }
+    }
+
+    // The native C++ bool for a comparison of two native-double operands `l` and
+    // `r`, matching applyBinary on two numbers *exactly* -- NaN included. Bee's
+    // LE/GE treat unordered operands as equal (they return true for NaN), unlike
+    // native `<=`/`>=`, so those are written as negated strict comparisons.
+    static std::string nativeCmpForm(TokenType op, const std::string& l, const std::string& r) {
+        switch (op) {
+            case TokenType::LT:  return "(" + l + " < "  + r + ")";
+            case TokenType::GT:  return "(" + l + " > "  + r + ")";
+            case TokenType::LE:  return "(!(" + l + " > " + r + "))";
+            case TokenType::GE:  return "(!(" + l + " < " + r + "))";
+            case TokenType::EQ:  return "(" + l + " == " + r + ")";
+            case TokenType::NEQ: return "(" + l + " != " + r + ")";
+            default:             return "";
+        }
+    }
+
+    // Try to emit `e` as a native C++ `bool` (no Value boxing), returning "" if
+    // it can't. Covers the shape of a numeric loop/if condition: comparisons of
+    // native-numeric operands, and &&/||/! over such comparisons. Because the
+    // operands come from nativeNum (always Bee numbers), the native comparison
+    // matches the runtime's number path exactly; see nativeCmpForm for NaN.
+    std::string nativeBool(Expr* e) {
+        if (!e) return "";
+        switch (e->kind) {
+            case Expr::Kind::Grouping:
+                return nativeBool(static_cast<GroupingExpr*>(e)->inner.get());
+            case Expr::Kind::Unary: {
+                auto* u = static_cast<UnaryExpr*>(e);
+                if (u->op != TokenType::NOT) return "";
+                std::string r = nativeBool(u->right.get());
+                return r.empty() ? "" : "(!" + r + ")";
+            }
+            case Expr::Kind::Logical: {
+                auto* b = static_cast<LogicalExpr*>(e);
+                const char* op = b->op == TokenType::AND ? "&&" :
+                                 b->op == TokenType::OR  ? "||" : nullptr;
+                if (!op) return "";
+                std::string l = nativeBool(b->left.get());
+                if (l.empty()) return "";
+                std::string r = nativeBool(b->right.get());
+                if (r.empty()) return "";
+                return "(" + l + " " + op + " " + r + ")";
+            }
+            case Expr::Kind::Binary: {
+                auto* b = static_cast<BinaryExpr*>(e);
+                // Both integer-native: compare as int64 (exact, no NaN). Every
+                // included type's values fit signed int64 with correct ordering
+                // (u8..u32 land as small non-negatives), so a signed compare is
+                // right. Otherwise fall back to the double comparison path.
+                std::string li = nativeIntNum(b->left.get());
+                if (!li.empty()) {
+                    std::string ri = nativeIntNum(b->right.get());
+                    if (!ri.empty()) return nativeCmpForm(b->op, li, ri);
+                }
+                std::string l = nativeNum(b->left.get());
+                if (l.empty()) return "";
+                std::string r = nativeNum(b->right.get());
+                if (r.empty()) return "";
+                return nativeCmpForm(b->op, l, r);
+            }
+            default: return "";
+        }
+    }
+
+    // A C++ bool for a condition: the native form when available, else the boxed
+    // Value's truthiness. Used for every if/while/for/ternary test.
+    std::string emitCond(Expr* e) {
+        std::string nb = nativeBool(e);
+        return !nb.empty() ? nb : "(" + emitExpr(e) + ").truthy()";
     }
 
     void raw(const std::string& s) { (*active_) << s; }
@@ -505,11 +664,24 @@ private:
     }
 
     std::string assignExpr(AssignExpr* e) {
-        // Native (unboxed) sized local: coerce a native double and store it,
-        // yielding the boxed value so `x = ...` still works as an expression.
-        if (const VarInfo* v = resolveInfo(e->name); v && v->native)
+        // Native (unboxed) sized local: store the coerced value, yielding the
+        // boxed value so `x = ...` still works as an expression.
+        if (const VarInfo* v = resolveInfo(e->name); v && v->native) {
+            if (v->nativeInt) {
+                // Integer store: prefer a native-int RHS (wrapped in the integer
+                // domain -- the hot `i += 1` becomes a plain int64 add); else a
+                // double RHS (e.g. `x = x / 2`) coerced once and truncated in.
+                std::string iv = nativeIntNum(e->value.get());
+                std::string rhs = !iv.empty()
+                    ? intCoerce(iv, v->nty)
+                    : "(int64_t)bee::TypeAnn::coerce((" + asNativeNum(e->value.get()) + "), " +
+                      numTyEnum(v->nty) + ")";
+                return "([&]{ " + v->cvar + " = " + rhs + "; return bee::Value((double)" +
+                       v->cvar + "); }())";
+            }
             return "([&]{ " + v->cvar + " = bee::TypeAnn::coerce((" + asNativeNum(e->value.get()) +
                    "), " + numTyEnum(v->nty) + "); return bee::Value(" + v->cvar + "); }())";
+        }
         std::string val = coerceIfSized(e->declaredType, emitExpr(e->value.get()));
         std::string c = resolve(e->name);
         if (!c.empty()) return "bee::aot::store(" + c + ", (" + val + "))";
@@ -521,6 +693,16 @@ private:
     }
 
     std::string binaryExpr(BinaryExpr* e) {
+        // Fast paths, safe only when both operands are statically native numbers:
+        // a comparison becomes a native C++ bool, arithmetic a native double --
+        // each boxed once, with no runtime operator dispatch. Both match the
+        // runtime's two-number path exactly (see nativeCmpForm / nativeNum).
+        if (std::string nb = nativeBool(e); !nb.empty())
+            return "bee::Value(" + nb + ")";
+        if (std::string ni = nativeIntNum(e); !ni.empty())
+            return "bee::Value((double)(" + ni + "))";
+        if (std::string nn = nativeNum(e); !nn.empty())
+            return "bee::Value((double)(" + nn + "))";
         const char* op = opName(e->op);
         if (!op) { err(e->line, "unsupported binary operator"); return "bee::Value()"; }
         std::string l = emitExpr(e->left.get());
@@ -656,10 +838,10 @@ private:
     }
 
     std::string ternaryExpr(TernaryExpr* e) {
-        std::string c = emitExpr(e->cond.get());
+        std::string c = emitCond(e->cond.get());
         std::string t = emitExpr(e->thenBranch.get());
         std::string f = emitExpr(e->elseBranch.get());
-        return "([&]{ bee::Value _c=(" + c + "); return _c.truthy() ? (" + t + ") : (" + f + "); }())";
+        return "([&]{ return (" + c + ") ? (" + t + ") : (" + f + "); }())";
     }
 
     std::string listCompExpr(ListCompExpr* e) {
@@ -782,9 +964,23 @@ private:
 
     void letStmt(LetStmt* s) {
         if (s->isDestructure) { destructureLet(s); return; }
-        // A non-escaping sized-numeric local becomes a native `double` (coerced
-        // to its type on write): no cell/Value indirection in the hot path.
+        // A non-escaping sized-numeric local becomes a native scalar (coerced to
+        // its type on write): no cell/Value indirection in the hot path. Integer
+        // types use an int64_t working value (integer-domain wrap, so arithmetic
+        // and comparisons stay native ints); floats use a double.
         if (!scopes_.back().global && nativeLocalsOk_ && s->type.isSizedNum()) {
+            if (isNativeIntTy(s->type.num)) {
+                std::string iv = s->initializer ? nativeIntNum(s->initializer.get()) : std::string();
+                std::string init = !iv.empty()
+                    ? intCoerce(iv, s->type.num)
+                    : (s->initializer
+                        ? "(int64_t)bee::TypeAnn::coerce((" + asNativeNum(s->initializer.get()) + "), " +
+                          numTyEnum(s->type.num) + ")"
+                        : std::string("0"));
+                std::string c = declareNativeInt(s->name, s->type.num);   // after init (no self-ref)
+                emit("int64_t " + c + " = " + init + ";");
+                return;
+            }
             std::string initD = s->initializer ? asNativeNum(s->initializer.get()) : std::string("0.0");
             std::string c = declareNative(s->name, s->type.num);   // after initD (no self-ref)
             emit("double " + c + " = bee::TypeAnn::coerce((" + initD + "), " + numTyEnum(s->type.num) + ");");
@@ -811,7 +1007,7 @@ private:
     }
 
     void ifStmt(IfStmt* s) {
-        emit("if ((" + emitExpr(s->condition.get()) + ").truthy()) {");
+        emit("if (" + emitCond(s->condition.get()) + ") {");
         indent_++; pushScope(); emitStmt(s->thenBranch.get()); popScope(); indent_--;
         if (s->elseBranch) {
             emit("} else {");
@@ -821,7 +1017,7 @@ private:
     }
 
     void whileStmt(WhileStmt* s) {
-        emit("while ((" + emitExpr(s->condition.get()) + ").truthy()) {");
+        emit("while (" + emitCond(s->condition.get()) + ") {");
         indent_++; pushScope(); emitStmt(s->body.get()); popScope(); indent_--;
         emit("}");
     }
@@ -833,7 +1029,7 @@ private:
         indent_++;
         pushScope();
         if (s->init) emitStmt(s->init.get());   // declares the loop var cell
-        std::string cond = s->condition ? "(" + emitExpr(s->condition.get()) + ").truthy()" : "true";
+        std::string cond = s->condition ? emitCond(s->condition.get()) : std::string("true");
         std::string incr = s->increment ? ("(void)(" + emitExpr(s->increment.get()) + ")") : std::string();
         emit("for (; " + cond + "; " + incr + ") {");
         indent_++; pushScope(); emitStmt(s->body.get()); popScope(); indent_--;

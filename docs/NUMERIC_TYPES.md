@@ -50,20 +50,39 @@ for i in range(10) { acc = acc + 1 }   # each store wraps
 print(acc)                             # -> 4
 ```
 
-## Semantics are identical everywhere
+## Semantics across engines
 
-The interpreter, the register VM, and the `beec` AOT compiler all produce the
-**same** result for a typed program — wrapping and rounding are defined once and
-shared. A typed function simply runs on the tree-walker under the VM/JIT (which
-don't model wrapping), while the AOT compiler implements it directly.
+The interpreter, the register VM, and the `beec` AOT compiler agree on wrapping
+and rounding for every value that fits the ~53 bits a `double` represents
+exactly — which is the entire range of `i8`…`i32`/`u8`…`u32` and the working
+range of ordinary code. A typed function runs on the tree-walker under the
+VM/JIT (which don't model wrapping); the AOT compiler implements it directly.
+
+One deliberate difference: a **compiled binary computes sized-integer arithmetic
+as true fixed-width two's-complement integers** — that is what the type promises.
+The interpreter and VM compute through `double`, so an intermediate integer
+result larger than 2⁵³ (for example a big `i32 * i32` product) is rounded before
+it wraps. There the AOT binary is *exact* and the interpreter is approximate:
+
+```bee
+let a: i32 = 2000000000
+print(a * a)          # AOT binary: -1651507200 (exact 32-bit wrap)
+                      # interpreter: rounds the 4e18 product first
+```
+
+This only shows up for integer results beyond 2⁵³; every value inside that range
+(all of `i8`…`u32`, and normal `i64` use) is identical on every engine.
 
 ## Speed
 
 The annotation is also a compilation hint. When `beec` compiles a program, a
 sized local that isn't captured by a closure becomes a **native machine value**
-(`int32_t`, `double`, …) with native arithmetic — no boxing in hot loops. A
-typed accumulator loop runs at the same speed as the untyped, dynamically-typed
-version, and integer wrapping costs nothing (the hardware does it).
+— integer types work in `int64_t`, floats in `double` — and its arithmetic,
+comparisons, and loop conditions compile to native machine instructions with no
+boxing and no per-operation coercion in hot loops. Integer wrapping costs nothing
+(it is the hardware's own two's-complement). A typed numeric loop in a compiled
+binary runs at native speed — on a tight nested `i64` loop it matches, and can
+beat, the interpreter's JIT.
 
 ```bash
 beec examples/11_numeric_types.bee -o types && ./types
@@ -73,10 +92,11 @@ beec examples/11_numeric_types.bee -o types && ./types
 
 - Values are still doubles at the language level, so `type(x)` is `number` and a
   typed value passed to an unannotated function is just a number.
-- Because the model is double-based, `i64`/`u64` carry only the ~53 bits a
-  double represents exactly; and a single expression whose intermediate integer
-  result exceeds 2⁶³ falls back to a defined modular reduction rather than
-  native machine wrapping. Neither affects ordinary code.
+- At the language level values are doubles, so a sized number that leaves its
+  native local — printed, returned into a dynamic context, stored in a list — is
+  observed through a `double` and so carries ~53 bits. In a compiled binary the
+  arithmetic between native integer locals is exact 64-bit two's-complement (see
+  *Semantics across engines*); the interpreter/VM stay double-based throughout.
 - A non-number assigned to a sized binding is a type error, reported the same
   way as any other annotation mismatch (`declared i32 but got str`).
 

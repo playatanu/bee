@@ -1,5 +1,5 @@
 # Build the `bee` interpreter, with an optional LLVM JIT backend.
-VERSION  ?= 0.3.6
+VERSION  ?= 0.3.7
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pthread
 CXXFLAGS += -DBEE_VERSION=\"$(VERSION)\"

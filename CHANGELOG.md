@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.7] — 2026-08-11
+
+### Changed
+
+- **AOT numeric loops now run at native speed.** `beec` compiles comparisons and
+  loop conditions over native sized-numeric locals to native machine comparisons
+  (previously every `<`, `==`, … still went through the boxed dynamic runtime),
+  and stores sized **integer** locals in a native `int64_t` working value so
+  their arithmetic, comparisons, and wrapping are native integer instructions
+  with no per-operation coercion. A tight nested `i64` loop that took ~95s as a
+  compiled binary now runs in a few seconds — matching, and slightly beating, the
+  interpreter's JIT on the same machine.
+- **Sized integers are exact in compiled binaries.** Because AOT integer
+  arithmetic is now true fixed-width two's-complement, an intermediate integer
+  result beyond 2⁵³ (e.g. a large `i32 * i32` product) wraps *exactly* in a
+  compiled binary, where the double-based interpreter and VM round it first. This
+  matches what the sized types promise; it is observable only past 2⁵³. See the
+  [numeric types guide](docs/NUMERIC_TYPES.md).
+
 ## [0.3.6] — 2026-08-11
 
 ### Added
