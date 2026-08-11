@@ -76,6 +76,25 @@ struct TypeAnn {
             case NumTy::F16: return f16round(x);
             default: break;   // integers
         }
+        // Fast path: if x is in int64 range, (int64_t)x truncates toward zero
+        // and the narrowing cast does the two's-complement wrap -- no trunc/fmod
+        // (those can be libm calls). The range test also rejects NaN and inf
+        // (both fail the comparisons), which fall through to the slow path.
+        if (x >= -9223372036854775808.0 && x < 9223372036854775808.0) {
+            int64_t i = (int64_t)x;
+            switch (t) {
+                case NumTy::I8:  return (double)(int8_t)i;
+                case NumTy::U8:  return (double)(uint8_t)i;
+                case NumTy::I16: return (double)(int16_t)i;
+                case NumTy::U16: return (double)(uint16_t)i;
+                case NumTy::I32: return (double)(int32_t)i;
+                case NumTy::U32: return (double)(uint32_t)i;
+                case NumTy::I64: return (double)i;
+                case NumTy::U64: return (double)(uint64_t)i;
+                default: return x;
+            }
+        }
+        // Slow path: |x| >= 2^63, or NaN/inf. Rare, so the libm calls are fine.
         if (!std::isfinite(x)) return 0.0;
         int bits; bool sign;
         switch (t) {
